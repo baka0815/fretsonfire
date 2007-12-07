@@ -1,0 +1,131 @@
+#extends Templates.Page
+#def title: Frets on Fire FAQ
+
+#def content
+
+<h1>FAQ</h1>
+
+<dl>
+
+<dt>Q: Where can I get more songs?</dt>
+<dd>
+  A: While the in-game songs are admittely awesome, one does start craving
+     for a little variety before long. Lucky for you there are a number of
+     ways to get more tunes for the game:
+
+<ul>
+  <li>
+    Compose a new song with the game's built-in song editor. All you need is an OGG music file and some patience.
+    There are some <a href="http://www.nukular.ch/foftools">tools</a> to help you out as well.
+  </li>
+  <li>
+    Go out and buy <a href="http://www.guitarherogame.com">Guitar Hero</a>&trade; 1 or 2 and use the
+    built-in importer to bring the songs into the game.
+  </li>
+  <li>
+    Check out the songs on community sites such as
+    <a href="http://keyboardsonfire.net/?songs">Keyboards on Fire</a>,
+    <a href="http://www.fretsonfire.net">FretsOnFire.net</a>,
+    <a href="http://www.fofspain.com">FOF.Spain</a>, etc.
+    Once you have a new song downloaded, just extract it under the data/songs folder.
+  </li>
+</ul>
+</dd>
+<dt>Q: Some chords don't work.</dt>
+<dd>
+  A: Some keyboard manufactures reduce costs by making some key combinations
+     impossible to press. This is especially true with laptop keyboards and
+     some cheaper PC keyboards. The solution is to change the keys to different
+     ones. For example, swapping the Enter key with Shift should help a lot,
+     or changing the frets to i.e. numbers 1-5. Use the key tester in the
+     settings menu to check your chosen key set.
+</dd>
+<dt>Q: The game works poorly on Windows Vista.</dt>
+<dd>
+  A: The current <a href="http://www.opengl.org/about/overview/">OpenGL</a> graphics drivers
+     for both NVidia and AMD cards are quite poor in comparison to their Windows XP counterparts.
+     Unfortunately, until the graphics cards companies manage to get their drivers optimized
+     for Windows Vista, you might see graphical glitches or poor performance with Frets On Fire
+     on Vista. Always make sure you have the latest drivers for your graphics card installed.
+</dd>
+<dt>Q: The sound crackles.</dt>
+<dd>
+  A: Increase your audio buffer size or change to 22050 Hz sampling frequency.
+     You can do this from the Audio Settings.
+</dd>
+<dt>Q: The colors look ugly on my ATI video card.</dt>
+<dd>
+  A: Don't use tweaked drivers (e.g. Omega Drivers) that reduce the color
+     depth to 16 bits.
+</dd>
+<dt>Q: I can't hit those notes!</dt>
+<dd>
+  A: You either need to practice more or adjust the A/V delay option in the
+     audio settings. Try increasing or decreasing the delay by 50 and seeing
+     if it helps.
+</dd>
+<dt>Q: I can't see my scores on the <a href="../../charts">World Charts</a>.</dt>
+<dd>
+  A: You need to enable score uploading in the settings menu first.
+</dd>
+<img src="faq.png" style="float: right"/>
+
+<dt>Q: I get a strange OpenGL error on startup.</dt>
+<dd>
+  A: If your desktop color quality is set to 16 bits, increase it to 32 bits. This was fixed in version 1.0.192.
+</dd>
+<dt>Q: I only see a red screen when I choose Play Game from the main menu.</dt>
+<dd>
+  A: Press Escape and choose Play Game again. This was fixed in version 1.0.192.
+     If you still get this problem, disable your firewall or make an excemption
+     for the game in it.
+</dd>
+<dt>Q: How can I reset the game settings?</dt>
+<dd>
+  A: This depends on your operating system:
+<p style="padding-left: 2em">
+     <strong>Windows</strong>: Click Start | Run, type <tt>%APPDATA%\fretsonfire</tt>
+     and press enter. The settings are stored in the <tt>fretsonfire.ini</tt> file and will
+     be reset if you delete that file.
+</p>
+
+<p style="padding-left: 2em">
+     <strong>Linux, Mac OS X</strong>: The settings are stored in the <tt>.fretsonfire</tt>
+     directory under your home directory in a file called <tt>fretsonfire.ini</tt>. You
+     can delete that file to reset the settings.
+</p>
+</dd>
+<dt>Q: Why don't you add support for the whammy bar?</dt>
+<dd>
+<p>
+  A: At the moment the main issue standing in the way of whammy bar support is
+     the limited functionality of the PyGame audio library used by the game. It only
+     offers simple audio playback; for the whammy bar a pitch shifting function would
+     be needed. The recently added streaming audio system might offer a way around this,
+     but don't hold your breath.
+</p>
+<p>
+     Another problem is that the guitar controller adapter does not report whammy bar
+     data, so the real whammy bar can't be used.
+</p>
+</dd>
+
+<dt>Q: The Mac OS X version only shows a blank screen or crashes.</dt>
+<a name="macosx">
+<dd>
+<p>
+  A: The Mac OS X version is known to be buggy, especially on PPC machines.
+  Unfortunately, as none of us inthe development team have Macs, we can't
+  really improve the situation. <a href="http://sourceforge.net/forum/forum.php?thread_id=1718456&forum_id=633606">This thread</a> in the
+  forums may be helpful. If you're a Mac developer willing to help out with
+  this, please get in touch.
+</p>
+</dd>
+
+<dt>Q: No matter what I do, I get lousy scores.</dt>
+<dd>
+  A: Sell your gear.
+</dd>
+</dl>
+
+#end def

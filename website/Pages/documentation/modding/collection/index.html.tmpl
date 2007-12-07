@@ -1,0 +1,70 @@
+#extends Templates.Page
+#def title: Collection customization
+
+#def content
+
+<h1>Song Collection Customization</h1>
+
+<h2>Cassette appearance</h2>
+
+The appearance of the song cassettes can be changed by editing the
+<tt>song.ini</tt> file stored within the song directory. The file
+can contain the following settings:
+
+<table class="regular">
+  <tr>
+    <th>Setting</th>
+    <th>Effect</th>
+  </tr>
+  <tr>
+    <td>cassettecolor</td>
+    <td>The color of the cassette in <a href="http://www.ficml.org/jemimap/style/color/wheel.html">HTML notation</a></td>
+  </tr>
+  <tr>
+    <td>name</td>
+    <td>Song name</td>
+  </tr>
+  <tr>
+    <td>artist</td>
+    <td>Song performer</td>
+  </tr>
+  <tr>
+    <td>delay</td>
+    <td>Note delay in milliseconds. Each note in the song will be delayed by this amount.</td>
+  </tr>
+  <tr>
+    <td>tutorial</td>
+    <td>1 or 0 to indicate whether this song is a tutorial. Tutorials can have closed captioning and other effects in the <tt>script.txt</tt> file.</td>
+  </tr>
+</table>
+
+In addition to the above settings, you may create a 128x64 PNG file called
+<tt>label.png</tt> to the song directory. It will be drawn as the cassette
+label.
+
+<h2>Song libraries</h2>
+
+Songs can be organized into libraries by moving them into subfolders under the
+<tt>data/songs</tt> directory. Each library can have any number of songs. A
+library can also have a <tt>library.ini</tt>, which controls the following
+settings:
+
+<table class="regular">
+  <tr>
+    <th>Setting</th>
+    <th>Effect</th>
+  </tr>
+  <tr>
+    <td>color</td>
+    <td>The color of the library briefcase in <a href="http://www.ficml.org/jemimap/style/color/wheel.html">HTML notation</a></td>
+  </tr>
+  <tr>
+    <td>name</td>
+    <td>Library name</td>
+  </tr>
+</table>
+
+Similarly as songs, libraries can also have <tt>label.png</tt> image that will
+be drawn onto the library briefcase.
+
+#end def

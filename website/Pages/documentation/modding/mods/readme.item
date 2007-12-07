@@ -1,0 +1,25 @@
+
+<h1>Creating Game Modifications</h1>
+
+In Frets on Fire, game modifications or mods for short are basically collections
+of files that have been modified from the original game and therefore change
+some aspect of the game, such as graphics or sounds. At the moment code
+modifications that alter the gameplay are not officially supported by the game.
+
+The modifications are stored in the <tt>data/mods</tt> directory. When a
+modification is actived from the game settings, the game looks for every data
+file it loads first from the modification directory. If the file isn't there,
+the stock data file is used instead. In this way, modifications can override the
+data files shipped with the game.
+
+
+<h2>Quick guide making a mod</h2>
+
+<ol>
+  <li>Modify one or more of the game files in the data folder.</li>
+  <li>Create a folder for your mod in the <tt>data/mods</tt> folder. The folder name will be your
+      mod's name.</li>
+  <li>Copy the files you modified into the mod's folder.</li>
+  <li>Zip the mod folder and spread the resulting package.</li>
+</ol>
+         

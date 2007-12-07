@@ -1,0 +1,67 @@
+
+<h1>Graphics guide</h1>
+
+This text will shortly explain how we created vector graphics to Frets on Fire.
+Here's some background on the graphics used in Frets on Fire and a short introduction
+on how you can import your own images into the game.
+
+<h2>Introduction</h2>
+
+All graphics in the game are based on resolution independent <a
+href="http://en.wikipedia.org/wiki/Vector_graphics">vector graphics</a> stored in <a
+href="http://en.wikipedia.org/wiki/Scalable_Vector_Graphics">SVG files</a>. That means that you'll need to use a
+vector graphics program for creating your images. Here's what we used:
+  
+<ul>
+  <li><a src="http://www.gimp.org/">Gimp</a> (Used for preparing images for Inkscape)</li>
+  <li><a src="http://www.inkscape.org/">Inkscape</a> (Used for making the vector images)</li>
+</ul>
+
+In addition to 2D vector graphics, the game uses a few 3D models as well. They are
+stored in the <a href="http://www.collada.org">Collada</a> 3D graphics interchange format.
+We used <a href="http://www.blender.org">Blender</a> to create the 3D models.
+
+<h2>Graphics files in Frets on Fire</h2>
+
+<ul>   
+   <li>2x.svg, 3x.svg, 4x.svg - Ingame multiplier icons</li>
+   <li>ball1.svg - Empty ingame multiplier ball</li>
+   <li>ball2.svg - Full ingame multiplier ball</li>
+   <li>cassette.svg - Background for song selection dialog</li>
+   <li>editor.svg - Background for song editor</li>
+   <li>flame1.svg, flame2.svg - Ingame background flames</li>
+   <li>glow.svg - Texture for note glow effect</li>
+   <li>keyboard.svg - Background for mainmenu</li>
+   <li>left.svg, right.svg - Left and Right arrow</li>
+   <li>logo.svg - Game logo</li>
+   <li>neck.svg - Tiling texture for guitar neck</li>
+   <li>pose.svg - Elvis Costello look-a-like posing with keyboard.</li>
+   <li>star1.svg, star2.svg - Star images</li>
+   <li>default.ttf, title.ttf - Game fonts</li>
+</ul>
+
+Additionally, these 3D models are used:
+
+<ul>
+   <li>cassette.dae - Song selector cassette</li>
+   <li>key.dae - Keyboard key</li>
+   <li>note.dae - Ingame note</li>
+</ul>
+    
+<h2>Modifying vector files</h2>
+
+It's quite easy to start. Just open one of the files above, change something, save your piece of art as Plain SVG,
+execute Frets on Fire and you can see the changes instantly.  There is few things that might help you a little
+while working with Inkscape:
+
+<ul>
+    <li>Read the <a href="http://www.inkscape.org/doc/index.php">Inkscape tutorial</a>.</li>
+    <li>Keep the center of the vector image you are working with in the upper left corner.</li>
+    <li>Remember to save the document in Plain SVG format.</li>
+    <li>If you want to vectorize bitmap-image, open it in Inkscape and use Trace Bitmap -tool (Shift+Alt+B).
+        Remember to delete the original image after vectorizing.</li>
+    <li>When you open the svg document it's always grouped. To ungroup select all (Ctrl+A) and then ungroup (Shift+Ctrl+G). After ungrouping you can select and edit separate parts of the document.</li>
+    <li>Convert all objects in the SVG file to paths. (Path | Object to path, Shift+Ctrl+C)</li>
+    <li>Clean useless items from your SVG file before saving to keep the file compact. (File | Vacuum Defs)</li>
+</ul>
+

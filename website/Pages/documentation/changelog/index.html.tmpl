@@ -1,0 +1,109 @@
+#extends Templates.Page
+#def title: Changelog
+
+#def content
+<h1>Changelog</h1>
+
+<h2>Version 1.2.512</h2>
+
+<ul>
+ <li>Effects optimization</li>
+ <li>Font rendering optimization</li>
+ <li>Miscellaneous bug fixes</li>
+ <li>Added import support for Guitar Hero 80s</li>
+ <li>Translation updates</li>
+ <li>World Charts standing is now reported after each game</li>
+</ul>
+
+<h2>Version 1.2.451</h2>
+
+<ul>
+  <li>Fixed some bugs with the tapping implementation</li>
+  <li>Audio performance and stability fixes</li>
+  <li>Song chooser filter enhanced</li>
+  <li>Introduced new World Charts</li>
+  <li>Linux packaging fixes</li>
+</ul>
+
+<h2>Version 1.2.438</h2>
+
+<ul>
+  <li>Added custom fretboard and background support</li>
+  <li>Volume control</li>
+  <li>Song folder support</li>
+  <li>Fixed screw-up volume</li>
+  <li>Align notes to beat lines again</li>
+  <li>Fixed missing encoding error on linux</li>
+  <li>Dual core performance improvements</li>
+  <li>Fixed crash with strangely named joysticks</li>
+  <li>Fixed backspace etc. on mac</li>
+  <li>Delete rhythm file after importing each song</li>
+  <li>Improved importer encoding quality</li>
+  <li>Made notes disappear when they are hit</li>
+  <li>Fixed volume saturation issue with GH2 tracks</li>
+  <li>Fixed performance issue with note effect</li>
+  <li>Move the multiplier text upwards</li>
+  <li>Pause the song while the menu is shown</li>
+  <li>Implement playing multiple streaming OGG files simultaneously</li>
+  <li>Fixed the timer skew and add a high priority mode</li>
+  <li>Fixed the priority of the loading screens to improve loading time</li>
+  <li>Made the fret color configurable with the theme</li>
+  <li>Hit counter</li>
+  <li>Type-ahead find for song chooser</li>
+  <li>Fix Numeric memory leak</li>
+  <li>Fix importing two missing songs on GH1 and GH2 disks</li>
+  <li>Tapping support, aka hammer-ons and pull-ofs</li>
+  <li>PPC Mac fixes</li>
+</ul>
+
+<h2>Version 1.1.324</h2>
+
+<ul>
+  <li>Support for importing Guitar Hero&trade; II songs</li>
+  <li>Support for game modifications</li>
+  <li>Widescreen support</li>
+  <li>Added the submitted translations to the game. Thanks to everyone who sent theirs in!</li>
+  <li>Many bugfixes related to configuration settings, song creation, etc.</li>
+  <li>Mac OS X fixes</li>
+</ul>
+
+<h2>Version 1.0.263</h2>
+
+<ul>
+  <li>Mac OS X support. Okay, it's experimental, but it's there. Many thanks to Tero Pihlajakoski for his work on the Mac package!</li>
+  <li>Windows installer</li>
+  <li>Localization support</li>
+  <li>Improvements to the song editor</li>
+  <li>Fixed a major memory leak</li>
+  <li>Lefty mode</li>
+  <li>Support for cassette labels and colors</li>
+  <li>General performance tuning</li>
+</ul>
+
+<h2>Version 1.0.225</h2>
+
+<ul>
+  <li>Added a Guitar Hero(tm) song importer.</li>
+  <li>Fixed the key-release bug for long notes introduced by the previous version.</li>
+  <li>Added support for joystick axes and hats.</li>
+  <li>Added adjustable song delay in the editor.</li>
+  <li>Improved song chooser to remember last played song.</li>
+  <li>SDL_mixer and SDL_ttf added to Linux package to ease running on e.g. FreeBSD.</li>
+  <li>Added custom color scheme support.</li>
+  <li>Score multiplier now resets when notes are missed.</li>
+  <li>Added new difficulty level and support for songs with varying tempo.</li>
+</ul>
+
+
+<h2>Version 1.0.192</h2>
+
+<ul>
+  <li>Added joystick support.</li>
+  <li>Added support for two different pick keys.</li>
+  <li>Only show the available difficulty levels for songs.</li>
+  <li>Fixed the startup problems on video cards that do not support antialiasing.</li>
+  <li>Fixed the red screen of death.</li>
+  <li>Added the missing DLL to the Window version.</li>
+</ul>
+
+#end def

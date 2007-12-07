@@ -1,0 +1,42 @@
+#extends Templates.Page
+#def title: Importing Guitar Hero&trade; songs
+
+#def content
+<h1>Importing Guitar Hero&trade; songs</h1>
+
+<p>
+  The game has a built-in importer for the songs in Guitar Hero&trade; I and II by
+  RedOctane. To use it, you'll need to have the game DVD, at least 500
+  megabytes of free disk space and a lot of patience.
+</p>
+
+<p>
+  You'll also need to have the OGG Vorbis command line compressor
+  installed. In Linux, you can usually get it in a package called
+  vorbis-tools. In Windows, copy the encoder (<a href="http://www.google.com/search?q=oggenc.exe">oggenc.exe</a>)
+  into the game directory.
+</p>
+
+<p>
+  The importer can be started by choosing Song Editor in the main menu,
+  followed by "Import Guitar Hero(tm) Songs". The importer will ask you
+  the path to where the game files can be found. Usually this is just the
+  driver letter of your DVD drive, e.g. 'D:'.
+</p>
+
+<p>
+  After you have entered the correct path, the importer will start ripping
+  the songs. Note that this will take a very long time. For example, on a
+  1.8 GHz Pentium M laptop with 2 gigabytes of RAM the process took about
+  4 hours. It is recommended that you run the game in windowed mode so that
+  you can leave the importer running in the background and do other things
+  while it's doing its magic.
+</p>
+
+<p>
+  Once the importer is finished, you'll find the songs in the regular
+  song selector. Note that if you abort the importer midway, it will
+  mostly pick up where it left off when you run it again.
+</p>
+
+#end def

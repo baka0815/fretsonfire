@@ -1,0 +1,67 @@
+#extends Templates.Base
+#def sfLink(file, text)
+  #return "<a href='http://downloads.sourceforge.net/fretsonfire/%s?use_mirror=osdn'>%s</a>" % ($file, $text)
+#end def
+#def header
+#end def
+#def content
+#end def
+#def footer
+<div class="menuPane">
+  <h2>Information</h2>
+  <ul>
+    <li><a href="/">Front page</a></li>
+    <li><a href="/about/">About the game</a></li>
+    <li><a href="/screenshots/">Screenshots</a></li>
+    <li><a href="http://sourceforge.net/news/?group_id=182199">News</a></li>
+    <li><a href="/documentation/changelog">Changelog</a></li>
+  </ul>
+</div>
+
+<div class="menuPane">
+  <h2>Community</h2>
+  <ul>
+    <li><a href="/charts/">World Charts</a></li>
+    <li><a href="http://www.fretsonfire.net/">Fan Forum</a></li>
+    <li><a href="http://keyboardsonfire.net/">Keyboards on Fire</a></li>
+    <li><a href="http://www.fofspain.com/">FOF Spain</a></li>
+    <li><a href="http://www.fofitalia.altervista.org/">FOF Italy</a></li>
+    <li><a href="http://www.frenchonfire.fr.nf">French On Fire</a></li>
+    <li><a href="http://fofpt.com.sapo.pt/">Frets On Fire Portugal</a></li>
+    <li><a href="http://www.finalfret.com">Final Fret</a></li>
+  </ul>
+</div>
+
+<div class="menuPane">
+  <h2><a href="documentation">Documentation</a></h2>
+  <ul>
+    <li><a href="/documentation/howto/">Playing the game</a></li>
+    <li><a href="/documentation/faq/">Frequently asked questions</a></li>
+    <li><a href="/documentation/importer/">Song importer guide</a></li>
+    <li><a href="/documentation/source/">Source code guide</a></li>
+    <li><a href="/documentation/modding/">Modding guide</a></li>
+    <li><a href="/documentation/charts/">Charts server</a></li>
+  </ul>
+</div>
+
+<div class="menuPane">
+  <h2>Resources</h2>
+  <ul>
+    <li><a href="mailto:sami.kyostila at gmail dot com">Contact</a></li>
+    <li><a href="http://sourceforge.net/projects/fretsonfire">Project page</a></li>
+    <li><a href="http://sourceforge.net/forum/?group_id=182199">Project forum</a></li>
+  </ul>
+
+  <a href="http://www.sourceforge.net">
+    <img src="http://sourceforge.net/sflogo.php?group_id=182199&type=3"/>
+  </a>
+</div>
+#end def
+#def body
+<div id="page">
+  <div id="header">$header</div>
+  <div id="content">$content</div>
+  <div id="contentFooter"></div>
+  <div id="footer">$footer</div>
+</div>
+#end def

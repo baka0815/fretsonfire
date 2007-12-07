@@ -1,0 +1,29 @@
+#extends Templates.Page
+#def title: Screenshots
+
+#def screenshot(name)
+  <li><a href="$name"><img src="thumbnails/$name" alt="Screenshot $name"/></a></li>
+#end def
+
+#def content
+
+<h1>Screenshots</h1>
+
+<ul class="screenshots">
+  $screenshot("fretsonfire1.png")
+  $screenshot("fretsonfire2.png")
+  $screenshot("fretsonfire3.png")
+  $screenshot("fretsonfire4.png")
+  $screenshot("fretsonfire5.png")
+  $screenshot("fretsonfire6.png")
+  $screenshot("fretsonfire7.png")
+</ul>
+
+<h2>Demonstration video</h2>
+
+<ul>
+  <li><a href="http://www.unrealvoodoo.org/projects/fretsonfire/screenshots/fretsonfire-demo-divx.avi">DivX format</a> (20 MB)</li>
+  <li><a href="http://video.google.com/videoplay?docid=-4385700275120314654">Google Video</a></li>
+</ul>
+
+#end def

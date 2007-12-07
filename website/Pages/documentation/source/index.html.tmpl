@@ -1,0 +1,90 @@
+#extends Templates.Page
+#def title: Source code guide
+
+#def content
+<h1>Source code guide</h1>
+
+You can find the source code for each game release from the <a
+href="http://sourceforge.net/project/showfiles.php?group_id=182199">SourceForge
+files page</a>. Alternatively, you may use the following command to check out
+the latest source code snapshot from <a
+href="http://sourceforge.net/svn/?group_id=182199">the Subversion
+repository</a>:
+
+<pre>
+svn co https://fretsonfire.svn.sourceforge.net/svnroot/fretsonfire fretsonfire
+</pre>
+
+Extract the source code and copy the <strong>data</strong> directory from the
+game distribution to the extracted directory. To run the game,
+enter the <strong>src</strong> directory and type <strong>python
+FretsOnFire.py</strong>.
+
+Currently we offer precompiled binaries for Windows, Linux x86 and Intel Mac OS X.
+
+<h1>Requirements</h1>
+
+The game source code has the following dependencies:
+
+<ul>
+  <li>
+    <a href="http://www.python.org">Python 2.3 or newer</a> (The game is written in the Python programming language)
+  </li>
+  <li>
+    <a href="http://www.pygame.org">PyGame</a> (PyGame provides access to video and audio hardware, among other things)
+  </li>
+  <li>
+    <a href="http://pyopengl.sourceforge.net">PyOpenGL</a> (Provides OpenGL functions for Python)
+  </li>
+  <li>
+    <a href="http://www.amanith.org">Amanith Framework</a> (The <a href="http://www.w3.org/Graphics/SVG/">SVG graphics</a> of the game are drawn with this OpenGL-based vector graphics library)
+  </li>
+  <li>
+    <a href="http://unrealvoodoo.org/hiteck/projects/pyamanith/">PyAmanith</a> (Makes Amanith usable from Python)
+  </li>
+  <li>
+    <a href="http://numpy.scipy.org/">Numeric</a> (Matrix math routines)
+  </li>
+  <li>
+    <a href="http://www.pythonware.com/products/pil/">Python Imaging Library</a> (Image manipulation routines)
+  </li>
+  <li>
+    [Included] <a href="http://colladablender.illusoft.com">Illusoft Collada module</a> (The 3D models of the game are in the <a href="http://www.collada.org">Collada</a> format)
+  </li>
+  <li>
+    [Included] <a href="http://www.mxm.dk/products/public/pythonmidi">MXM Python Midi Package</a> (The song notes are stored in MIDI files)
+  </li>
+  <li>
+    [Included] <a href="http://home.gna.org/oomadness/en/cerealizer/index.html">Cerealizer</a> (Used for saving things into files)
+  </li>
+  <li>
+    [Optional] <a href="http://psyco.sourceforge.net">Psyco specializing compiler</a> (Used for speed optimization)
+  </li>
+  <li>
+    [Optional] <a href="http://glew.sourceforge.net">GLEW OpenGL extension wrangler</a> (Used for render-to-texture support)
+  </li>
+  <li>
+    [Optional] <a href="http://ekyo.nerim.net/software/pyogg/index.html">PyOgg</a> (Used for streaming OGG files from the disk)
+  </li>
+</ul>
+
+For making a binary release, you'll also need these:
+
+<ul>
+  <li>
+    <a href="http://www.py2exe.org">py2exe</a> (Used to make the EXE file on Windows)
+  </li>
+  <li>
+    <a href="http://www.python.net/crew/atuining/cx_Freeze/">cx_Freeze</a> (Used to make the binary file on Linux)
+  </li>
+  <li>
+    <a href="http://epydoc.sourceforge.net">Epydoc</a> (Used to generate the source code reference documentation)
+  </li>
+</ul>
+
+<p>
+<a href="readme_mac.txt">Guide to building the game on Mac OS X</a> and
+<a href="fretsonfire-macsupport.zip"> and associated files</a> by Tero Pihlajakoski.
+</p>
+
+#end def

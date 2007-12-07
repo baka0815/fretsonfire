@@ -1,0 +1,230 @@
+body
+{
+  margin: 0px;
+  color: #f80;
+  background-color: #000;
+}
+
+h1
+{
+  font-weight: normal;
+  border-bottom: solid thin #800;
+}
+
+h2
+{
+  font-weight: normal;
+}
+
+a {
+  color: #f40;
+  text-decoration: none;
+}
+
+a img {
+  border: none;
+}
+
+a:visited {
+  color: #f40;
+}
+
+a:hover
+{
+  color: #fa0;
+  text-decoration: underline;
+}
+
+dt
+{
+  padding: 1em 1em 1em 0em;
+  font-weight: bold;
+}
+
+dd
+{
+}
+
+table.regular
+{
+  padding: 2em;
+}
+
+table.regular th
+{
+  background-color: #400;
+  padding-left: 1em;
+  padding-right: 1em;
+  text-align: left;
+}
+
+table.regular td
+{
+  background-color: #400;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+div#page
+{
+  background-color: #300;
+  background-image: url(background.png);
+  background-repeat: repeat-x;
+}
+
+div#header
+{
+  display: none;
+}
+
+div#content
+{
+  padding-top: 1em;
+  margin: 0em 3em 1em 3em;
+}
+
+div#contentFooter
+{
+  clear: both;
+}
+
+.emphasis
+{
+  font-weight: bold;
+}
+
+img.picture
+{
+  display: block;
+  border: solid black 5px;
+  margin: 3em;
+}
+
+/*
+ *  Front page
+ */
+
+img#logo
+{
+  display: block;
+  padding-left: 128px;
+  padding-bottom: 2em;
+}
+
+div.pane
+{
+  background-image: url(pane-small.png);
+  background-repeat: no-repeat;
+  width: 256px;
+  height: 10em;
+  margin-left: 1em;
+  padding-right: 1em;
+  padding-left: 1em;
+  padding-bottom: 2em;
+  float: left;
+}
+
+div.pane ol
+{
+  padding-left: 2em;
+}
+
+div.pane h1
+{
+  font-size: 1.5em;
+}
+
+/*
+ *  Footer
+ */
+div#footer
+{
+  background-color: #000;
+  background-image: url(footer.png);
+  background-repeat: repeat-x;
+  clear: both;
+  padding-top: 60px;
+}
+
+div#footer a
+{
+  color: #888;
+  text-decoration: none;
+}
+
+div#footer a:visited
+{
+  color: #888;
+}
+
+div#footer a:hover
+{
+  color: #fff;
+  text-decoration: underline;
+}
+
+div#footer > div
+{
+  border-right: solid 1px #444;
+}
+
+div#footer > div:last-child
+{
+  border-right: none;
+}
+
+div.menuPane
+{
+  padding-right: 4em;
+  margin-left: 2em;
+  margin-right: 2em;
+  float: left;
+  font-size: smaller;
+  height: 10em;
+}
+
+div.menuPane ul
+{
+  color: #444;
+  padding-top: 0em;
+  padding-left: 0em;
+  margin-top: 0em;
+}
+
+div.menuPane li
+{
+  list-style-type: none;
+}
+
+div.menuPane h2
+{
+  color: #aaa;
+  margin-top: 0em;
+  margin-bottom: 0em;
+  font-weight: normal;
+}
+
+/**
+ *  Screenshots
+ */
+
+ul.screenshots li
+{
+  display: inline;
+}
+
+ul.screenshots img
+{
+  margin: 1em 2em 1em 2em;
+}
+
+/**
+ *  Forms
+ */
+
+input
+{
+  background-color: #000;
+  border: solid thin #800;
+  color: #f40;
+}

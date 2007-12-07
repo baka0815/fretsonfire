@@ -1,0 +1,46 @@
+#extends Templates.Page
+#def title: Frets On Fire
+
+#def content
+<a href="/"><img id="logo" src="logo.png" alt="Frets On Fire"/></a>
+
+<div class="pane">
+  <h1>Download for Windows</h1>
+
+  <p>Version 1.2.512:</p>
+  <ul>
+    <li>$sfLink("FretsOnFire-1.2.512-win32.exe", "Full version installer")</li>
+    <li>$sfLink("FretsOnFire-1.2.512-win32.zip", "Full version ZIP archive")</li>
+    <li>$sfLink("FretsOnFire-1.2.512-win32-update.zip", "Update for previous version")</li>
+  </ul>
+</div>
+
+<div class="pane">
+  <h1>Download for Linux</h1>
+
+  <p>Version 1.2.512:</p>
+  <ul>
+    <li>$sfLink("FretsOnFire-1.2.512-linux.tar.gz", "Full version")</li>
+    <li>$sfLink("FretsOnFire-1.2.512-linux-update.tar.gz", "Update for previous version")</li>
+  </ul>
+</div>
+
+<div class="pane">
+  <h1>Download for Mac OS X</h1>
+
+  <p>Version 1.2.451 (<a href="documentation/faq/#macosx">experimental</a>):</p>
+  <ul>
+    <li>$sfLink("FretsOnFire-1.2.451-macosx.zip", "Full version")</li>
+  </ul>
+</div>
+
+<div class="pane">
+  <h1>Bonus content</h1>
+
+  <ul>
+    <li><a href="http://scenerychannel.com/fof.html">Fasten Me</a> by <a href="http://www.scenerychannel.com">Scenery Channel</a></li>
+    <li><a href="charts/">World Charts</a></li>
+  </ul>
+</div>
+
+#end def

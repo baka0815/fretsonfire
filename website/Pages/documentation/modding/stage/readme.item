@@ -1,0 +1,186 @@
+
+<h1>Customizing Stage Graphics</h1>
+
+The stage graphic layout is specified a file called <tt>stage.ini</tt>. The
+stage is composed from a number of layers which are drawn on top of each
+other. Each layer can have zero or more animation effects attached to it.
+
+<h2>Specifying layers</h2>
+
+Each layer is specified in a section called <tt>layerN</tt>, where <tt>N</tt>
+is an ascending number that specifies at which point the layer is drawn. The
+first layer is called <tt>layer1</tt>. Each layer section can have the following
+settings (default value in parenthesis):
+
+<table class="regular">
+  <tr>
+    <th>Setting</th>
+    <th>Effect</th> 
+  </tr>
+  <tr>
+    <td>xres</td>
+    <td>Power-of-two width of the layer texture. This setting is limited by the screen resolution (256)</td>
+  </tr>
+  <tr>
+    <td>yres</td>
+    <td>Power-of-two height of the layer texture. This setting is limited by the screen resolution (256)</td>
+  </tr>
+  <tr>
+    <td>xscale</td>
+    <td>X scale factor (1)</td>
+  </tr>
+  <tr>
+    <td>yscale</td>
+    <td>Y scale factor (1)</td>
+  </tr>
+  <tr>
+    <td>texture</td>
+    <td>Texture file name, i.e. SVG file name. Reuse the same texture multiple times if possible to conserve memory.</td>
+  </tr>
+  <tr>
+    <td>angle</td>
+    <td>Layer angle in degrees (0)</td>
+  </tr>
+  <tr>
+    <td>src_blending</td>
+    <td>Source blending factor, one of zero, one, dst_color, one_minus_dst_color, src_alpha, one_minus_src_alpha, dst_alpha, one_minus_dst_alpha, src_alpha_saturate (src_alpha)</td>
+  </tr>  
+  <tr>
+    <td>dst_blending</td>
+    <td>Destination blending factor, one of zero, one, dst_color, one_minus_dst_color, src_alpha, one_minus_src_alpha, dst_alpha, one_minus_dst_alpha, src_alpha_saturate (one_minus_src_alpha)</td>
+  </tr>  
+  <tr>
+    <td>color_r</td>
+    <td>Red color component (1)</td>
+  </tr>  
+  <tr>
+    <td>color_g</td>
+    <td>Green color component (1)</td>
+  </tr>  
+  <tr>
+    <td>color_b</td>
+    <td>Blue color component (1)</td>
+  </tr>  
+  <tr>
+    <td>color_a</td>
+    <td>Alpha color component (1)</td>
+  </tr>  
+  <tr>
+    <td>foreground</td>
+    <td>If 1, the layer is drawn on top of other game graphics such as the fretboard (0)</td>
+  </tr>  
+</table>
+
+<h2>Specifying layer effects</h2>
+
+A layer effect controls the size, position or color of a layer during gameplay.
+Each layer can have multiple effecst, which get applied in order. An effect is
+specified in a section called <tt>layerN:fxM</tt>, where <tt>N</tt> is the
+number of the layer that the effect is attached to and <tt>M</tt> is the effect
+number, starting from one. An effect can have the following settings:
+
+<table class="regular">
+  <tr>
+    <th>Setting</th>
+    <th>Effect</th> 
+  </tr>
+  <tr>
+    <td>type</td>
+    <td>Effect type, one of light, rotate, wiggle, scale</td>
+  </tr>
+  <tr>
+    <td>intensity</td>
+    <td>Effect intensity or weight (1)</td>
+  </tr>  
+  <tr>
+    <td>trigger</td>
+    <td>What event triggers the effect, one of none, beat, quarterbeat, pick, miss (none)</td>
+  </tr>  
+  <tr>
+    <td>period</td>
+    <td>Effect period in milliseconds. An effect triggered by the beat or quarterbeat will have the corresponding period set automatically (500)</td>
+  </tr>
+  <tr>
+    <td>delay</td>
+    <td>Trigger delay in periods (0)</td>
+  </tr>  
+  <tr>
+    <td>profile</td>
+    <td>Trigger profile, one of step, linstep, smoothstep, sinstep (linstep)</td>
+  </tr>  
+</table>
+
+The various types of effects have the following extra parameters:
+
+<h3>Light effect</h3>
+
+<table class="regular">
+  <tr>
+    <th>Setting</th>
+    <th>Effect</th> 
+  </tr>
+  <tr>
+    <td>light_number</td>
+    <td>Light ordinal number, controls color change delay (0)</td>
+  </tr>
+  <tr>
+    <td>ambient</td>
+    <td>Ambient light level (0.5)</td>
+  </tr>
+  <tr>
+    <td>contrast</td>
+    <td>Light contrast (0.5)</td>
+  </tr>
+</table>
+
+<h3>Scale effect</h3>
+
+<table class="regular">
+  <tr>
+    <th>Setting</th>
+    <th>Effect</th> 
+  </tr>
+  <tr>
+    <td>xmagnitude</td>
+    <td>Horizontal scaling magnitude (0.1)</td>
+  </tr>
+  <tr>
+    <td>ymagnitude</td>
+    <td>Vertical scaling magnitude (0.1)</td>
+  </tr>
+</table>
+
+<h3>Wiggle effect</h3>
+
+<table class="regular">
+  <tr>
+    <th>Setting</th>
+    <th>Effect</th> 
+  </tr>
+  <tr>
+    <td>frequency</td>
+    <td>Wiggling frequency multiplier (6)</td>
+  </tr>
+  <tr>
+    <td>xmagnitude</td>
+    <td>Horizontal wiggling magnitude (0.1)</td>
+  </tr>
+  <tr>
+    <td>ymagnitude</td>
+    <td>Vertical wiggling magnitude (0.1)</td>
+  </tr>
+</table>
+
+<h3>Rotate effect</h3>
+
+<table class="regular">
+  <tr>
+    <th>Setting</th>
+    <th>Effect</th> 
+  </tr>
+  <tr>
+    <td>angle</td>
+    <td>Extreme angle of rotation in degrees (45)</td>
+  </tr>
+</table>
+

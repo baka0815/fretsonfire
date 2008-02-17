@@ -40,6 +40,7 @@
      or changing the frets to i.e. numbers 1-5. Use the key tester in the
      settings menu to check your chosen key set.
 </dd>
+
 <dt>Q: The game works poorly on Windows Vista.</dt>
 <dd>
   A: The current <a href="http://www.opengl.org/about/overview/">OpenGL</a> graphics drivers
@@ -48,6 +49,22 @@
      for Windows Vista, you might see graphical glitches or poor performance with Frets On Fire
      on Vista. Always make sure you have the latest drivers for your graphics card installed.
 </dd>
+
+<dt>Q: I get a weird cx_Freeze error on startup.</dt>
+<a name="cxfreeze"></a>
+<dd>
+  A: This cryptic error is most commonly caused by old graphics card drivers. Please upgrade 
+  them and try again. We will improve the error message received in cases like this in the future.
+</dd>
+
+<dt>Q: The game says I'm missing a file called MSVCRT71.DLL.</dt>
+<a name="msvcrt"></a>
+<dd>
+  A: This file was mistakenly left out from a version of the game, although it is required on
+  some computers. This will be fixed in the next release, but for the time begin, please download
+  that file from the web and copy it to the game folder. Make sure you check the file for viruses!
+</dd>
+
 <dt>Q: The sound crackles.</dt>
 <dd>
   A: Increase your audio buffer size or change to 22050 Hz sampling frequency.
@@ -95,6 +112,7 @@
      can delete that file to reset the settings.
 </p>
 </dd>
+
 <dt>Q: Why don't you add support for the whammy bar?</dt>
 <dd>
 <p>
@@ -111,7 +129,7 @@
 </dd>
 
 <dt>Q: The Mac OS X version only shows a blank screen or crashes.</dt>
-<a name="macosx">
+<a name="macosx"></a>
 <dd>
 <p>
   A: The Mac OS X version is known to be buggy, especially on PPC machines.

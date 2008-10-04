@@ -2,5 +2,5 @@
 make remote
 cd Site/Remote
 find -name \*.svn -exec rm -rf "{}" \;
-rsync -rv . fretsonfire.sf.net:fretsonfire/htdocs
+rsync -rv . skyostil,fretsonfire@web.sf.net:htdocs
 cd ../..

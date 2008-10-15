@@ -104,24 +104,38 @@ img.picture
  *  Front page
  */
 
+.logoContainer
+{
+  text-align: center;
+  margin: 0px;
+  padding: 0px;
+}
+
 img#logo
 {
-  display: block;
-  padding-left: 128px;
-  padding-bottom: 2em;
+}
+
+div.paneContainer
+{
+  text-align: center;
+  margin: 0px;
+  margin-top: 3em;
+  padding: 0px;
 }
 
 div.pane
 {
+  text-align: left;
+  vertical-align: top;
+  display: inline-block;
   background-image: url(pane-small.png);
   background-repeat: no-repeat;
   width: 256px;
-  height: 10em;
+  height: 14em;
   margin-left: 1em;
   padding-right: 1em;
   padding-left: 1em;
   padding-bottom: 2em;
-  float: left;
 }
 
 div.pane ol

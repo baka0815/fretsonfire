@@ -3,7 +3,6 @@ Makefile
 copying.txt
 readme.txt
 install.txt
-changelog.txt
 setup.py
 data/2x.png
 data/3x.png

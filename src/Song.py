@@ -108,12 +108,12 @@ class SongInfo(object):
     
     scores = self._get("scores", str, "")
     scores_ext = self._get("scores_ext", str, "")
-    print scores_ext
+    #print scores_ext
     if scores:
       scores = Cerealizer.loads(binascii.unhexlify(scores))
       if scores_ext:
         scores_ext = Cerealizer.loads(binascii.unhexlify(scores_ext))
-        print scores_ext
+        #print scores_ext
       for difficulty in scores.keys():
         try:
           difficulty = difficulties[difficulty]
@@ -122,15 +122,15 @@ class SongInfo(object):
         for i, base_scores in enumerate(scores[difficulty.id]):
           score, stars, name, hash = base_scores
           if scores_ext != "":
-            print "woo"
+            #print "woo"
             #Someone may have mixed extended and non extended
             try:
-              hash_ext, scoreExt = scores_ext[difficulty.id][i]
-              
+              hash_ext, stars2, notesHit, notesTotal, noteStreak, modVersion, modOptions1, modOptions2 =  scores_ext[difficulty.id][i]
+              scoreExt = (notesHit, notesTotal, noteStreak, modVersion, modOptions1, modOptions2)
             except:
               hash_ext = 0
-              scoreExt = [0, 0, 0 , "RF-mod", "Default", "Default"]
-            print score, stars, name, scoreExt
+              scoreExt = (0, 0, 0 , "RF-mod", "Default", "Default")
+            #print score, stars, name, scoreExt
           if self.getScoreHash(difficulty, score, stars, name) == hash:
             if scores_ext != "" and hash == hash_ext:
               self.addHighscore(difficulty, score, stars, name, part = parts[GUITAR_PART], scoreExt = scoreExt)
@@ -211,6 +211,7 @@ class SongInfo(object):
       
     for difficulty in highScores.keys():
       s[difficulty.id] = [(score, stars, name, self.getScoreHash(difficulty, score, stars, name)) for score, stars, name, scores_ext in highScores[difficulty]]
+      print s[difficulty.id]
     return binascii.hexlify(Cerealizer.dumps(s))
 
   def getObfuscatedScoresExt(self, part = parts[GUITAR_PART]):
@@ -227,7 +228,8 @@ class SongInfo(object):
       highScores = self.highScores
       
     for difficulty in highScores.keys():
-      s[difficulty.id] = [(self.getScoreHash(difficulty, score, stars, name), scores_ext) for score, stars, name, scores_ext in highScores[difficulty]]
+      s[difficulty.id] = [(self.getScoreHash(difficulty, score, stars, name), stars) + scores_ext for score, stars, name, scores_ext in highScores[difficulty]]
+      print s[difficulty.id]
     return binascii.hexlify(Cerealizer.dumps(s))
 
   def save(self):
@@ -404,7 +406,7 @@ class SongInfo(object):
       return False
     return True
   
-  def addHighscore(self, difficulty, score, stars, name, part = parts[GUITAR_PART], scoreExt = [0, 0, 0, "RF-mod", "Default", "Default"]):
+  def addHighscore(self, difficulty, score, stars, name, part = parts[GUITAR_PART], scoreExt = (0, 0, 0, "RF-mod", "Default", "Default")):
     if part == parts[GUITAR_PART]:
       highScores = self.highScores
     elif part == parts[RHYTHM_PART]:

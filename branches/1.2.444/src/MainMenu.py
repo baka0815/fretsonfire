@@ -42,6 +42,8 @@ class MainMenu(BackgroundLayer):
     self.time                = 0.0
     self.nextLayer           = None
     self.visibility          = 0.0
+
+    self.spinnyDisabled = self.engine.config.get("theme", "disable_spinny")    
     
     self.engine.loadSvgDrawing(self, "background", "keyboard.svg")
     self.engine.loadSvgDrawing(self, "guy",        "pose.svg")
@@ -65,9 +67,9 @@ class MainMenu(BackgroundLayer):
     
     mainMenu = [
       (_("Play Game"),   self.newSinglePlayerGame),
+      (_("Settings >"),  settingsMenu),
       (_("Tutorial"),    self.showTutorial),
       (_("Song Editor"), editorMenu),
-      (_("Settings >"),  settingsMenu),
       (_("Credits"),     self.showCredits),
       (_("Quit"),        self.quit),
     ]
@@ -178,14 +180,17 @@ class MainMenu(BackgroundLayer):
   def render(self, visibility, topMost):
     self.visibility = visibility
     v = 1.0 - ((1 - visibility) ** 2)
+
       
     t = self.time / 100
     w, h, = self.engine.view.geometry[2:4]
     r = .5
     self.background.transform.reset()
-    self.background.transform.translate((1 - v) * 2 * w + w / 2 + math.cos(t / 2) * w / 2 * r, h / 2 + math.sin(t) * h / 2 * r)
-    self.background.transform.rotate(-t)
-    self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
+    
+    if self.spinnyDisabled != True:
+      self.background.transform.translate((1 - v) * 2 * w + w / 2 + math.cos(t / 2) * w / 2 * r, h / 2 + math.sin(t) * h / 2 * r)
+      self.background.transform.rotate(-t)
+      self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
     self.background.draw()
 
     self.logo.transform.reset()

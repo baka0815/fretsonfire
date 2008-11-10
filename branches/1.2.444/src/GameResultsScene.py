@@ -61,6 +61,8 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
     self.scoreDifficulty = None
     self.playerList      = players
 
+    self.spinnyDisabled   = self.engine.config.get("theme", "disable_spinny")    
+
     items = [
       (_("Replay"),            self.replay),
       (_("Change Song"),       self.changeSong),
@@ -141,11 +143,11 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
     
       if notes:
         # 5 stars at 95%, 4 stars at 75%
-        f = float(player.notesHit) / notes
+        f = float(player.notesHit - player.twoChord) / notes
         self.stars[i]    = int(5.0   * (f + .05))
         self.accuracy[i] = int(100.0 * f)
 
-        if self.accuracy[i] == 100.0:
+        if self.accuracy[i] == 100.0 and player.notesHit - player.twoChord == notes:
           self.stars[i] = 6
         
         taunt = None
@@ -220,10 +222,11 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
       w, h, = self.engine.view.geometry[2:4]
       r = .5
       if self.background:
-        self.background.transform.reset()
-        self.background.transform.translate(v * 2 * w + w / 2 + math.cos(t / 2) * w / 2 * r, h / 2 + math.sin(t) * h / 2 * r)
-        self.background.transform.rotate(-t)
-        self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
+        if self.spinnyDisabled != True:
+          self.background.transform.reset()
+          self.background.transform.translate(v * 2 * w + w / 2 + math.cos(t / 2) * w / 2 * r, h / 2 + math.sin(t) * h / 2 * r)
+          self.background.transform.rotate(-t)
+          self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
         self.background.draw()
       
       if self.showHighscores:

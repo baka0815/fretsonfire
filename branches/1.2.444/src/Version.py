@@ -30,8 +30,14 @@ def appName():
 def revision():
   return int("$LastChangedRevision: 451 $".split(" ")[1])
 
+def branch():
+  return "RF-mod"
+
+def branchrevision():
+  return 4.06
+
 def version():
-  return "%s.%d" % (VERSION, revision())
+  return "%s.%d-%s-%.2f" % (VERSION, revision(), branch(), branchrevision())
 
 def dataPath():
   # Determine whether were running from an exe or not

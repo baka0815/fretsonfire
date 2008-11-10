@@ -261,21 +261,29 @@ class Guitar:
 
     if tailOnly:
       return
+
+    #mesh = outer ring (black) 
+    #mesh_001 = main note (key color) 
+    #mesh_002 = top (white or hopo if no mesh_003) 
+    #mesh_003 = hopo bump (hopo color)
     
     glPushMatrix()
     glEnable(GL_DEPTH_TEST)
     glDepthMask(1)
     glShadeModel(GL_SMOOTH)
-    #glColor3f(1, 1, 1)
+
     self.noteMesh.render("Mesh_001")
+    glColor3f(1, 1, 1)
     if isTappable:
       glColor3f(self.hopoColor[0], self.hopoColor[1], self.hopoColor[2])
-      self.noteMesh.render("Mesh_003")
-    glColor4f(.75 * color[0], .75 * color[1], .75 * color[2], color[3])
-    self.noteMesh.render("Mesh")
-    glColor4f(.25 * color[0], .25 * color[1], .25 * color[2], color[3])
-    glColor3f(1,1,1)
+      if(self.noteMesh.render("Mesh_003")) == True:
+        glColor3f(1, 1, 1)
     self.noteMesh.render("Mesh_002")
+    glColor3f(0, 0, 0)
+    self.noteMesh.render("Mesh")
+
+
+
     glDepthMask(0)
     glPopMatrix()
 
@@ -491,8 +499,8 @@ class Guitar:
     m1      = self.lateMargin
     m2      = self.lateMargin * 2
 
-    if catchup == True:
-      m2 = 0
+    #if catchup == True:
+    #  m2 = 0
       
     track   = song.track[self.player]
     notes   = [(time, event) for time, event in track.getEvents(pos - m1, pos - m2) if isinstance(event, Note)]
@@ -551,6 +559,7 @@ class Guitar:
       requiredKeys = [note.number for time, note in notes]
 
       if len(requiredKeys) > 2 and self.twoChordMax == True:
+        skipped = len(requiredKeys) - 2
         requiredKeys = [min(requiredKeys), max(requiredKeys)]
         twochord = 1
 
@@ -562,7 +571,7 @@ class Guitar:
           if n > max(requiredKeys):
             return False
     if twochord == 1:
-      self.twoChord += 1
+      self.twoChord += skipped
 
     return True
 
@@ -592,6 +601,7 @@ class Guitar:
       requiredKeys = [note.number for time, note in notes]
 
       if len(requiredKeys) > 2 and self.twoChordMax == True:
+        skipped = len(requiredKeys) - 2
         requiredKeys = [min(requiredKeys), max(requiredKeys)]
         twochord = 1
 
@@ -603,7 +613,8 @@ class Guitar:
           if hopo == False and n >= min(requiredKeys):
             return False
     if twochord == 1:
-      self.twoChord += 1
+      self.twoChord += skipped
+      
     return True
   
 

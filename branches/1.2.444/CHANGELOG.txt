@@ -1,3 +1,13 @@
+4.06
+   Made folder rotation nicer
+   Toggle for rotation
+   Reordered Menu
+   end song fixed
+   final changes to library models
+   fixed jump keys
+   Added key for search
+   Added disable spinny
+   fixed chord downconverter scoring
 4.05
    Removed flame toggles
    ported vbpm disable
@@ -14,6 +24,30 @@
    Added POV settings
    Fixed library sort order
    Added song sort order option
+   Attempted to fix library models
+4.02
+   Ported 2 player
+   Ported disable preview
+   Ported sort order
+   Ported counter
+   Ported green stars
+   Ported chord down converter
+   Adjusted screen for 2 player
+   Alter library song count
+   Exclude old RF-mod style folders
+4.01
+   Ported 2 player framework
+   Ported high score scroller
+   Ported game results info
+   Ported disable note/fret sfx
+   Ported end song
+   Ported GH2 multi-part
+   Ported song.ini additions
+   Ported volume adjustments
+   Ported delay fixes
+   Ported party mode
+   Ported fretted by
+   Ported timer
 
 4.0
    Added base_library

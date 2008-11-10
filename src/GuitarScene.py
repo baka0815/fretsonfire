@@ -127,9 +127,21 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
   def resumeGame(self):
     self.loadSettings()
+    self.setCamera()
     if self.song:
       self.song.unpause()
 
+  def setCamera(self):
+    if self.pov == 1:
+      self.camera.target    = (1, 1, 1)
+      self.camera.origin    = (0, 5, -5)
+    elif self.pov == 2:
+      self.camera.target    = (0, 0, 4)
+      self.camera.origin    = (0, 2, -2)
+    else:
+      self.camera.target    = (0, 0, 4)
+      self.camera.origin    = (0, 3, -3)
+      
   #RF-mod (not needed?)
   def freeResources(self):
     self.song = None
@@ -148,6 +160,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.guitarVolume     = self.engine.config.get("audio", "guitarvol")
     self.songVolume       = self.engine.config.get("audio", "songvol")
     self.rhythmVolume     = self.engine.config.get("audio", "rhythmvol")
+    self.pov              = self.engine.config.get("game", "pov")
     #self.guitar.leftyMode = self.engine.config.get("game",  "leftymode")
 
     if self.song:
@@ -201,6 +214,8 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       guitar.hopoLast = -1
 
     self.engine.collectGarbage()
+
+    self.setCamera()
     
     if not self.song:
       return

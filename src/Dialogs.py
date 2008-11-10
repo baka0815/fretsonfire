@@ -592,7 +592,7 @@ class SongChooser(Layer, KeyListener):
       label.bind()
       glColor3f(1, 1, 1)
       glMatrixMode(GL_TEXTURE)
-      glScalef(1, -1, 1)
+      glScalef(-1, -1, 1)
       glMatrixMode(GL_MODELVIEW)
       self.libraryLabel.render()
       glMatrixMode(GL_TEXTURE)

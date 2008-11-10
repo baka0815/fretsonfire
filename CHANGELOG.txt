@@ -1,7 +1,7 @@
 4.03
    Added POV settings
    Fixed library sort order
-   Added song sort order option
+   Added song sort order options
 
 4.0
    Added base_library

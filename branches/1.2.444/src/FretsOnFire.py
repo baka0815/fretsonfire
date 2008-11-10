@@ -42,6 +42,7 @@ import Version
 import getopt
 import sys
 import os
+import codecs
 
 usage = """%(prog)s [options]
 Options:
@@ -82,7 +83,11 @@ if __name__ == "__main__":
       engine.cmdPlay = 1
       engine.cmdDiff = int(difficulty)
       engine.cmdPart = int(part)
-      
+
+    encoding = Config.get("game", "encoding")
+    if encoding != None:
+      reload(sys)
+      sys.setdefaultencoding(encoding)
     engine.setStartupLayer(MainMenu(engine))
 
     try:

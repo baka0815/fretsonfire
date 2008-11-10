@@ -70,7 +70,7 @@ Config.define("audio",  "rhythmvol",  float,    1.0,  text = _("Rhythm Volume"),
 Config.define("video",  "fontscale",  float,    1.0,  text = _("Text scale"),      options = dict([(n / 100.0, "%3d%%" % n) for n in range(50, 260, 10)]))
 
 #RF-mod items
-Config.define("engine", "game_priority",       int,   2,      text = _("Priority"), options = {0: _("Idle"), 1: _("Low"), 2: _("Normal"), 3:_("Above Normal"), 4:_("High"), 5:_("Realtime")})
+Config.define("engine", "game_priority",       int,   2,      text = _("Priority"), options = {0: _("0 Idle"), 1: _("1 Low"), 2: _("2 Normal"), 3:_("3 Above Normal"), 4:_("4 High"), 5:_("5 Realtime")})
 Config.define("game",   "alt_keys",            bool,  False,  text = _("Alternate Controller"), options = {False: _("No"), True: _("Yes")})
 Config.define("game",   "strum_burst",         int,   0,      text = _("Strum Sensitivity"), options = {0: _("FoF"), 1: _("GH1"), 2: _("GH2")})
 Config.define("game",   "hopo_mark",           int,   0,      text = _("HO/PO Note Marks"), options = {0: _("RFmod"), 1: _("FoF")})
@@ -79,6 +79,7 @@ Config.define("game",   "disable_vbpm",        bool,  False,  text = _("Disable 
 Config.define("game",   "sort_order",          int,   0,      text = _("Sort Order"), options = {0: _("Title"), 1: _("Artist"), 2: _("Tag")})
 Config.define("game",   "pov",                 int,   0,      text = _("Point Of View"), options = {0: _("FoF"), 1: _("GH"), 2: _("Custom")})
 Config.define("game",   "players",             int,   1,      text = _("Number of players"),  options = {1: _("1"), 2: _("2")})
+Config.define("game",   "party_time",          int,   30,     text = _("Party Mode Timer"), options = dict([(n, n) for n in range(1, 99)]))
 Config.define("game",   "disable_libcount",    bool,  False,  text = _("Disable Library Count"),    options = {False: _("No"), True: _("Yes")})
 Config.define("game",   "disable_librotation", bool,  False,  text = _("Disable Library Rotation"),    options = {False: _("No"), True: _("Yes")})
 Config.define("video",  "disable_stats",       bool,  False,  text = _("Disable Stats"),    options = {False: _("No"), True: _("Yes")})

@@ -59,7 +59,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.partyMode  = True
       Players         = 1
       self.partySwitch      = 0
-      self.partyTime        = 30
+      self.partyTime        = self.engine.config.get("game", "party_time")
       self.partyPlayer      = 0
     if Players == 2:
       self.playerList = self.playerList + [self.player2]
@@ -233,6 +233,11 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       guitar.twoChord = 0
       guitar.hopoActive = False
       guitar.hopoLast = -1
+
+    if self.partyMode == True:
+      self.guitars[0].keys = PLAYER1KEYS
+      self.guitars[0].actions = PLAYER1ACTIONS
+      self.keysList   = [PLAYER1KEYS]
 
     self.engine.collectGarbage()
 
@@ -493,8 +498,8 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         self.playerList[i].streak = 0
         self.guitars[i].setMultiplier(1)
         guitar.hopoLast = -1
+        self.song.setInstrumentVolume(0.0, self.players[i].part)
         if not guitar.playedNotes:
-          self.song.setInstrumentVolume(0.0, self.playerList[i].part)
           guitar.hopoActive = False
       # late pick
       if self.keyBurstTimeout[i] is not None and self.engine.timer.time > self.keyBurstTimeout[i]:
@@ -625,6 +630,61 @@ class GuitarSceneClient(GuitarScene, SceneClient):
           self.sfxChannel.play(self.engine.data.screwUpSoundBass)
         else:
           self.sfxChannel.play(self.engine.data.screwUpSound)
+
+  def doPick3(self, num, hopo = False):
+    if not self.song:
+      return
+  
+    pos = self.getSongPosition()
+    #clear out any missed notes before this pick since they are already missed by virtue of the pick
+    missedNotes = self.guitars[num].getMissedNotes(self.song, pos, catchup = True)
+
+    if len(missedNotes) > 0:
+      self.playerList[num].streak = 0
+      self.guitars[num].setMultiplier(1)
+      self.guitars[num].hopoActive = False
+      self.guitars[num].hopoLast = -1
+      if hopo == True:
+        return
+
+    #hopo fudge
+    hopoFudge = abs(abs(self.guitars[num].hopoActive) - pos)
+    activeList = [k for k in self.keysList[num] if self.controls.getState(k)]
+    #if len(activeList) != 0 and guitar.hopoActive and activeList[0] != self.keysList[num][guitar.hopoLast] and control in self.keysList[num]:
+
+    if len(activeList) == 1 and self.guitars[num].keys[self.guitars[num].hopoLast] == activeList[0]:
+      if self.guitars[num].hopoActive != False and hopoFudge > 0 and hopoFudge < self.guitars[num].lateMargin:
+        return
+      #print "In fudge", self.guitars[num].hopoLast, activeList, self.guitars[num].keys[self.guitars[num].hopoLast], self.guitars[num].actions
+      #for k in self.guitars[num].actions:
+      #  if self.controls.getState(k):
+      #    print "fudge"
+      #    return
+
+    if self.guitars[num].startPick3(self.song, pos, self.controls, hopo):
+      self.song.setInstrumentVolume(1.0, self.playerList[num].part)
+      if self.guitars[num].playedNotes:
+        self.playerList[num].streak += 1
+      self.playerList[num].notesHit += len(self.guitars[num].playedNotes)
+      self.stage.triggerPick(pos, [n[1].number for n in self.guitars[num].playedNotes])    
+      self.players[num].addScore(len(self.guitars[num].playedNotes) * 50)
+      if self.players[num].streak % 10 == 0:
+        self.lastMultTime[num] = self.getSongPosition()
+        self.guitars[num].setMultiplier(self.playerList[num].getScoreMultiplier())
+    else:
+      self.guitars[num].hopoActive = False
+      self.guitars[num].hopoLast = -1
+      self.song.setInstrumentVolume(0.0, self.playerList[num].part)
+      self.playerList[num].streak = 0
+      self.guitars[num].setMultiplier(1)
+      self.stage.triggerMiss(pos)
+
+      if self.engine.data.screwUpSounds and self.screwUpVolume > 0.0:
+        self.sfxChannel.setVolume(self.screwUpVolume)
+        if `self.playerList[num].part` == "Bass Guitar":
+          self.sfxChannel.play(self.engine.data.screwUpSoundBass)
+        else:
+          self.sfxChannel.play(self.engine.data.screwUpSound)
       
   def toggleAutoPlay(self):
     self.autoPlay = not self.autoPlay
@@ -649,6 +709,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     if self.hopoStyle ==  0:
       res = self.keyPressed2(key, unicode, control)
       return res
+    elif self.hopoStyle == 2:
+      res = self.keyPressed3(key, unicode, control)
+      return res
+
     if not control:
       control = self.controls.keyPressed(key)
 
@@ -752,6 +816,66 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             break
       else:
         self.enteredCode = []
+
+  def keyPressed3(self, key, unicode, control = None):
+    hopo = False
+    if not control:
+      control = self.controls.keyPressed(key)
+    else:
+      hopo = True
+      
+    if True:
+      pressed = -1
+      if control in (self.guitars[0].actions):
+        hopo = False
+        pressed = 0;  
+      elif len(self.playerList) > 1 and control in (self.guitars[1].actions):
+        hopo = False
+        pressed = 1;
+
+      numpressed = [len([1 for k in guitar.keys if self.controls.getState(k)]) for guitar in self.guitars]
+
+      activeList = [k for k in self.keysList[pressed] if self.controls.getState(k)]
+      if control in (self.guitars[0].keys) and self.song and numpressed[0] >= 1:
+        if self.guitars[0].hopoActive > 0:
+          hopo = True
+          pressed = 0;
+      elif len(self.playerList) > 1 and control in (self.guitars[1].keys) and numpressed[1] >= 1:
+        if self.guitars[1].hopoActive > 0:
+          hopo = True
+          pressed = 1;
+
+      if pressed >= 0:
+        for k in self.keysList[pressed]:
+          if self.controls.getState(k):
+            self.keyBurstTimeout[pressed] = None
+            break
+        else:
+          self.keyBurstTimeout[pressed] = self.engine.timer.time + self.keyBurstPeriod
+          return True
+
+      if pressed >= 0 and self.song:
+        self.doPick3(pressed, hopo)
+      
+    if control in Player.CANCELS:
+      self.pauseGame()
+      self.engine.view.pushLayer(self.menu)
+      return True
+    elif key >= ord('a') and key <= ord('z'):
+      # cheat codes
+      n = len(self.enteredCode)
+      for code, func in self.cheatCodes:
+        if n < len(code):
+          if key == code[n]:
+            self.enteredCode.append(key)
+            if self.enteredCode == code:
+              self.enteredCode     = []
+              for player in self.playerList:
+                player.cheating = True
+              func()
+            break
+      else:
+        self.enteredCode = []
    
   def getExtraScoreForCurrentlyPlayedNotes(self, num):
     if not self.song:
@@ -767,6 +891,9 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     #RF style HOPO playing
     if self.hopoStyle ==  0:
       res = self.keyReleased2(key)
+      return res
+    if self.hopoStyle ==  2:
+      res = self.keyReleased3(key)
       return res
     control = self.controls.keyReleased(key)
 
@@ -800,6 +927,21 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       if len(activeList) != 0 and guitar.hopoActive and activeList[0] != self.keysList[i][guitar.hopoLast] and control in self.keysList[i]:
         self.keyPressed2(None, 0, activeList[0])
 
+  def keyReleased3(self, key):
+    control = self.controls.keyReleased(key)
+    for i, keys in enumerate(self.keysList):
+      if control in keys and self.song:
+        for time, note in self.guitars[i].playedNotes:
+          if self.guitars[i].hopoActive == False or (self.guitars[i].hopoActive < 0 and control == self.keysList[i][note.number]):
+        #if self.guitars[i].hopoActive >= 0 and not self.guitars[i].playedNotes:
+            self.endPick(i)
+        #pass 
+    
+    for i, guitar in enumerate(self.guitars):
+      activeList = [k for k in self.keysList[i] if self.controls.getState(k) and k != control]
+      if len(activeList) != 0 and guitar.hopoActive and activeList[0] != self.keysList[i][guitar.hopoLast] and control in self.keysList[i]:
+        self.keyPressed3(None, 0, activeList[0])
+        
   def getPlayerNum(self, control):
     if control in (self.guitars[0].keys + self.guitars[0].actions):
       return(0) 
@@ -879,10 +1021,12 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             if self.partyPlayer == 0:
               self.guitars[0].keys = PLAYER2KEYS
               self.guitars[0].actions = PLAYER2ACTIONS
+              self.keysList   = [PLAYER2KEYS]
               self.partyPlayer = 1
             else:
               self.guitars[0].keys = PLAYER1KEYS
               self.guitars[0].actions = PLAYER1ACTIONS
+              self.keysList   = [PLAYER1KEYS]
               self.partyPlayer = 0
           t = "%d" % (self.partyTime - timeleft + 1)
           if self.partyTime - timeleft < 5:
@@ -938,6 +1082,8 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             else:
               font.render(_("Missed!"), (0, 0))
             glPopMatrix()
+            #May not be the best place for this
+            #self.song.setInstrumentVolume(0.0, self.players[i].part)
 
         # show the streak balls
         if player.streak >= 30:

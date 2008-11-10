@@ -1,17 +1,17 @@
 TODO Items/Bugs
 ---------------
 
+debug flag to dump a file with file sizes and settings and such
+
 Somehow disable windows screensaver when game is running
 
 Add a 'uploadas' option in song.ini (can be abused)
 
 less distracting multiplier toggle
 
-maybe need a HOPO restart fudge?
+maybe need a HOPO restart fudge? (in progress)
 
 can i separate same song detection and muting background track?
-
-High score entry with guitar keys
 
 add flash or some indication on 2 player where i know which side messed up
 
@@ -44,8 +44,6 @@ Smaller cassette scaling and include song title next to all of them with toggle
 Random song select option
 
 Delay tuning/synching in editor with audible 'tink' sound when a note should have been pressed
-
-
 
 Folder support for a 'career' mode
 
@@ -143,3 +141,4 @@ Configurable (ini file) difficulty names (DONE)
 As made famous by using cover tag (DONE)
 Make a flameX_YX_color variable setting for 'off' instead of the toggle (DONE)
 fix 2nd player stettings saving (DONE)
+High score entry with guitar keys (DONE)

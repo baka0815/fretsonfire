@@ -139,9 +139,7 @@ class Guitar:
     l            = self.boardLength
 
     beatsPerUnit = self.beatsPerBoard / self.boardLength
-    offset       = (pos - self.lastBpmChange) / self.targetPeriod + self.baseBeat
-
-    #print self.lastBpmChange, self.currentPeriod, self.targetPeriod, self.baseBeat    
+    offset       = (pos - self.lastBpmChange) / self.currentPeriod + self.baseBeat 
 
     glEnable(GL_TEXTURE_2D)
     self.neckDrawing.texture.bind()
@@ -849,8 +847,8 @@ class Guitar:
     m1      = self.lateMargin
     m2      = self.lateMargin * 2
 
-    if catchup == True:
-      m2 = 0
+    #if catchup == True:
+    #  m2 = 0
       
     track   = song.track[self.player]
     notes   = [(time, event) for time, event in track.getEvents(pos - m1, pos - m2) if isinstance(event, Note)]
@@ -871,7 +869,7 @@ class Guitar:
       t     = min([time for time, event in notes])
       notes = [(time, event) for time, event in notes if time - t < 1e-3]
     return notes
-    
+
   def getRequiredNotes2(self, song, pos, hopo = False):
 
     track   = song.track[self.player]
@@ -881,6 +879,17 @@ class Guitar:
     if notes:
       t     = min([time for time, event in notes])
       notes = [(time, event) for time, event in notes if time - t < 1e-3]
+    return notes
+    
+  def getRequiredNotes3(self, song, pos, hopo = False):
+
+    track   = song.track[self.player]
+    notes = [(time, event) for time, event in track.getEvents(pos - self.lateMargin, pos + self.earlyMargin) if isinstance(event, Note)]
+    notes = [(time, event) for time, event in notes if not (event.hopod or event.played or event.skipped)]
+    notes = [(time, event) for time, event in notes if (time >= (pos - self.lateMargin)) and (time <= (pos + self.earlyMargin))]
+    #if notes:
+    #  t     = min([time for time, event in notes])
+    #  notes = [(time, event) for time, event in notes if time - t < 1e-3]
     return notes
 
   def controlsMatchNotes(self, controls, notes):
@@ -899,10 +908,11 @@ class Guitar:
     chordlist = chords.values()
     chordlist.sort(lambda a, b: cmp(a[0][0], b[0][0]))
 
-    twochord = 0    
+    twochord = 0
     for notes in chordlist:
       # matching keys?
       requiredKeys = [note.number for time, note in notes]
+      requiredKeys = self.uniqify(requiredKeys)
 
       if len(requiredKeys) > 2 and self.twoChordMax == True:
         skipped = len(requiredKeys) - 2
@@ -945,6 +955,7 @@ class Guitar:
     for notes in chordlist:
       # matching keys?
       requiredKeys = [note.number for time, note in notes]
+      requiredKeys = self.uniqify(requiredKeys)
 
       if len(requiredKeys) > 2 and self.twoChordMax == True:
         skipped = len(requiredKeys) - 2
@@ -962,7 +973,92 @@ class Guitar:
       self.twoChord += skipped
       
     return True
+
+  def controlsMatchNotes3(self, controls, notes, hopo = False):
+    # no notes?
+    if not notes:
+      return False
+
+    # check each valid chord
+    chords = {}
+    for time, note in notes:
+      if note.hopod == True and controls.getState(self.keys[note.number]):
+      #if hopo == True and controls.getState(self.keys[note.number]):
+        self.playedNotes = []
+        return True
+      if not time in chords:
+        chords[time] = []
+      chords[time].append((time, note))
+
+    #Make sure the notes are in the right time order
+    chordlist = chords.values()
+    chordlist.sort(lambda a, b: cmp(a[0][0], b[0][0]))
+
+    twochord = 0
+    missList = []
+    for chord in chordlist:
+      # matching keys?
+      requiredKeys = [note.number for time, note in chord]
+
+      requiredKeys = self.uniqify(requiredKeys)
+
+      if len(requiredKeys) > 2 and self.twoChordMax == True:
+        skipped = len(requiredKeys) - 2
+        requiredKeys = [min(requiredKeys), max(requiredKeys)]
+        twochord = 1
+      if (self.controlsMatchNote3(controls, chord, requiredKeys, hopo)):
+        for time, note in chord:
+          note.played = True
+        break
+      if hopo == True:
+        break
+      missList.append(chord)
+    else:
+      missList = []
+    for chord in missList:
+      for time, note in chord:
+        note.skipped = True
+        note.played = False
+    if twochord == 1:
+      self.twoChord += skipped
+      
+    return True
+
+  def uniqify(self, seq, idfun=None): 
+    # order preserving
+    if idfun is None:
+        def idfun(x): return x
+    seen = {}
+    result = []
+    for item in seq:
+        marker = idfun(item)
+        # in old Python versions:
+        # if seen.has_key(marker)
+        # but in new ones:
+        if marker in seen: continue
+        seen[marker] = 1
+        result.append(item)
+    return result
   
+  def controlsMatchNote3(self, controls, chordTuple, requiredKeys, hopo):
+    if len(chordTuple) > 1:
+    #Chords must match exactly
+      for n, k in enumerate(self.keys):
+        if (n in requiredKeys and not controls.getState(k)) or (n not in requiredKeys and controls.getState(k)):
+          return False
+    else:
+    #Single Note must match that note
+      requiredKey = requiredKeys[0]
+      if not controls.getState(self.keys[requiredKey]):
+        return False
+      if hopo == False:
+      #Check for higher numbered frets if not a HOPO
+        for n, k in enumerate(self.keys):
+          if n > requiredKey:
+          #higher numbered frets cannot be held
+            if controls.getState(k):
+              return False
+    return True
 
   def areNotesTappable(self, notes):
     if not notes:
@@ -972,6 +1068,26 @@ class Guitar:
         return True
     return False
   
+  def startPick(self, song, pos, controls, hopo = False):
+    if hopo == True:
+      res = startPick2(song, pos, controls, hopo)
+      return res
+    if not song:
+      return False
+    
+    self.playedNotes = []
+    
+    notes = self.getRequiredNotes(song, pos)
+
+    if self.controlsMatchNotes(controls, notes):
+      self.pickStartPos = pos
+      for time, note in notes:
+        self.pickStartPos = max(self.pickStartPos, time)
+        note.played       = True
+      self.playedNotes = notes
+      return True
+    return False
+
   def startPick(self, song, pos, controls, hopo = False):
     if hopo == True:
       res = startPick2(song, pos, controls, hopo)
@@ -1016,6 +1132,36 @@ class Guitar:
           self.hopoActive = 0
       self.hopoLast     = note.number
       self.playedNotes = notes
+      return True
+    return False
+
+  def startPick3(self, song, pos, controls, hopo = False):
+    if not song:
+      return False
+    
+    self.playedNotes = []
+    
+    notes = self.getRequiredNotes3(song, pos, hopo)
+
+    self.controlsMatchNotes3(controls, notes, hopo)
+    for time, note in notes:
+      if note.played != True:
+        continue
+      self.pickStartPos = pos
+      self.pickStartPos = max(self.pickStartPos, time)
+      if hopo:
+        note.hopod        = True
+      else:
+        note.played       = True
+      if note.tappable == 1 or note.tappable == 2:
+        self.hopoActive = time
+      elif note.tappable == 3:
+        self.hopoActive = -time
+      else:
+        self.hopoActive = 0
+      self.hopoLast     = note.number
+      self.playedNotes.append([time,note])
+    if len(self.playedNotes) != 0:
       return True
     return False
 

@@ -115,12 +115,65 @@ class GetText(Layer, KeyListener):
     if (c in Player.KEY1S or key == pygame.K_RETURN) and not self.accepted:
       self.engine.view.popLayer(self)
       self.accepted = True
+      if c in Player.KEY1S:
+        self.engine.data.acceptSound.play()
     elif c in Player.CANCELS + Player.KEY2S and not self.accepted:
       self.text = None
       self.engine.view.popLayer(self)
       self.accepted = True
-    elif key == pygame.K_BACKSPACE and not self.accepted:
+      if c in Player.KEY2S:
+        self.engine.data.cancelSound.play()
+    elif (c in Player.KEY4S or key == pygame.K_BACKSPACE) and not self.accepted:
       self.text = self.text[:-1]
+      if c in Player.KEY4S:
+        self.engine.data.cancelSound.play()
+    elif c in Player.KEY3S and not self.accepted:
+      self.text += self.text[len(self.text) - 1]
+      self.engine.data.acceptSound.play()
+    elif c in Player.ACTION1S and not self.accepted:
+      if len(self.text) == 0:
+        self.text = "A"
+        return True
+      letter = self.text[len(self.text)-1]
+      letterNum = ord(letter)
+      if letterNum == ord('A'):
+        letterNum = ord(' ')
+      elif letterNum == ord(' '):
+        letterNum = ord('_')
+      elif letterNum == ord('_'):
+        letterNum = ord('-')
+      elif letterNum == ord('-'):
+        letterNum = ord('9')
+      elif letterNum == ord('0'):
+        letterNum = ord('z')
+      elif letterNum == ord('a'):
+        letterNum = ord('Z')        
+      else:
+        letterNum -= 1
+      self.text = self.text[:-1] + chr(letterNum)
+      self.engine.data.selectSound.play()
+    elif c in Player.ACTION2S and not self.accepted:
+      if len(self.text) == 0:
+        self.text = "A"
+        return True
+      letter = self.text[len(self.text)-1]
+      letterNum = ord(letter)
+      if letterNum == ord('Z'):
+        letterNum = ord('a')
+      elif letterNum == ord('z'):
+        letterNum = ord('0')
+      elif letterNum == ord('9'):
+        letterNum = ord('-')
+      elif letterNum == ord('-'):
+        letterNum = ord('_')
+      elif letterNum == ord('_'):
+        letterNum = ord(' ')
+      elif letterNum == ord(' '):
+        letterNum = ord('A')
+      else:
+        letterNum += 1
+      self.text = self.text[:-1] + chr(letterNum)
+      self.engine.data.selectSound.play()
     elif unicode and ord(unicode) > 31 and not self.accepted:
       self.text += unicode
     return True
@@ -346,12 +399,20 @@ class SongChooser(Layer, KeyListener):
     self.sortOrder        = self.engine.config.get("game", "sort_order")
     self.rotationDisabled = self.engine.config.get("game", "disable_librotation")
     self.spinnyDisabled   = self.engine.config.get("game", "disable_spinny")
+
+    temp = self.engine.config.get("game", "search_key")
+    
+    if temp != "None":
+      self.searchKey = ord(temp[0])
+    else:
+      self.searchKey = ord('/')
     
     # Use the default library if this one doesn't exist
     if not self.library or not os.path.isdir(self.engine.resource.fileName(self.library)):
       self.library = Song.DEFAULT_LIBRARY
 
     self.loadCollection()
+
     self.engine.resource.load(self, "cassette",     lambda: Mesh(self.engine.resource.fileName("cassette.dae")), synch = True)
     self.engine.resource.load(self, "label",        lambda: Mesh(self.engine.resource.fileName("label.dae")), synch = True)
     self.engine.resource.load(self, "libraryMesh",  lambda: Mesh(self.engine.resource.fileName("library.dae")), synch = True)
@@ -362,6 +423,7 @@ class SongChooser(Layer, KeyListener):
   def loadCollection(self):
     self.loaded = False
     self.engine.resource.load(self, "libraries", lambda: Song.getAvailableLibraries(self.engine, self.library), onLoad = self.libraryListLoaded)
+
     showLoadingScreen(self.engine, lambda: self.loaded, text = _("Browsing Collection..."))
 
   def libraryListLoaded(self, libraries):
@@ -390,7 +452,8 @@ class SongChooser(Layer, KeyListener):
     #for i, item in enumerate(self.items):
     #  if isinstance(item, Song.LibraryInfo):
     #    self.loadItemLabel(i)
-    self.updateSelection()
+    if self.items != []:
+      self.updateSelection()
     
   def shown(self):
     self.engine.input.addKeyListener(self, priority = True)
@@ -412,6 +475,9 @@ class SongChooser(Layer, KeyListener):
   def getSelectedLibrary(self):
     return self.library
 
+  def getItems(self):
+    return self.items
+  
   def loadItemLabel(self, i):
     # Load the item label if it isn't yet loaded
     item = self.items[i]
@@ -486,7 +552,7 @@ class SongChooser(Layer, KeyListener):
       self.searchText = self.searchText[:-1]
       if self.searchText == "":
         self.searching = False
-    elif key == 47:
+    elif key == self.searchKey:
       if self.searching == False:
         self.searching = True
       else:
@@ -494,7 +560,7 @@ class SongChooser(Layer, KeyListener):
     elif self.searching == True and unicode and ord(unicode) > 31 and not self.accepted:
       self.searchText += unicode
       self.doSearch()
-    elif self.searching == False and ((key >= 97 and key <= 122) or (key >= 49 and key <= 57)):
+    elif self.searching == False and ((key >= ord('a') and key <= ord('z')) or (key >= ord('A') and key <= ord('Z')) or (key >= ord('0') and key <= ord('9'))):
       k1 = unicode
       k2 = k1.capitalize()
       found = 0
@@ -514,8 +580,7 @@ class SongChooser(Layer, KeyListener):
             break
       if found == 1 and self.selectedIndex != i:
         self.selectedIndex = i
-        self.updateSelection()
-        
+        self.updateSelection() 
     return True
 
   def matchesSearch(self, item):
@@ -801,7 +866,7 @@ class SongChooser(Layer, KeyListener):
 
 class FileChooser(BackgroundLayer, KeyListener):
   """File choosing layer."""
-  def __init__(self, engine, masks, path, prompt = ""):
+  def __init__(self, engine, masks, path, prompt = "", dirSelect = False):
     self.masks          = masks
     self.path           = path
     self.prompt         = prompt
@@ -810,10 +875,12 @@ class FileChooser(BackgroundLayer, KeyListener):
     self.selectedFile   = None
     self.time           = 0.0
     self.menu           = None
+
+    self.dirSelect      = dirSelect
     self.spinnyDisabled = self.engine.config.get("game", "disable_spinny")
 
     self.engine.loadSvgDrawing(self, "background", "editor.svg")
-
+    
   def _getFileCallback(self, fileName):
     return lambda: self.chooseFile(fileName)
 
@@ -821,6 +888,10 @@ class FileChooser(BackgroundLayer, KeyListener):
     f = os.path.join(self.path, fileName)
     if fileName == "..":
       return _("[Parent Folder]")
+    if self.dirSelect == True:
+      for mask in self.masks:
+        if fnmatch.fnmatch(fileName, mask):
+          return _("[Accept Folder]")
     if os.path.isdir(f):
       return _("%s [Folder]") % fileName
     return fileName
@@ -838,6 +909,8 @@ class FileChooser(BackgroundLayer, KeyListener):
           continue
       files.append(fn)
     files.sort()
+    if self.dirSelect == True and (fnmatch.fnmatch(self.path, mask)):
+      files.insert(0, self.path)
     return files
 
   def updateFiles(self):
@@ -847,7 +920,18 @@ class FileChooser(BackgroundLayer, KeyListener):
     self.engine.view.pushLayer(self.menu)
 
   def chooseFile(self, fileName):
+    if self.dirSelect == True:
+      for mask in self.masks:
+        if fnmatch.fnmatch(fileName, mask):
+          self.selectedFile = fileName
+          accepted = True
+          self.engine.view.popLayer(self.menu)
+          self.engine.view.popLayer(self)
+          self.menu = None
+          return
+          
     path = os.path.abspath(os.path.join(self.path, fileName))
+    
     if os.path.isdir(path):
       self.path = path
       self.updateFiles()
@@ -1162,10 +1246,14 @@ def chooseSong(engine, prompt = _("Choose a Song"), selectedSong = None, selecte
   @returns a (library, song) pair
   """
   d = SongChooser(engine, prompt, selectedLibrary = selectedLibrary, selectedSong = selectedSong)
-  _runDialog(engine, d)
+
+  if d.getItems() == []:
+    return (None, None)
+  else:
+    _runDialog(engine, d)
   return (d.getSelectedLibrary(), d.getSelectedSong())
   
-def chooseFile(engine, masks = ["*.*"], path = ".", prompt = _("Choose a File")):
+def chooseFile(engine, masks = ["*.*"], path = ".", prompt = _("Choose a File"), dirSelect = False):
   """
   Ask the user to select a file.
   
@@ -1174,7 +1262,7 @@ def chooseFile(engine, masks = ["*.*"], path = ".", prompt = _("Choose a File"))
   @param path:    Initial path
   @param prompt:  Prompt shown to the user
   """
-  d = FileChooser(engine, masks, path, prompt)
+  d = FileChooser(engine, masks, path, prompt, dirSelect)
   _runDialog(engine, d)
   return d.getSelectedFile()
   

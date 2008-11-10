@@ -93,30 +93,31 @@ Config.define("player0", "akey_4",       str, "K_F4",     text = _("Alt Fret #4"
 Config.define("player0", "akey_5",       str, "K_F5",     text = _("Alt Fret #5"))
 Config.define("player0", "akey_cancel",  str, "K_ESCAPE", text = _("Alt Cancel"))
 
-Config.define("player1", "player_2_key_action1",  str, "K_F9", text = _("Player 2 Pick"))
-Config.define("player1", "player_2_key_action2",  str, "K_F10", text = _("Player 2 Secondary Pick"))
-Config.define("player1", "player_2_key_1",        str, "K_1",     text = _("Player 2 Fret #1"))
-Config.define("player1", "player_2_key_2",        str, "K_2",     text = _("Player 2 Fret #2"))
-Config.define("player1", "player_2_key_3",        str, "K_3",     text = _("Player 2 Fret #3"))
-Config.define("player1", "player_2_key_4",        str, "K_4",     text = _("Player 2 Fret #4"))
-Config.define("player1", "player_2_key_5",        str, "K_5",     text = _("Player 2 Fret #5"))
-Config.define("player1", "player_2_key_cancel",   str, "K_F8", text = _("Player 2 Cancel"))
-Config.define("player1", "player_2_key_left",    str, "K_6",   text = _("Player 2 Move left"))
-Config.define("player1", "player_2_key_right",   str, "K_7",  text = _("Player 2 Move right"))
-Config.define("player1", "player_2_key_up",      str, "K_8",     text = _("Player 2 Move up"))
-Config.define("player1", "player_2_key_down",    str, "K_9",   text = _("Player 2 Move down"))
-Config.define("player1", "aplayer_2_key_action1", str, "K_F9", text = _("Player 2 Alt Pick"))
-Config.define("player1", "aplayer_2_key_action2", str, "K_F10", text = _("Player 2 Alt Secondary Pick"))
-Config.define("player1", "aplayer_2_key_1",       str, "K_1",     text = _("Player 2 Alt Fret #1"))
-Config.define("player1", "aplayer_2_key_2",       str, "K_2",     text = _("Player 2 Alt Fret #2"))
-Config.define("player1", "aplayer_2_key_3",       str, "K_3",     text = _("Player 2 Alt Fret #3"))
-Config.define("player1", "aplayer_2_key_4",       str, "K_4",     text = _("Player 2 Alt Fret #4"))
-Config.define("player1", "aplayer_2_key_5",       str, "K_5",     text = _("Player 2 Alt Fret #5"))
-Config.define("player1", "aplayer_2_key_cancel",  str, "K_F8", text = _("Player 2 Alt Cancel"))
-Config.define("player1", "aplayer_2_key_left",    str, "K_6",   text = _("Player 2 Alt Move left"))
-Config.define("player1", "aplayer_2_key_right",   str, "K_7",  text = _("Player 2 Alt Move right"))
-Config.define("player1", "aplayer_2_key_up",      str, "K_8",     text = _("Player 2 Alt Move up"))
-Config.define("player1", "aplayer_2_key_down",    str, "K_9",   text = _("Player 2 Alt Move down"))
+Config.define("player1", "player_2_key_left",     str, "K_LEFT",     text = _("Player 2 Move left"))
+Config.define("player1", "player_2_key_right",    str, "K_RIGHT",    text = _("Player 2 Move right"))
+Config.define("player1", "player_2_key_up",       str, "K_UP",       text = _("Player 2 Move up"))
+Config.define("player1", "player_2_key_down",     str, "K_DOWN",     text = _("Player 2 Move down"))
+Config.define("player1", "player_2_key_action1",  str, "K_PAGEDOWN", text = _("Player 2 Pick"))
+Config.define("player1", "player_2_key_action2",  str, "K_PAGEUP",   text = _("Player 2 Secondary Pick"))
+Config.define("player1", "player_2_key_1",        str, "K_F8",       text = _("Player 2 Fret #1"))
+Config.define("player1", "player_2_key_2",        str, "K_F9",       text = _("Player 2 Fret #2"))
+Config.define("player1", "player_2_key_3",        str, "K_F10",      text = _("Player 2 Fret #3"))
+Config.define("player1", "player_2_key_4",        str, "K_F11",      text = _("Player 2 Fret #4"))
+Config.define("player1", "player_2_key_5",        str, "K_F12",      text = _("Player 2 Fret #5"))
+Config.define("player1", "player_2_key_cancel",   str, "K_F7",       text = _("Player 2 Cancel"))
+
+Config.define("player1", "aplayer_2_key_left",     str, "K_LEFT",     text = _("Player 2 Move left"))
+Config.define("player1", "aplayer_2_key_right",    str, "K_RIGHT",    text = _("Player 2 Move right"))
+Config.define("player1", "aplayer_2_key_up",       str, "K_UP",       text = _("Player 2 Move up"))
+Config.define("player1", "aplayer_2_key_down",     str, "K_DOWN",     text = _("Player 2 Move down"))
+Config.define("player1", "aplayer_2_key_action1",  str, "K_PAGEDOWN", text = _("Player 2 Pick"))
+Config.define("player1", "aplayer_2_key_action2",  str, "K_PAGEUP",   text = _("Player 2 Secondary Pick"))
+Config.define("player1", "aplayer_2_key_1",        str, "K_F8",       text = _("Player 2 Fret #1"))
+Config.define("player1", "aplayer_2_key_2",        str, "K_F9",       text = _("Player 2 Fret #2"))
+Config.define("player1", "aplayer_2_key_3",        str, "K_F10",      text = _("Player 2 Fret #3"))
+Config.define("player1", "aplayer_2_key_4",        str, "K_F11",      text = _("Player 2 Fret #4"))
+Config.define("player1", "aplayer_2_key_5",        str, "K_F12",      text = _("Player 2 Fret #5"))
+Config.define("player1", "aplayer_2_key_cancel",   str, "K_F7",       text = _("Player 2 Cancel"))
 
 Config.define("player0", "name",         str, "")
 Config.define("player0", "difficulty",   int, Song.EASY_DIFFICULTY)
@@ -253,10 +254,21 @@ class Player(object):
     Config.set(self.playerstring, "difficulty", difficulty.id)
 
   def getPart(self):
-    return Song.parts.get(Config.get(self.playerstring, "part"))
+    part = Config.get(self.playerstring, "part")
+    if part == -1:
+      return "Party Mode"
+    elif part == -2:
+      return "No Player 2"
+    else:
+      return Song.parts.get(part)
     
   def setPart(self, part):
-    Config.set(self.playerstring, "part", part.id)    
+    if part == "Party Mode":
+      Config.set(self.playerstring, "part", -1)
+    elif part == "No Player 2":
+      Config.set(self.playerstring, "part", -2)
+    else:
+      Config.set(self.playerstring, "part", part.id)    
     
   difficulty = property(getDifficulty, setDifficulty)
   part = property(getPart, setPart)

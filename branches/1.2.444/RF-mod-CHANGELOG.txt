@@ -1,3 +1,19 @@
+4.12
+   Started HOPO streak fix (awesome)
+   Base_library selector (awesome)
+   Added High score entry with fret keys (awesome)
+   Fixed 2note chord bug (bug in American Idiot)
+   Fixed doHopo to handle text events
+   Fixed multiple markHopo() bug
+   Added player2 part memory special cases for no player2 and party mode
+   Added fix and config for encoding
+   Added configurable search key (search_key)
+   Fixed key jump to not be ascii specific
+   Fixed party mode player2 hopo bug
+   Added party mode timer configuration in settings
+   Changed Default keys for player 2
+   Fixed volume lowering if you miss under certain circumstances
+
 4.11
    Fixed jumpy neck
    Fixed cmd line start, also added difficulty and part options

@@ -143,6 +143,7 @@ dataFiles = [
   "stage_background.svg",
   "stage_audience1.svg",
   "stage_audience2.svg",
+  "stage_drums.png"
   "stage_drums.svg",
   "stage_bassdrum.svg",
   "stage_light.svg",

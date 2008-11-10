@@ -33,6 +33,7 @@ import Song
 import Version
 import Player
 import Config
+import Theme
 
 class Element:
   """A basic element in the credits scroller."""
@@ -94,7 +95,7 @@ class Credits(Layer, KeyListener):
     self.offset      = 1.0
     
     Config.set("game", "selected_library", "songs")
-    credit_song  = Config.get("theme", "credit_song")
+    credit_song  = Theme.creditSong
     if credit_song == "None":
       credit_song = "defy"
       

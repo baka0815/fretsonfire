@@ -41,6 +41,8 @@ import Log
 import shutil, os, struct, wave, tempfile
 from struct import unpack
 
+KEYS = PLAYER1KEYS
+
 class Editor(Layer, KeyListener):
   """Song editor layer."""
   def __init__(self, engine, songName = None, libraryName = DEFAULT_LIBRARY):
@@ -62,7 +64,7 @@ class Editor(Layer, KeyListener):
     self.libraryName = libraryName
     self.heldFrets   = set()
 
-    self.spinnyDisabled   = self.engine.config.get("theme", "disable_spinny")    
+    self.spinnyDisabled   = self.engine.config.get("game", "disable_spinny")    
 
     mainMenu = [
       (_("Save Song"),                  self.save),

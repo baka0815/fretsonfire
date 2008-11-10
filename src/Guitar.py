@@ -119,6 +119,11 @@ class Guitar:
     self.bpm               = bpm
     self.baseBeat          = 0.0
 
+  def setdynamicBPM(self, bpm):
+    self.earlyMargin       = 60000.0 / bpm / 3.5
+    self.lateMargin        = 60000.0 / bpm / 3.5
+    self.noteReleaseMargin = 60000.0 / bpm / 2
+    
   def setMultiplier(self, multiplier):
     self.scoreMultiplier = multiplier
     
@@ -332,7 +337,7 @@ class Guitar:
           self.baseBeat         += (time - self.lastBpmChange) / self.currentPeriod
           self.targetBpm         = event.bpm
           self.lastBpmChange     = time
-          self.setBPM(self.targetBpm)
+          self.setdynamicBPM(self.targetBpm)
         continue
       
       if not isinstance(event, Note):
@@ -844,8 +849,8 @@ class Guitar:
     m1      = self.lateMargin
     m2      = self.lateMargin * 2
 
-    #if catchup == True:
-    #  m2 = 0
+    if catchup == True:
+      m2 = 0
       
     track   = song.track[self.player]
     notes   = [(time, event) for time, event in track.getEvents(pos - m1, pos - m2) if isinstance(event, Note)]
@@ -868,14 +873,10 @@ class Guitar:
     return notes
     
   def getRequiredNotes2(self, song, pos, hopo = False):
+
     track   = song.track[self.player]
     notes = [(time, event) for time, event in track.getEvents(pos - self.lateMargin, pos + self.earlyMargin) if isinstance(event, Note)]
-
-    if hopo:
-      notes = [(time, event) for time, event in notes if not (event.hopod or event.played)]
-    else:
-      notes = [(time, event) for time, event in notes if not (event.played)]
-
+    notes = [(time, event) for time, event in notes if not (event.hopod or event.played)]
     notes = [(time, event) for time, event in notes if (time >= (pos - self.lateMargin)) and (time <= (pos + self.earlyMargin))]
     if notes:
       t     = min([time for time, event in notes])
@@ -924,7 +925,7 @@ class Guitar:
     # no notes?
     if not notes:
       return False
-  
+
     # check each valid chord
     chords = {}
     for time, note in notes:

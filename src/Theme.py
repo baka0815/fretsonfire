@@ -83,21 +83,38 @@ DEFAULT_SIZE_FLAME4_4X   = 0.075
 
 DEFAULT_SPINNY           = False
 
+DEFAULT_X_TARGET_POV     = 0.0
+DEFAULT_Y_TARGET_POV     = 0.0
+DEFAULT_Z_TARGET_POV     = 4.0
+
+DEFAULT_X_ORIGIN_POV     = 0.0
+DEFAULT_Y_ORIGIN_POV     = 3.0
+DEFAULT_Z_ORIGIN_POV     = -3.0
+
+DEFAULT_PHRASE_LOADING   = "Tuning Guitar..."
+DEFAULT_PHRASE_RESULTS   = "Chilling"
+DEFAULT_SONG_CREDIT      = "defy"
+
 # read the color scheme from the config file
 Config.define("theme", "background_color",  str, DEFAULT_COLOR_BACKGROUND)
 Config.define("theme", "base_color",        str, DEFAULT_COLOR_BASE)
 Config.define("theme", "selected_color",    str, DEFAULT_COLOR_SELECTED)
-Config.define("theme", "fret0_color",       str, DEFAULT_COLOR_FRET0)
-Config.define("theme", "fret1_color",       str, DEFAULT_COLOR_FRET1)
-Config.define("theme", "fret2_color",       str, DEFAULT_COLOR_FRET2)
-Config.define("theme", "fret3_color",       str, DEFAULT_COLOR_FRET3)
-Config.define("theme", "fret4_color",       str, DEFAULT_COLOR_FRET4)
 Config.define("theme", "hopo_color",        str, DEFAULT_COLOR_HOPO)
 Config.define("theme", "spot_color",        str, DEFAULT_COLOR_SPOT)
 Config.define("theme", "key_color",         str, DEFAULT_COLOR_KEY)
 Config.define("theme", "key2_color",        str, DEFAULT_COLOR_KEY2)
 Config.define("theme", "tracks_color",      str, DEFAULT_COLOR_TRACKS)
 Config.define("theme", "bars_color",        str, DEFAULT_COLOR_BARS)
+
+Config.define("theme", "loading_phrase",    str, DEFAULT_PHRASE_LOADING)
+Config.define("theme", "results_phrase",    str, DEFAULT_PHRASE_RESULTS)
+Config.define("theme", "credit_song",       str, DEFAULT_SONG_CREDIT)
+
+Config.define("theme", "fret0_color",       str, DEFAULT_COLOR_FRET0)
+Config.define("theme", "fret1_color",       str, DEFAULT_COLOR_FRET1)
+Config.define("theme", "fret2_color",       str, DEFAULT_COLOR_FRET2)
+Config.define("theme", "fret3_color",       str, DEFAULT_COLOR_FRET3)
+Config.define("theme", "fret4_color",       str, DEFAULT_COLOR_FRET4)
 
 Config.define("theme", "flame0_1X_color",    str, DEFAULT_COLOR_FLAME0_1X)
 Config.define("theme", "flame1_1X_color",    str, DEFAULT_COLOR_FLAME1_1X)
@@ -145,20 +162,14 @@ Config.define("theme", "disable_song_spinny",    bool, DEFAULT_SPINNY)
 Config.define("theme", "disable_editor_spinny",  bool, DEFAULT_SPINNY)
 Config.define("theme", "disable_results_spinny", bool, DEFAULT_SPINNY)
 Config.define("theme", "disable_menu_spinny",    bool, DEFAULT_SPINNY)
-def hexToColor(color):
-  if color[0] == "#":
-    color = color[1:]
-    if len(color) == 3:
-      return (int(color[0], 16) / 15.0, int(color[1], 16) / 15.0, int(color[2], 16) / 15.0)
-    return (int(color[0:2], 16) / 255.0, int(color[2:4], 16) / 255.0, int(color[4:6], 16) / 255.0)
-  elif color.lower() == "off":
-    return (-1, -1, -1)
-  elif color.lower() == "fret":
-    return (-2, -2, -2)
-  return (0, 0, 0)
-    
-def colorToHex(color):
-  return "#" + ("".join(["%02x" % int(c * 255) for c in color]))
+
+Config.define("theme", "pov_target_x",       float, DEFAULT_X_TARGET_POV)
+Config.define("theme", "pov_target_y",       float, DEFAULT_Y_TARGET_POV)
+Config.define("theme", "pov_target_z",       float, DEFAULT_Z_TARGET_POV)
+
+Config.define("theme", "pov_origin_x",       float, DEFAULT_X_ORIGIN_POV)
+Config.define("theme", "pov_origin_y",       float, DEFAULT_Y_ORIGIN_POV)
+Config.define("theme", "pov_origin_z",       float, DEFAULT_Z_ORIGIN_POV)
 
 backgroundColor = None
 baseColor       = None
@@ -180,18 +191,54 @@ spinnySongDisabled = None
 spinnyEditorDisabled = None
 spinnyResultsDisabled = None
 spinnyMenuDisabled = None
+creditSong = None
+povTargetX = None
+povTargetY = None
+povTargetZ = None
+povOriginX = None
+povOriginY = None
+povOriginZ = None
+
+def hexToColor(color):
+  if color[0] == "#":
+    color = color[1:]
+    if len(color) == 3:
+      return (int(color[0], 16) / 15.0, int(color[1], 16) / 15.0, int(color[2], 16) / 15.0)
+    return (int(color[0:2], 16) / 255.0, int(color[2:4], 16) / 255.0, int(color[4:6], 16) / 255.0)
+  elif color.lower() == "off":
+    return (-1, -1, -1)
+  elif color.lower() == "fret":
+    return (-2, -2, -2)
+  return (0, 0, 0)
+    
+def colorToHex(color):
+  return "#" + ("".join(["%02x" % int(c * 255) for c in color]))
+
+def setSelectedColor(alpha = 1.0):
+  glColor4f(*(selectedColor + (alpha,)))
+
+def setBaseColor(alpha = 1.0):
+  glColor4f(*(baseColor + (alpha,)))
+  
+
 
 def open(config):
-  global backgroundColor, baseColor, selectedColor, fretColors
+  # Read in theme.ini specific variables
+  
+  setupColors(config)
+  setupFrets(config)
+  setupFlameColors(config)
+  setupFlameSizes(config)
+  setupSpinny(config)
+  setupPOV(config)
+  setupMisc(config)
+
+def setupColors(config):
+  global backgroundColor, baseColor, selectedColor
   global hopoColor, spotColor
   global keyColor, key2Color
   global tracksColor, barsColor
-  global flameColors, flameSizes
-  global loadingPhrase, resultsPhrase
-  global spinnySongDisabled, spinnyEditorDisabled, spinnyResultsDisabled, spinnyMenuDisabled
-
-  #special cases for theme.ini in mod directories
-
+  
   temp = config.get("theme", "background_color")
   if backgroundColor == None or temp != DEFAULT_COLOR_BACKGROUND:
     backgroundColor = hexToColor(temp)  
@@ -202,38 +249,7 @@ def open(config):
 
   temp = config.get("theme", "selected_color")
   if selectedColor == None or temp != DEFAULT_COLOR_SELECTED:
-    selectedColor = hexToColor(temp)    
-
-  loadingPhrase = config.get("theme", "loading_phrase")
-  resultsPhrase = config.get("theme", "results_phrase")
-
-  spinnySongDisabled = config.get("theme", "disable_song_spinny")
-  spinnyEditorDisabled = config.get("theme", "disable_editor_spinny")
-  spinnyResultsDisabled = config.get("theme", "disable_results_spinny")
-  spinnyMenuDisabled = config.get("theme", "disable_menu_spinny")
-  
-  if fretColors == None:
-    fretColors = [hexToColor(config.get("theme", "fret%d_color" % i)) for i in range(5)]
-  else:
-    temp = config.get("theme", "fret0_color")
-    if temp != DEFAULT_COLOR_FRET0:
-      fretColors[0] = hexToColor(temp)
-
-    temp = config.get("theme", "fret1_color")
-    if temp != DEFAULT_COLOR_FRET1:
-      fretColors[1] = hexToColor(temp)
-
-    temp = config.get("theme", "fret2_color")
-    if temp != DEFAULT_COLOR_FRET2:
-      fretColors[2] = hexToColor(temp)
-
-    temp = config.get("theme", "fret3_color")
-    if temp != DEFAULT_COLOR_FRET3:
-      fretColors[3] = hexToColor(temp)
-
-    temp = config.get("theme", "fret4_color")
-    if temp != DEFAULT_COLOR_FRET4:
-      fretColors[4] = hexToColor(temp)
+    selectedColor = hexToColor(temp)
 
   temp = config.get("theme", "hopo_color")
   if hopoColor == None or temp != DEFAULT_COLOR_HOPO:
@@ -257,8 +273,37 @@ def open(config):
 
   temp = config.get("theme", "bars_color")
   if barsColor == None or temp != DEFAULT_COLOR_BARS:
-    barsColor = hexToColor(temp)
+    barsColor = hexToColor(temp)    
 
+def setupFrets(config):
+  global fretColors
+    
+  if fretColors == None:
+    fretColors = [hexToColor(config.get("theme", "fret%d_color" % i)) for i in range(5)]
+  else:
+    temp = config.get("theme", "fret0_color")
+    if temp != DEFAULT_COLOR_FRET0:
+      fretColors[0] = hexToColor(temp)
+
+    temp = config.get("theme", "fret1_color")
+    if temp != DEFAULT_COLOR_FRET1:
+      fretColors[1] = hexToColor(temp)
+
+    temp = config.get("theme", "fret2_color")
+    if temp != DEFAULT_COLOR_FRET2:
+      fretColors[2] = hexToColor(temp)
+
+    temp = config.get("theme", "fret3_color")
+    if temp != DEFAULT_COLOR_FRET3:
+      fretColors[3] = hexToColor(temp)
+
+    temp = config.get("theme", "fret4_color")
+    if temp != DEFAULT_COLOR_FRET4:
+      fretColors[4] = hexToColor(temp)
+
+def setupFlameColors(config):
+  global flameColors
+  
   if flameColors == None:
     flameColors = [[hexToColor(config.get("theme", "flame%d_1X_color" % i)) for i in range(5)]]
     flameColors.append([hexToColor(config.get("theme", "flame%d_2X_color" % i)) for i in range(5)])
@@ -345,6 +390,9 @@ def open(config):
     if temp != DEFAULT_COLOR_FLAME4_4X:
       flameColors[3][4] = hexToColor(temp)
 
+def setupFlameSizes(config):
+  global flameSizes
+
   if flameSizes == None:
     flameSizes = [[config.get("theme", "flame%d_1X_size" % i) for i in range(5)]]
     flameSizes.append([config.get("theme", "flame%d_2X_size" % i) for i in range(5)])
@@ -430,9 +478,66 @@ def open(config):
     temp = config.get("theme", "flame4_4X_size")
     if temp != DEFAULT_SIZE_FLAME4_4X:
       flameSizes[3][4] = temp
-    
-def setSelectedColor(alpha = 1.0):
-  glColor4f(*(selectedColor + (alpha,)))
 
-def setBaseColor(alpha = 1.0):
-  glColor4f(*(baseColor + (alpha,)))
+def setupSpinny(config):
+  global spinnySongDisabled, spinnyEditorDisabled, spinnyResultsDisabled, spinnyMenuDisabled
+
+  temp = config.get("theme", "disable_song_spinny")
+  if spinnySongDisabled == None or temp != DEFAULT_SPINNY:
+    spinnySongDisabled = temp
+
+  temp = config.get("theme", "disable_editor_spinny")
+  if spinnyEditorDisabled == None or temp != DEFAULT_SPINNY:
+    spinnyEditorDisabled = temp
+    
+  temp = config.get("theme", "disable_results_spinny")
+  if spinnyResultsDisabled == None or temp != DEFAULT_SPINNY:
+    spinnyResultsDisabled = temp
+    
+  temp = config.get("theme", "disable_menu_spinny")
+  if spinnyMenuDisabled == None or temp != DEFAULT_SPINNY:
+    spinnyMenuDisabled = temp
+
+def setupPOV(config):
+  global povTargetX, povTargetY, povTargetZ
+  global povOriginX, povOriginY, povOriginZ
+  
+  temp = config.get("theme", "pov_target_x")
+  if povTargetX == None or temp != DEFAULT_X_TARGET_POV:
+    povTargetX = temp  
+
+  temp = config.get("theme", "pov_target_y")
+  if povTargetY == None or temp != DEFAULT_Y_TARGET_POV:
+    povTargetY = temp
+
+  temp = config.get("theme", "pov_target_z")
+  if povTargetZ == None or temp != DEFAULT_Z_TARGET_POV:
+    povTargetZ = temp
+
+  temp = config.get("theme", "pov_origin_x")
+  if povOriginX == None or temp != DEFAULT_X_ORIGIN_POV:
+    povOriginX = temp  
+
+  temp = config.get("theme", "pov_origin_y")
+  if povOriginY == None or temp != DEFAULT_Y_ORIGIN_POV:
+    povOriginY = temp
+
+  temp = config.get("theme", "pov_origin_z")
+  if povOriginZ == None or temp != DEFAULT_Z_ORIGIN_POV:
+    povOriginZ = temp
+
+def setupMisc(config):
+  global loadingPhrase, resultsPhrase
+  global creditSong
+
+  temp = config.get("theme", "loading_phrase")
+  if loadingPhrase == None or temp != DEFAULT_PHRASE_LOADING:
+    loadingPhrase = temp
+
+  temp = config.get("theme", "results_phrase")
+  if resultsPhrase == None or temp != DEFAULT_PHRASE_RESULTS:
+    resultsPhrase = temp
+
+  temp = config.get("theme", "credit_song")
+  if creditSong == None or temp != DEFAULT_SONG_CREDIT:
+    creditSong = temp

@@ -38,6 +38,8 @@ class MyConfigParser(ConfigParser):
         fp.write("\n")
       sections = sorted(self._sections)
       for section in sections:
+        if section == "theme":
+          continue
         fp.write("[%s]\n" % section)
         sectList = self._sections[section].items()
         sectList.sort()

@@ -47,23 +47,30 @@ usage = """%(prog)s [options]
 Options:
   --verbose, -v      Verbose messages
   --play=, -p [SongDir] play a song from the commandline
+  --diff=, -D [difficulty number] use this difficulty
+  --part=, -P [part number] use this part
 """ % {"prog": sys.argv[0] }
 
 if __name__ == "__main__":
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "vp:", ["verbose", "play="])
+    opts, args = getopt.getopt(sys.argv[1:], "vp:D:P:", ["verbose", "play=", "diff=", "part="])
   except getopt.GetoptError:
     print usage
     sys.exit(1)
     
   playing = None
+  difficulty = 0
+  part = 0
   for opt, arg in opts:
     if opt in ["--verbose", "-v"]:
       Log.quiet = False
     if opt in ["--play", "-p"]:
       playing = arg
+    if opt in ["--diff", "-D"]:
+      difficulty = arg      
+    if opt in ["--part", "-P"]:
+      part = arg
       
-
   while True:
     config = Config.load(Version.appName() + ".ini", setAsDefault = True)
     engine = GameEngine(config)
@@ -73,6 +80,8 @@ if __name__ == "__main__":
       Config.set("game", "selected_library", "songs")
       Config.set("game", "selected_song", playing)
       engine.cmdPlay = 1
+      engine.cmdDiff = int(difficulty)
+      engine.cmdPart = int(part)
       
     engine.setStartupLayer(MainMenu(engine))
 

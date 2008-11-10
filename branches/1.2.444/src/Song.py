@@ -23,7 +23,7 @@
 import midi
 import Log
 import Audio
-from ConfigParser import ConfigParser
+import Config
 import os
 import re
 import shutil
@@ -93,7 +93,7 @@ class SongInfo(object):
   def __init__(self, infoFileName):
     self.songName      = os.path.basename(os.path.dirname(infoFileName))
     self.fileName      = infoFileName
-    self.info          = ConfigParser()
+    self.info          = Config.MyConfigParser()
     self._difficulties = None
     self._parts        = None
 
@@ -398,7 +398,7 @@ class LibraryInfo(object):
   def __init__(self, libraryName, infoFileName):
     self.libraryName   = libraryName
     self.fileName      = infoFileName
-    self.info          = ConfigParser()
+    self.info          = Config.MyConfigParser()
     self.songCount     = 0
 
     try:

@@ -53,9 +53,14 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.playerList   = [self.player]
     self.keysList     = [PLAYER1KEYS]
 
+    self.partyMode = False
+    
     if Players == -1:
       self.partyMode  = True
       Players         = 1
+      self.partySwitch      = 0
+      self.partyTime        = 30
+      self.partyPlayer      = 0
     if Players == 2:
       self.playerList = self.playerList + [self.player2]
       self.keysList   = self.keysList + [PLAYER2KEYS]
@@ -119,11 +124,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.originZ        = float(tempval)
       
     #new
-    
-    self.partyMode        = False    
-    self.partySwitch      = 0
-    self.partyTime        = 30
-    self.partyPlayer      = 0
     
     self.loadSettings()
     self.engine.resource.load(self, "song",          lambda: loadSong(self.engine, songName, library = libraryName, part = [player.part for player in self.playerList]), onLoad = self.songLoaded)
@@ -609,8 +609,8 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         return
 
     #hopo fudge
-    hopoFudge = abs(self.guitars[num].hopoActive) - pos
-    if hopoFudge > 0 and hopoFudge < self.guitars[num].lateMargin:
+    hopoFudge = abs(self.guitars[num].hopoActive - pos)
+    if self.guitars[num].hopoActive != False and hopoFudge > 0 and hopoFudge < self.guitars[num].lateMargin:
       for k in self.guitars[num].actions:
         if self.controls.getState(k):
           return
@@ -1020,7 +1020,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       if self.song and self.song.info.tutorial:
         glColor3f(1, 1, 1)
         pos = self.getSongPosition()
-        for time, event in self.song.track.getEvents(pos - self.song.period * 2, pos + self.song.period * 4):
+        for time, event in self.song.track[i].getEvents(pos - self.song.period * 2, pos + self.song.period * 4):
           if isinstance(event, PictureEvent):
             if pos < time or pos > time + event.length:
               continue

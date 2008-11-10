@@ -307,6 +307,7 @@ class Guitar:
           self.baseBeat         += (time - self.lastBpmChange) / self.currentPeriod
           self.targetBpm         = event.bpm
           self.lastBpmChange     = time
+          self.setBPM(self.targetBpm)
         continue
       
       if not isinstance(event, Note):
@@ -352,11 +353,15 @@ class Guitar:
         continue
       glPushMatrix()
       glTranslatef(x, (1.0 - visibility) ** (event.number + 1), z)
+        
       self.renderNote(length, color = color, flat = flat, tailOnly = tailOnly, isTappable = isTappable)
       glPopMatrix()
 
 
     # Draw a waveform shape over the currently playing notes
+
+    if self.disableNoteSFX == True:
+      return
     glBlendFunc(GL_SRC_ALPHA, GL_ONE)
     for time, event in self.playedNotes:
       step  = self.currentPeriod / 16

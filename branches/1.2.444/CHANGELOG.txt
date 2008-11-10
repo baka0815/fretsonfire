@@ -1,9 +1,16 @@
+4.08
+   Pretty ConfigParser
+   Fixed tutorial
+   Fixed cheating reset
+   Fixed party mode
+   Fixed HOPO fudge
+   Fixed BPM
+   Fixed disable notesfx
 4.07
    variables for custom POV
    POV changes
    proper clipping for notes
    Made accuracy a float
-
 4.06
    Made folder rotation nicer
    Toggle for rotation

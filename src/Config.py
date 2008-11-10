@@ -117,7 +117,10 @@ class Config:
       else:
         value = False
     else:
-      value = type(value)
+      try:
+        value = type(value)
+      except:
+        value = None
       
     #Log.debug("%s.%s = %s" % (section, option, value))
     return value

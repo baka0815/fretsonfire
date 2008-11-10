@@ -205,10 +205,6 @@ def songFiles(song, extra = []):
 dataFiles = [
   (".", ["../readme.txt",     "../copying.txt"]),
   ("data",                    dataFiles),
-  ("data/songs/defy",         songFiles("defy", ["label.png"])),
-  ("data/songs/bangbang",     songFiles("bangbang", ["label.png"])),
-  ("data/songs/twibmpg",      songFiles("twibmpg", ["label.png"])),
-  ("data/songs/tutorial",     songFiles("tutorial", ["esc.svg", "keyboard.svg", "script.txt", "pose.svg"])),
   ("data/mods/Chilly",        chillyModFiles),
   ("data/mods/LightGraphics", lightModFiles),
   ("data/translations",       glob.glob("../data/translations/*.mo")),
@@ -222,7 +218,7 @@ if os.name == "nt":
         windows = [
           {
             "script":          "FretsOnFire.py",
-            "icon_resources":  [(1, "../data/icon.ico")]
+            "icon_resources":  [(1, "fof.ico")]
           }
         ],
         zipfile = "data/library.zip",

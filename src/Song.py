@@ -410,12 +410,13 @@ class LibraryInfo(object):
     if not self.name:
       self.name = os.path.basename(os.path.dirname(self.fileName))
 
+    return
     # Count the available songs
     libraryRoot = os.path.dirname(self.fileName)
     for name in os.listdir(libraryRoot):
       if not os.path.isdir(os.path.join(libraryRoot, name)) or name.startswith("."):
         continue
-      if os.path.isfile(os.path.join(libraryRoot, name, "song.ini")):
+      if os.path.isfile(os.path.join(libraryRoot, name, "notes.mid")):
         self.songCount += 1
 
   def _set(self, attr, value):
@@ -1141,26 +1142,37 @@ def getDefaultLibrary(engine):
   return LibraryInfo(DEFAULT_LIBRARY, engine.resource.fileName(DEFAULT_LIBRARY, "library.ini"))
 
 def getAvailableLibraries(engine, library = DEFAULT_LIBRARY):
+  print "get libs"
   # Search for libraries in both the read-write and read-only directories
   songRoots    = [engine.resource.fileName(library),
                   engine.resource.fileName(library, writable = True)]
   libraries    = []
   libraryRoots = []
-  
-  for songRoot in songRoots:
+
+  for songRoot in set(songRoots):
     for libraryRoot in os.listdir(songRoot):
       libraryRoot = os.path.join(songRoot, libraryRoot)
       if not os.path.isdir(libraryRoot):
         continue
-      for name in os.listdir(libraryRoot):
+      if os.path.isfile(os.path.join(libraryRoot, "notes.mid")):
+        continue
+      libName = library + os.path.join(libraryRoot.replace(songRoot, ""))
+      libraries.append(LibraryInfo(libName, os.path.join(libraryRoot, "library.ini")))
+      continue
+      dirs = os.listdir(libraryRoot)
+      print "End list"
+      for name in dirs:
         if os.path.isfile(os.path.join(libraryRoot, name, "song.ini")):
           if not libraryRoot in libraryRoots:
             libName = library + os.path.join(libraryRoot.replace(songRoot, ""))
+            print "new lib", libName, os.path.join(libraryRoot, "library.ini")
             libraries.append(LibraryInfo(libName, os.path.join(libraryRoot, "library.ini")))
             libraryRoots.append(libraryRoot)
+  print "done libs"
   return libraries
 
 def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = False):
+  print "get songs"
   # Search for songs in both the read-write and read-only directories
   songRoots = [engine.resource.fileName(library), engine.resource.fileName(library, writable = True)]
   names = []
@@ -1174,5 +1186,7 @@ def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = Fals
   songs = [SongInfo(engine.resource.fileName(library, name, "song.ini", writable = True)) for name in names]
   if not includeTutorials:
     songs = [song for song in songs if not song.tutorial]
+  songs = [song for song in songs if not song.artist == '=FOLDER=']
   songs.sort(lambda a, b: cmp(a.name, b.name))
+  print "Done songs"
   return songs

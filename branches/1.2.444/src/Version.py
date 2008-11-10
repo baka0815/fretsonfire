@@ -34,7 +34,7 @@ def branch():
   return "RF-mod"
 
 def branchrevision():
-  return 4.14
+  return 4.15
 
 def branchVersion():
   return "%s-%.2f" % (branch(), branchrevision())

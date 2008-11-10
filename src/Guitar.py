@@ -266,12 +266,15 @@ class Guitar:
     glEnable(GL_DEPTH_TEST)
     glDepthMask(1)
     glShadeModel(GL_SMOOTH)
+    #glColor3f(1, 1, 1)
     self.noteMesh.render("Mesh_001")
     if isTappable:
+      glColor3f(self.hopoColor[0], self.hopoColor[1], self.hopoColor[2])
       self.noteMesh.render("Mesh_003")
     glColor4f(.75 * color[0], .75 * color[1], .75 * color[2], color[3])
     self.noteMesh.render("Mesh")
     glColor4f(.25 * color[0], .25 * color[1], .25 * color[2], color[3])
+    glColor3f(1,1,1)
     self.noteMesh.render("Mesh_002")
     glDepthMask(0)
     glPopMatrix()
@@ -316,11 +319,16 @@ class Guitar:
       length     = event.length / self.currentPeriod / beatsPerUnit
       flat       = False
       tailOnly   = False
-      isTappable = event.tappable
+
+
+      if event.tappable < 2:
+        isTappable = False
+      else:
+        isTappable = True
       
       # Clip the played notes to the origin
       if z < 0:
-        if event.played:
+        if event.played or event.hopod:
           tailOnly = True
           length += z
           z = 0
@@ -474,23 +482,45 @@ class Guitar:
     if self.leftyMode:
       glScale(-1, 1, 1)
 
-  def getMissedNotes(self, song, pos):
+  def getMissedNotes(self, song, pos, catchup = False):
     if not song:
       return
 
     m1      = self.lateMargin
     m2      = self.lateMargin * 2
+
+    if catchup == True:
+      m2 = 0
+      
     track   = song.track[self.player]
     notes   = [(time, event) for time, event in track.getEvents(pos - m1, pos - m2) if isinstance(event, Note)]
     notes   = [(time, event) for time, event in notes if (time >= (pos - m2)) and (time <= (pos - m1))]
-    notes   = [(time, event) for time, event in notes if not event.played]
+    notes   = [(time, event) for time, event in notes if not event.played and not event.hopod and not event.skipped]
 
+    if catchup == True:
+      for time, event in notes:
+        event.skipped = True
     return notes
-    
+
   def getRequiredNotes(self, song, pos):
     track   = song.track[self.player]
     notes = [(time, event) for time, event in track.getEvents(pos - self.lateMargin, pos + self.earlyMargin) if isinstance(event, Note)]
     notes = [(time, event) for time, event in notes if not event.played]
+    notes = [(time, event) for time, event in notes if (time >= (pos - self.lateMargin)) and (time <= (pos + self.earlyMargin))]
+    if notes:
+      t     = min([time for time, event in notes])
+      notes = [(time, event) for time, event in notes if time - t < 1e-3]
+    return notes
+    
+  def getRequiredNotes2(self, song, pos, hopo = False):
+    track   = song.track[self.player]
+    notes = [(time, event) for time, event in track.getEvents(pos - self.lateMargin, pos + self.earlyMargin) if isinstance(event, Note)]
+
+    if hopo:
+      notes = [(time, event) for time, event in notes if not (event.hopod or event.played)]
+    else:
+      notes = [(time, event) for time, event in notes if not (event.played)]
+
     notes = [(time, event) for time, event in notes if (time >= (pos - self.lateMargin)) and (time <= (pos + self.earlyMargin))]
     if notes:
       t     = min([time for time, event in notes])
@@ -534,19 +564,64 @@ class Guitar:
 
     return True
 
+  def controlsMatchNotes2(self, controls, notes, hopo = False):
+    # no notes?
+    if not notes:
+      return False
+  
+    # check each valid chord
+    chords = {}
+    for time, note in notes:
+      if note.hopod == True and controls.getState(self.keys[note.number]):
+      #if hopo == True and controls.getState(self.keys[note.number]):
+        self.playedNotes = []
+        return True
+      if not time in chords:
+        chords[time] = []
+      chords[time].append((time, note))
+
+    #Make sure the notes are in the right time order
+    chordlist = chords.values()
+    chordlist.sort(lambda a, b: cmp(a[0][0], b[0][0]))
+
+    twochord = 0    
+    for notes in chordlist:
+      # matching keys?
+      requiredKeys = [note.number for time, note in notes]
+
+      if len(requiredKeys) > 2 and self.twoChordMax == True:
+        requiredKeys = [min(requiredKeys), max(requiredKeys)]
+        twochord = 1
+
+      for n, k in enumerate(self.keys):
+        if n in requiredKeys and not controls.getState(k):
+          return False
+        if not n in requiredKeys and controls.getState(k):
+          # The lower frets can be held down
+          if hopo == False and n >= min(requiredKeys):
+            return False
+    if twochord == 1:
+      self.twoChord += 1
+    return True
+  
+
   def areNotesTappable(self, notes):
     if not notes:
       return
     for time, note in notes:
-      if not note.tappable:
-        return False
-    return True
+      if note.tappable > 1:
+        return True
+    return False
   
-  def startPick(self, song, pos, controls):
+  def startPick(self, song, pos, controls, hopo = False):
+    if hopo == True:
+      res = startPick2(song, pos, controls, hopo)
+      return res
     if not song:
       return False
     
     self.playedNotes = []
+    
     notes = self.getRequiredNotes(song, pos)
 
     if self.controlsMatchNotes(controls, notes):
@@ -554,6 +629,33 @@ class Guitar:
       for time, note in notes:
         self.pickStartPos = max(self.pickStartPos, time)
         note.played       = True
+      self.playedNotes = notes
+      return True
+    return False
+
+  def startPick2(self, song, pos, controls, hopo = False):
+    if not song:
+      return False
+    
+    self.playedNotes = []
+    
+    notes = self.getRequiredNotes2(song, pos, hopo)
+
+    if self.controlsMatchNotes2(controls, notes, hopo):
+      self.pickStartPos = pos
+      for time, note in notes:
+        self.pickStartPos = max(self.pickStartPos, time)
+        if hopo:
+          note.hopod        = True
+        else:
+          note.played       = True
+        if note.tappable == 1 or note.tappable == 2:
+          self.hopoActive = time
+        elif note.tappable == 3:
+          self.hopoActive = -time
+        else:
+          self.hopoActive = 0
+      self.hopoLast     = note.number
       self.playedNotes = notes
       return True
     return False

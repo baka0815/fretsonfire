@@ -464,14 +464,13 @@ class Event:
     self.length = length
 
 class Note(Event):
-  def __init__(self, number, length, special = False, tappable = False, hopo = 0):
+  def __init__(self, number, length, special = False, tappable = 0):
     Event.__init__(self, length)
     self.number   = number
     self.played   = False
     self.special  = special
     self.tappable = tappable
     #RF-mod
-    self.hopo    = hopo
     self.hopod   = False
     self.skipped = False
     
@@ -547,7 +546,7 @@ class Track:
           event.hopod = False
           event.skipped = False
 
-  def update(self):
+  def markTappable(self):
     # Determine which notes are tappable. The rules are:
     #  1. Not the first note of the track
     #  2. Previous note not the same as this one
@@ -573,7 +572,7 @@ class Track:
         bpm = event.bpm
       elif isinstance(event, Note):
         # All notes are initially not tappable
-        event.tappable = False
+        event.tappable = 0
         ticks = beatsToTicks(time)
         
         # Part of chord?
@@ -593,14 +592,187 @@ class Track:
             else:
               # If all the notes are different, mark the current notes tappable
               for note in currentNotes:
-                note.tappable = True
+                note.tappable = 2
 
         # Set the current notes as the previous notes
         prevNotes    = currentNotes
         prevTicks    = currentTicks
         currentNotes = [event]
         currentTicks = ticks
+    for time, event in self.allEvents:
+      if not isinstance(event, Note):
+        continue
+      if time > 000 and time < 7000:
+        print "Note2", event.number, event.tappable, time
 
+  def markHopo(self):
+    lastTick = 0
+    lastTime  = 0
+    lastEvent = Note
+    
+    tickDelta = 0
+    noteDelta = 0
+
+    hopoDelta = 161
+    chordFudge = 10
+    ticksPerBeat = 480
+    hopoNotes = []
+    chordNotes = []
+    sameNotes = []
+    bpmNotes = []
+    firstTime = 1
+
+#    for time, event in self.allEvents + [self.allEvents[-1]]:
+    for time, event in self.allEvents:
+      if isinstance(event, Tempo):
+        bpmNotes.append([time, event])
+        continue
+      if not isinstance(event, Note):
+        continue
+      
+      while bpmNotes and time >= bpmNotes[0][0]:
+        #Adjust to new BPM
+        bpm = bpmNotes[0][1].bpm
+        bpmNotes.pop(0)
+
+      tick = (time * bpm * ticksPerBeat) / 60000.0
+      lastTick = (lastTime * bpm * ticksPerBeat) / 60000.0
+      
+      #skip first note
+      if firstTime == 1:
+        #If already processed abort
+        if event.tappable != 0:
+          return
+        chordNotes.append(event)
+        event.tappable = -3
+        lastEvent = event
+        lastTime  = time
+        firstTime = 0
+        continue
+        
+      tickDelta = tick - lastTick        
+      noteDelta = event.number - lastEvent.number
+        
+      #previous note and current note HOPOable      
+      if tickDelta <= hopoDelta:
+        #Add both notes to HOPO list even if duplicate.  Will come out in processing
+        if (not hopoNotes) or not (hopoNotes[-1][0] == lastTime and hopoNotes[-1][1] == lastEvent):
+          #special case for first marker note.  Change it to a HOPO start
+          if not hopoNotes and lastEvent.tappable == -3:
+            lastEvent.tappable = 1
+          hopoNotes.append([lastTime, lastEvent])
+
+        hopoNotes.append([time, event])
+        
+      #HOPO Over        
+      if tickDelta >= hopoDelta:
+        if hopoNotes != []:
+          #If the last event is the last HOPO note, mark it as a HOPO end
+          if lastEvent.tappable != -1 and hopoNotes[-1][1] == lastEvent:
+            if lastEvent.tappable >= 0:
+              lastEvent.tappable = 3
+            else:
+              lastEvent.tappable = -1
+
+      #This is the same note as before
+      elif noteDelta == 0:
+        #Add both notes to bad list even if duplicate.  Will come out in processing
+        sameNotes.append(lastEvent)
+        sameNotes.append(event)
+        lastEvent.tappable = -2
+        event.tappable = -2
+            
+      #This is a chord
+      elif tickDelta < chordFudge:
+        #Add both notes to bad list even if duplicate.  Will come out in processing
+        if chordNotes[-1] != lastEvent:
+          chordNotes.append(lastEvent)
+        chordNotes.append(event)
+        lastEvent.tappable = -1
+        event.tappable = -1
+        
+      lastEvent = event
+      lastTime = time
+    else:
+      #Add last note to HOPO list if applicable
+      if noteDelta != 0 and tickDelta > 1.5 and tickDelta < hopoDelta:
+        hopoNotes.append([time, event])
+
+    firstTime = 1
+    note = None
+             
+    for time, note in list(hopoNotes):
+      if firstTime == 1:
+        if note.tappable >= 0:
+          note.tappable = 1
+        lastEvent = note
+        firstTime = 0
+        continue
+
+      #current Note Invalid      
+      if note.tappable < 0:
+        #If current note is invalid for HOPO, and previous note was start of a HOPO section, then previous note not HOPO
+        if lastEvent.tappable == 1:
+          lastEvent.tappable = 0
+        #If current note is invalid for HOPO, and previous note was a HOPO section, then previous note is end of HOPO
+        elif lastEvent.tappable > 0:
+          lastEvent.tappable = 3
+      #current note valid
+      elif note.tappable >= 0:
+        #String of same notes can be followed by HOPO
+        if note.tappable == 3:
+          #This is the end of a valid HOPO section
+          if lastEvent.tappable == 1 or lastEvent.tappable == 2:
+            lastEvent = note
+            lastTime = time
+            continue
+          if lastEvent.tappable == -2:
+            #If its the same note again it's invalid
+            if lastEvent.number == note.number:
+              note.tappable = -2
+            else:
+              lastEvent.tappable = 1
+          elif lastEvent.tappable == 0:
+            lastEvent.tappable = 1
+          #If last note was invalid or end of HOPO section, and current note is end, it is really not HOPO
+          elif lastEvent.tappable != 2 and lastEvent.tappable != 1:
+            note.tappable = 0
+          #If last event was invalid or end of HOPO section, current note is start of HOPO
+          else:
+            note.tappable = 1
+        elif note.tappable == 2:
+          if lastEvent.tappable == -2:
+            note.tappable = 1
+          elif lastEvent.tappable == -1:
+            note.tappable = 0
+        elif note.tappable == 1:
+          if lastEvent.tappable == 2:
+            note.tappable = 0
+        else:
+          if lastEvent.tappable == -2:
+            lastEvent.tappable = 1
+            
+          if lastEvent.tappable != 2 and lastEvent.tappable != 1:
+            note.tappable = 1
+          else:
+            note.tappable = 2
+      lastEvent = note
+      lastTime = time
+    else:
+      if note != None:
+        #Handle last note
+        #If it is the start of a HOPO, it's not really a HOPO
+        if note.tappable == 1:
+          note.tappable = 0
+        #If it is the middle of a HOPO, it's really the end of a HOPO
+        elif note.tappable == 2:
+          note.tappable = 3      
+    for time, event in self.allEvents:
+      if not isinstance(event, Note):
+        continue
+      if time > 000 and time < 7000:
+        print "Note3", event.number, event.tappable, time
+    
 class Song(object):
   def __init__(self, engine, infoFileName, songTrackName, guitarTrackName, rhythmTrackName, noteFileName, scriptFileName = None, partlist = [parts[GUITAR_PART]]):
     self.engine        = engine
@@ -652,9 +824,9 @@ class Song(object):
 
     # update all note tracks
     #HOPO done here (should be in guitar scene, only do the track you are playing)
-    for tracks in self.tracks:
-      for track in tracks:
-        track.update()
+    #for tracks in self.tracks:
+    #  for track in tracks:
+    #    track.update()
 
   def getHash(self):
     h = sha.new()

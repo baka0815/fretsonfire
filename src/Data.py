@@ -76,6 +76,8 @@ class Data(object):
 
     # load sounds
     resource.load(self, "screwUpSounds", self.loadScrewUpSounds)
+    resource.load(self, "screwUpSoundsBass", self.loadScrewUpSoundsBass)
+    resource.load(self, "symcSounds", self.loadScrewUpSounds)
     self.loadSoundEffect(self, "acceptSound",  "in.ogg")
     self.loadSoundEffect(self, "cancelSound",  "out.ogg")
     self.loadSoundEffect(self, "selectSound1", "crunch1.ogg")
@@ -90,7 +92,13 @@ class Data(object):
 
   def loadScrewUpSounds(self):
     return [Sound(self.resource.fileName("fiba%d.ogg" % i)) for i in range(1, 7)]
-    
+
+  def loadScrewUpSoundsBass(self):
+    return [Sound(self.resource.fileName("bfiba%d.ogg" % i)) for i in range(1, 7)]
+  
+  def loadSyncSounds(self):
+    return [Sound(self.resource.fileName("sync%d.ogg" % i)) for i in range(1, 2)]
+  
   def loadSvgDrawing(self, target, name, fileName, textureSize = None):
     """
     Load an SVG drawing synchronously.
@@ -128,8 +136,13 @@ class Data(object):
     """@return: A randomly chosen screw-up sound."""
     return random.choice(self.screwUpSounds)
 
-  screwUpSound = property(getScrewUpSound)
+  def getScrewUpSoundBass(self):
+    """@return: A randomly chosen screw-up sound."""
+    return random.choice(self.screwUpSoundsBass)
 
+  screwUpSound = property(getScrewUpSound)
+  screwUpSoundBass = property(getScrewUpSoundBass)
+  
   def essentialResourcesLoaded(self):
     """return: True if essential resources such as the font have been loaded."""
     return bool(self.font and self.bigFont)

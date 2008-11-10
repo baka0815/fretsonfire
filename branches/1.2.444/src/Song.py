@@ -108,12 +108,10 @@ class SongInfo(object):
     
     scores = self._get("scores", str, "")
     scores_ext = self._get("scores_ext", str, "")
-    #print scores_ext
     if scores:
       scores = Cerealizer.loads(binascii.unhexlify(scores))
       if scores_ext:
         scores_ext = Cerealizer.loads(binascii.unhexlify(scores_ext))
-        #print scores_ext
       for difficulty in scores.keys():
         try:
           difficulty = difficulties[difficulty]
@@ -122,7 +120,6 @@ class SongInfo(object):
         for i, base_scores in enumerate(scores[difficulty.id]):
           score, stars, name, hash = base_scores
           if scores_ext != "":
-            #print "woo"
             #Someone may have mixed extended and non extended
             try:
               hash_ext, stars2, notesHit, notesTotal, noteStreak, modVersion, modOptions1, modOptions2 =  scores_ext[difficulty.id][i]
@@ -130,7 +127,6 @@ class SongInfo(object):
             except:
               hash_ext = 0
               scoreExt = (0, 0, 0 , "RF-mod", "Default", "Default")
-            #print score, stars, name, scoreExt
           if self.getScoreHash(difficulty, score, stars, name) == hash:
             if scores_ext != "" and hash == hash_ext:
               self.addHighscore(difficulty, score, stars, name, part = parts[GUITAR_PART], scoreExt = scoreExt)
@@ -211,7 +207,6 @@ class SongInfo(object):
       
     for difficulty in highScores.keys():
       s[difficulty.id] = [(score, stars, name, self.getScoreHash(difficulty, score, stars, name)) for score, stars, name, scores_ext in highScores[difficulty]]
-      print s[difficulty.id]
     return binascii.hexlify(Cerealizer.dumps(s))
 
   def getObfuscatedScoresExt(self, part = parts[GUITAR_PART]):
@@ -229,7 +224,6 @@ class SongInfo(object):
       
     for difficulty in highScores.keys():
       s[difficulty.id] = [(self.getScoreHash(difficulty, score, stars, name), stars) + scores_ext for score, stars, name, scores_ext in highScores[difficulty]]
-      print s[difficulty.id]
     return binascii.hexlify(Cerealizer.dumps(s))
 
   def save(self):
@@ -421,7 +415,6 @@ class SongInfo(object):
     #notesHit, notesTotal, noteStreak, modVersion, modOptions1, modOptions2 = scoreExt 
     if not difficulty in highScores:
       highScores[difficulty] = []
-    print score, stars, name, scoreExt
     highScores[difficulty].append((score, stars, name, scoreExt))
     highScores[difficulty].sort(lambda a, b: {True: -1, False: 1}[a[0] > b[0]])
     highScores[difficulty] = highScores[difficulty][:5]
@@ -704,8 +697,9 @@ class Track:
       
       while bpmNotes and time >= bpmNotes[0][0]:
         #Adjust to new BPM
-        bpm = bpmNotes[0][1].bpm
-        bpmNotes.pop(0)
+        #bpm = bpmNotes[0][1].bpm
+        bpmTime, bpmEvent = bpmNotes.pop(0)
+        bpm = bpmEvent.bpm
 
       tick = (time * bpm * ticksPerBeat) / 60000.0
       lastTick = (lastTime * bpm * ticksPerBeat) / 60000.0
@@ -717,10 +711,10 @@ class Track:
         lastTime  = time
         firstTime = 0
         continue
-        
+
       tickDelta = tick - lastTick        
       noteDelta = event.number - lastEvent.number
-      
+
       #previous note and current note HOPOable      
       if tickDelta <= hopoDelta:
         #Add both notes to HOPO list even if duplicate.  Will come out in processing
@@ -728,12 +722,15 @@ class Track:
           #special case for first marker note.  Change it to a HOPO start
           if not hopoNotes and lastEvent.tappable == -3:
             lastEvent.tappable = 1
+          #this may be incorrect if a bpm event happened inbetween this note and last note
+          hopoNotes.append([lastTime, bpmEvent])
           hopoNotes.append([lastTime, lastEvent])
 
+        hopoNotes.append([bpmTime, bpmEvent])
         hopoNotes.append([time, event])
         
       #HOPO Over        
-      if tickDelta >= hopoDelta:
+      if tickDelta > hopoDelta:
         if hopoNotes != []:
           #If the last event is the last HOPO note, mark it as a HOPO end
           if lastEvent.tappable != -1 and hopoNotes[-1][1] == lastEvent:
@@ -764,6 +761,7 @@ class Track:
     else:
       #Add last note to HOPO list if applicable
       if noteDelta != 0 and tickDelta > 1.5 and tickDelta < hopoDelta and isinstance(event, Note):
+        hopoNotes.append([time, bpmEvent])
         hopoNotes.append([time, event])
 
     firstTime = 1
@@ -776,16 +774,33 @@ class Track:
     for note in list(sameNotes):
       #same note in string -2
       note.tappable = -2
-             
+
+    bpmNotes = []
+    
     for time, note in list(hopoNotes):
+      if isinstance(note, Tempo):
+        bpmNotes.append([time, note])
+        continue
       if not isinstance(note, Note):
         continue
+      while bpmNotes and time >= bpmNotes[0][0]:
+        #Adjust to new BPM
+        #bpm = bpmNotes[0][1].bpm
+        bpmTime, bpmEvent = bpmNotes.pop(0)
+        bpm = bpmEvent.bpm
+
       if firstTime == 1:
         if note.tappable >= 0:
           note.tappable = 1
         lastEvent = note
         firstTime = 0
         continue
+
+
+#need to recompute (or carry forward) BPM at this time
+      tick = (time * bpm * ticksPerBeat) / 60000.0
+      lastTick = (lastTime * bpm * ticksPerBeat) / 60000.0
+      tickDelta = tick - lastTick
 
       #current Note Invalid
       if note.tappable < 0:
@@ -831,12 +846,16 @@ class Track:
             note.tappable = 0
         else:
           if lastEvent.tappable == -2:
-            lastEvent.tappable = 1
-            
+            if tickDelta <= hopoDelta:
+              lastEvent.tappable = 1
+              
           if lastEvent.tappable != 2 and lastEvent.tappable != 1:
             note.tappable = 1
           else:
-            note.tappable = 2
+            if note.tappable == 1:
+              note.tappable = 1
+            else:
+              note.tappable = 2
       lastEvent = note
       lastTime = time
     else:
@@ -849,7 +868,14 @@ class Track:
         elif note.tappable == 2:
           note.tappable = 3      
     self.marked = True
-    
+
+    for time, event in self.allEvents:
+      if isinstance(event, Tempo):
+        bpmNotes.append([time, event])
+        continue
+      if not isinstance(event, Note):
+        continue
+        
 class Song(object):
   def __init__(self, engine, infoFileName, songTrackName, guitarTrackName, rhythmTrackName, noteFileName, scriptFileName = None, partlist = [parts[GUITAR_PART]]):
     self.engine        = engine

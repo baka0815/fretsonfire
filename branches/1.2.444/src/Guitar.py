@@ -46,6 +46,7 @@ class Guitar:
     self.fretActivity   = [0.0] * self.strings
     self.fretColors     = Theme.fretColors
     self.playedNotes    = []
+    self.missedNotes    = []
     self.editorMode     = editorMode
     self.selectedString = 0
     self.time           = 0.0
@@ -950,16 +951,17 @@ class Guitar:
           # The lower frets can be held down
           if n > max(requiredKeys):
             return False
-      if twochord != 2:
-        for time, note in chord:
-          note.played = True
-      else:
-        for time, note in chord:
-          note.skipped = True
-        chord[0][1].skipped = False
-        chord[-1][1].skipped = False
-        chord[0][1].played = True
-        chord[-1][1].played = True
+      if twochord != 0:
+        if twochord != 2:
+          for time, note in chord:
+            note.played = True
+        else:
+          for time, note in chord:
+            note.skipped = True
+          chord[0][1].skipped = False
+          chord[-1][1].skipped = False
+          chord[0][1].played = True
+          chord[-1][1].played = True
     if twochord == 2:
       self.twoChord += skipped
 
@@ -1009,16 +1011,17 @@ class Guitar:
           # The lower frets can be held down
           if hopo == False and n >= min(requiredKeys):
             return False
-      if twochord != 2:
-        for time, note in chord:
-          note.played = True
-      else:
-        for time, note in chord:
-          note.skipped = True
-        chord[0][1].skipped = False
-        chord[-1][1].skipped = False
-        chord[0][1].played = True
-        chord[-1][1].played = True
+      if twochord != 0:
+        if twochord != 2:
+          for time, note in chord:
+            note.played = True
+        else:
+          for time, note in chord:
+            note.skipped = True
+          chord[0][1].skipped = False
+          chord[-1][1].skipped = False
+          chord[0][1].played = True
+          chord[-1][1].played = True
         
     if twochord == 2:
       self.twoChord += skipped
@@ -1045,7 +1048,7 @@ class Guitar:
     chordlist = chords.values()
     chordlist.sort(lambda a, b: cmp(a[0][0], b[0][0]))
 
-    missList = []
+    self.missedNotes = []
     twochord = 0
     for chord in chordlist:
       # matching keys?
@@ -1077,11 +1080,11 @@ class Guitar:
         break
       if hopo == True:
         break
-      missList.append(chord)
+      self.missedNotes.append(chord)
     else:
-      missList = []
+      self.missedNotes = []
     
-    for chord in missList:
+    for chord in self.missedNotes:
       for time, note in chord:
         note.skipped = True
         note.played = False

@@ -22,6 +22,7 @@
 
 import os
 import Config
+import Theme
 from Language import _
 
 def _getModPath(engine):
@@ -51,8 +52,13 @@ def getActiveMods(engine):
 def activateMod(engine, modName):
   modPath = _getModPath(engine)
   m = os.path.join(modPath, modName)
+  t = os.path.join(m, "theme.ini")
   if os.path.isdir(m):
     engine.resource.addDataPath(m)
+    if os.path.isfile(t):
+      theme = Config.load(t)
+      Theme.open(theme)
+
 
 def deactivateMod(engine, modName):
   modPath = _getModPath(engine)

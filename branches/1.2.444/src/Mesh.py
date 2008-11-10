@@ -153,3 +153,16 @@ class Mesh:
 
     if self.geoms:
       return self.render(geomName)
+
+  def find(self, geomName = None):
+    found = False
+    if self.geoms:            
+      # render geometry
+      for scene in self.doc.visualScenesLibrary.items:
+        for node in scene.nodes:
+          if geomName is not None and node.name != geomName:
+            continue
+          found = True
+
+
+    return found

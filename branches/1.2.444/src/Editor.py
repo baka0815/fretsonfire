@@ -308,7 +308,7 @@ class Editor(Layer, KeyListener):
     w, h, = self.engine.view.geometry[2:4]
     r = .5
 
-    if spinnyDisabled != True:    
+    if self.spinnyDisabled != True:    
       self.background.transform.reset()
       self.background.transform.translate(w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
       self.background.transform.rotate(-t)

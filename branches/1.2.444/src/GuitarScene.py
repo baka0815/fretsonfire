@@ -135,7 +135,11 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.engine.loadSvgDrawing(self, "fx4x",   "4x.svg", textureSize = (256, 256))
 
     #new
-    Dialogs.showLoadingScreen(self.engine, lambda: self.song, text = _("Tuning Guitar..."))
+
+    phrase = random.choice(Theme.loadingPhrase.split(","))
+    if phrase == "None":
+      phrase = "Tuning Guitar..."
+    Dialogs.showLoadingScreen(self.engine, lambda: self.song, text = phrase)
 
     settingsMenu = Settings.GameSettingsMenu(self.engine)
     settingsMenu.fadeScreen = True
@@ -278,22 +282,19 @@ class GuitarSceneClient(GuitarScene, SceneClient):
           self.song.track[i].markHopo()
     
     if self.disableStats != True:
-      lastEventList = [len(self.song.track[i].getAllEvents()) for i in range(len(self.guitars))]
-      pos = []
-      for i,lastEvent in enumerate(lastEventList):
-        if lastEvent > 0:
-          posi,event = self.song.track[i].getAllEvents()[lastEvent-1]
-          pos = pos + [[posi,event]]
-      if len(pos) > 0:
-        pos.sort(lambda x,y: int(y[0]-x[0]))
-        self.lastEvent = pos[len(pos)-1][0] + pos[len(pos)-1][1].length + 1000
-        self.lastEvent = round(self.lastEvent / 1000) * 1000
-        self.notesCum = 0
-        self.noteLastTime = 0
-      else:
-        self.lastEvent = 0
-        self.notesCum = 0
-        self.noteLastTime = 0
+      lastTime = 0
+      for i,guitar in enumerate(self.guitars):      
+        for time, event in self.song.track[i].getAllEvents():
+          if not isinstance(event, Note):
+            continue
+          if time + event.length > lastTime:
+            lastTime = time + event.length
+
+      self.lastEvent = lastTime + 1000
+      self.lastEvent = round(self.lastEvent / 1000) * 1000
+      self.notesCum = 0
+      self.noteLastTime = 0
+ 
 
   def doHopo(self, num):
     lastTick = 0
@@ -517,6 +518,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       # missed some notes?
       if self.playerList[i].streak > 0 and guitar.getMissedNotes(self.song, pos):
         self.playerList[i].streak = 0
+        self.guitars[i].setMultiplier(1)
         guitar.hopoLast = -1
         if not guitar.playedNotes:
           self.song.setInstrumentVolume(0.0, self.playerList[i].part)
@@ -584,9 +586,11 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.stage.triggerPick(pos, [n[1].number for n in self.guitars[num].playedNotes])
       if self.playerList[num].streak % 10 == 0:
         self.lastMultTime[num] = pos
+        self.guitars[num].setMultiplier(self.playerList[num].getScoreMultiplier())
     else:
       self.song.setInstrumentVolume(0.0, self.playerList[num].part)
       self.playerList[num].streak = 0
+      self.guitars[num].setMultiplier(1)
       self.stage.triggerMiss(pos)
       if `self.playerList[num].part` == "Bass Guitar":
         self.sfxChannel.play(self.engine.data.screwUpSoundBass)
@@ -603,18 +607,19 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     missedNotes = self.guitars[num].getMissedNotes(self.song, pos, catchup = True)
     if len(missedNotes) > 0:
       self.playerList[num].streak = 0
+      self.guitars[num].setMultiplier(1)
       self.guitars[num].hopoActive = False
       self.guitars[num].hopoLast = -1
       if hopo == True:
         return
 
     #hopo fudge
-    hopoFudge = abs(self.guitars[num].hopoActive - pos)
+    hopoFudge = abs(abs(self.guitars[num].hopoActive) - pos)
     if self.guitars[num].hopoActive != False and hopoFudge > 0 and hopoFudge < self.guitars[num].lateMargin:
       for k in self.guitars[num].actions:
         if self.controls.getState(k):
           return
-    
+
     if self.guitars[num].startPick2(self.song, pos, self.controls, hopo):
       self.song.setInstrumentVolume(1.0, self.playerList[num].part)
       if self.guitars[num].playedNotes:
@@ -624,11 +629,13 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.players[num].addScore(len(self.guitars[num].playedNotes) * 50)
       if self.players[num].streak % 10 == 0:
         self.lastMultTime[num] = self.getSongPosition()
+        self.guitars[num].setMultiplier(self.playerList[num].getScoreMultiplier())
     else:
       self.guitars[num].hopoActive = False
       self.guitars[num].hopoLast = -1
       self.song.setInstrumentVolume(0.0, self.playerList[num].part)
       self.playerList[num].streak = 0
+      self.guitars[num].setMultiplier(1)
       self.stage.triggerMiss(pos)
 
       if self.engine.data.screwUpSounds and self.screwUpVolume > 0.0:
@@ -744,7 +751,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       if pressed >= 0 and self.song:
         self.doPick2(pressed, hopo)
       
-    if control == Player.CANCEL:
+    if control in Player.CANCELS:
       self.pauseGame()
       self.engine.view.pushLayer(self.menu)
       return True
@@ -829,6 +836,16 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
     self.engine.view.setOrthogonalProjection(normalize = True)
     try:
+      now = self.getSongPosition()
+      pos = self.lastEvent - now
+      # Out cheaters
+      if self.playerList[0].cheating == True:
+        scale = 0.002 + 0.0005 * (((pos % 60000) / 1000) % 1) ** 3
+        text = _("Cheater")
+        w, h = bigFont.getStringSize(text, scale = scale)
+        Theme.setSelectedColor()
+        bigFont.render(text,  (.5 - w / 2, .2), scale = scale)
+        
       # show countdown
       if self.countdown > 1:
         Theme.setBaseColor(min(1.0, 3.0 - abs(4.0 - self.countdown)))
@@ -847,17 +864,18 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
       # show song name
       if self.countdown and self.song:
+        cover = ""
+        if self.song.info.findTag("cover") == True:
+          cover = "As made famous by: \n "
         Theme.setBaseColor(min(1.0, 4.0 - abs(4.0 - self.countdown)))
         extra = ""
         if self.song.info.frets:
           extra += " \n Fretted by: " + self.song.info.frets
         if self.song.info.version:
           extra += " \n v" + self.song.info.version
-        Dialogs.wrapText(font, (.05, .05 - h / 2), self.song.info.name + " \n " + self.song.info.artist + extra, rightMargin = .6, scale = 0.0015)
+        Dialogs.wrapText(font, (.05, .05 - h / 2), self.song.info.name + " \n " + cover + self.song.info.artist + extra, rightMargin = .6, scale = 0.0015)
       else:
         if self.disableStats != True:
-          now = self.getSongPosition()
-          pos = self.lastEvent - now
           if pos < 0:
             pos = 0
           
@@ -873,7 +891,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
         #Party mode
         if self.partyMode == True:
-          now = self.getSongPosition()
           timeleft = (now - self.partySwitch) / 1000
           if timeleft > self.partyTime:
             self.partySwitch = now
@@ -1017,7 +1034,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
       self.engine.view.setViewport(1,0)  
       # show the comments
-      if self.song and self.song.info.tutorial:
+      if self.song and (self.song.info.tutorial or self.song.info.lyrics):
         glColor3f(1, 1, 1)
         pos = self.getSongPosition()
         for time, event in self.song.track[i].getEvents(pos - self.song.period * 2, pos + self.song.period * 4):
@@ -1040,8 +1057,14 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             picture.draw()
           elif isinstance(event, TextEvent):
             if pos >= time and pos <= time + event.length:
-              text = _(event.text)
-              w, h = font.getStringSize(text)
-              font.render(text, (.5 - w / 2, .67))
+              if self.song.info.tutorial:
+                text = _(event.text)
+              else:
+                #do not translate lyrics
+                text = event.text
+
+              w, h = font.getStringSize(text,0.00175)
+              font.render(text, (.5 - w / 2, .69),(1, 0, 0),0.00175)
+
     finally:
       self.engine.view.resetProjection()

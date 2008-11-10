@@ -83,6 +83,7 @@ dataFiles = [
   "international.ttf",
   "keyboard.svg",
   "cassette.svg",
+  "gameresults.svg",
   "editor.svg",
   "key.dae",
   "note.dae",
@@ -109,6 +110,18 @@ dataFiles = [
   "fiba4.ogg",
   "fiba5.ogg",
   "fiba6.ogg",
+  "bfiba1.ogg",
+  "bfiba2.ogg",
+  "bfiba3.ogg",
+  "bfiba4.ogg",
+  "bfiba5.ogg",
+  "bfiba6.ogg",
+  "hitglow.png",
+  "hitglow.svg",
+  "hitglow2.png",
+  "hitglow2.svg",
+  "hitflames1.svg",
+  "hitflames2.svg",
   "neck.svg",
   "pose.svg",
   "logo.svg",
@@ -141,7 +154,7 @@ dataFiles = [
   "loading.svg",
 ]
 
-chillyModFiles = [
+allModFiles = [
   "mods/Chilly/theme.ini",
   "mods/Chilly/flame1.svg",
   "mods/Chilly/flame2.svg",
@@ -196,8 +209,6 @@ lightModFiles = [
 ]
 
 dataFiles      = ["../data/" + f for f in dataFiles]
-chillyModFiles = ["../data/" + f for f in chillyModFiles]
-lightModFiles  = ["../data/" + f for f in lightModFiles]
 
 def songFiles(song, extra = []):
   return ["../data/songs/%s/%s" % (song, f) for f in ["guitar.ogg", "notes.mid", "song.ini", "song.ogg"] + extra]
@@ -205,8 +216,6 @@ def songFiles(song, extra = []):
 dataFiles = [
   (".", ["../readme.txt",     "../copying.txt"]),
   ("data",                    dataFiles),
-  ("data/mods/Chilly",        chillyModFiles),
-  ("data/mods/LightGraphics", lightModFiles),
   ("data/translations",       glob.glob("../data/translations/*.mo")),
 ]
 

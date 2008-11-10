@@ -51,7 +51,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
   def createClient(self, libraryName, songName, Players):
     self.playerList   = [self.player]
     self.keysList     = [PLAYER1KEYS]
-    self.partyMode    = False
+
     if Players == -1:
       self.partyMode  = True
       Players         = 1
@@ -60,20 +60,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.keysList   = self.keysList + [PLAYER2KEYS]
 
     self.guitars          = [Guitar(self.engine,False,i) for i,player in enumerate(self.playerList)]
-    
-    self.screwUpVolume    = self.engine.config.get("audio", "screwupvol")
-    for i,guitar in enumerate(self.guitars):
-      guitar.leftyMode = self.engine.config.get("player%d" % (i), "leftymode")
-      guitar.twoChordMax  = self.engine.config.get("player%d" % (i), "two_chord_max")
-    #RF-mod (not needed?)
-    #self.disableFlame1    = self.engine.config.get("video", "disable_flame1")
-    #self.disableFlame2    = self.engine.config.get("video", "disable_flame2")
-    self.disableStats     = self.engine.config.get("video", "disable_stats")
-    self.hopoType         = self.engine.config.get("game", "hopo_type")
-    self.lastSwitch       = 0
-    self.partyTime        = 30
-    self.partyPlayer      = 0
-
     
     self.visibility       = 0.0
     self.libraryName      = libraryName
@@ -96,9 +82,15 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.camera.origin    = (0, 3, -3)
 
     #new
+    
+    self.partyMode        = False    
+    self.partySwitch      = 0
+    self.partyTime        = 30
+    self.partyPlayer      = 0
+    
     self.loadSettings()
     self.engine.resource.load(self, "song",          lambda: loadSong(self.engine, songName, library = libraryName, part = [player.part for player in self.playerList]), onLoad = self.songLoaded)
-    
+      
     self.stage            = Stage.Stage(self, self.engine.resource.fileName("stage.ini"))
     
     self.engine.loadSvgDrawing(self, "fx2x",   "2x.svg", textureSize = (256, 256))
@@ -160,13 +152,26 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.guitarVolume     = self.engine.config.get("audio", "guitarvol")
     self.songVolume       = self.engine.config.get("audio", "songvol")
     self.rhythmVolume     = self.engine.config.get("audio", "rhythmvol")
+    self.screwUpVolume    = self.engine.config.get("audio", "screwupvol")
+    #RF-mod
+    #self.disableFlame1    = self.engine.config.get("video", "disable_flame1")
+    #self.disableFlame2    = self.engine.config.get("video", "disable_flame2")
+    self.disableStats     = self.engine.config.get("video", "disable_stats")
+    self.hopoType         = self.engine.config.get("game", "hopo_type")
+    self.hopoMark         = self.engine.config.get("game", "hopo_mark")
+    self.hopoStyle        = self.engine.config.get("game", "hopo_style")
+    self.hopoMark = 0
+    self.hopoStyle = 0
     self.pov              = self.engine.config.get("game", "pov")
+    for i,guitar in enumerate(self.guitars):
+      guitar.leftyMode = self.engine.config.get("player%d" % (i), "leftymode")
+      guitar.twoChordMax  = self.engine.config.get("player%d" % (i), "two_chord_max")
     #self.guitar.leftyMode = self.engine.config.get("game",  "leftymode")
 
     if self.song:
       self.song.setBackgroundVolume(self.songVolume)
       self.song.setRhythmVolume(self.rhythmVolume)
-    
+      
   def songLoaded(self, song):
 
     for i,player in enumerate(self.playerList):
@@ -177,7 +182,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     if not self.engine.config.get("game", "tapping"):
       for time, event in self.song.track.getAllEvents():
         if isinstance(event, Note):
-          event.tappable = False
+          event.tappable = 0
 
   def endSong(self):
     self.engine.view.popLayer(self.menu)
@@ -221,14 +226,17 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       return
       
     self.countdown    = 8.0
-    self.lastSwitch = 0
+    self.partySwitch = 0
     for i,guitar in enumerate(self.guitars):
       guitar.endPick(i)
     self.song.stop()
 
     for i, guitar in enumerate(self.guitars):
       if self.hopoType == 1 or (self.hopoType == 2 and self.song.info.hopo == "on"):
-        self.doHopo(i)
+        if self.hopoMark == 1:
+          self.song.track[i].markTappable();
+        else:  
+          self.song.track[i].markHopo()
     
     if self.disableStats != True:
       lastEventList = [len(self.song.track[i].getAllEvents()) for i in range(len(self.guitars))]
@@ -541,7 +549,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.song.setInstrumentVolume(0.0, self.playerList[num].part)
       self.playerList[num].streak = 0
       self.stage.triggerMiss(pos)
-      self.sfxChannel.play(self.engine.data.screwUpSound)
+      if `self.playerList[num].part` == "Bass Guitar":
+        self.sfxChannel.play(self.engine.data.screwUpSoundBass)
+      else:
+        self.sfxChannel.play(self.engine.data.screwUpSound)
       self.sfxChannel.setVolume(self.screwUpVolume)
 
   def doPick2(self, num, hopo = False):
@@ -565,7 +576,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         if self.controls.getState(k):
           return
     
-    if self.guitars[num].startPick(self.song, pos, self.controls, hopo):
+    if self.guitars[num].startPick2(self.song, pos, self.controls, hopo):
       self.song.setInstrumentVolume(1.0, self.playerList[num].part)
       if self.guitars[num].playedNotes:
         self.playerList[num].streak += 1
@@ -574,7 +585,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.players[num].addScore(len(self.guitars[num].playedNotes) * 50)
       if self.players[num].streak % 10 == 0:
         self.lastMultTime[num] = self.getSongPosition()
-        self.doTwang()
     else:
       self.guitars[num].hopoActive = False
       self.guitars[num].hopoLast = -1
@@ -582,9 +592,13 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.playerList[num].streak = 0
       self.stage.triggerMiss(pos)
 
-      if self.screwUpSounds and self.screwUpVolume > 0.0:
-        self.sfxChannel.play(self.engine.data.screwUpSound)
+      if self.engine.data.screwUpSounds and self.screwUpVolume > 0.0:
         self.sfxChannel.setVolume(self.screwUpVolume)
+        if `self.playerList[num].part` == "Bass Guitar":
+          self.sfxChannel.play(self.engine.data.screwUpSoundBass)
+        else:
+          self.sfxChannel.play(self.engine.data.screwUpSound)
+    print "indopick", self.guitars[num].hopoActive, self.guitars[num].hopoLast
       
   def toggleAutoPlay(self):
     self.autoPlay = not self.autoPlay
@@ -605,6 +619,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.session.world.createScene("GameResultsScene", libraryName = self.libraryName, songName = self.songName, players = self.playerList)
 
   def keyPressed(self, key, unicode, control = None):
+    #RF style HOPO playing
+    if self.hopoStyle ==  0:
+      res = self.keyPressed2(key, unicode, control)
+      return res
     if not control:
       control = self.controls.keyPressed(key)
 
@@ -687,7 +705,8 @@ class GuitarSceneClient(GuitarScene, SceneClient):
           return True
 
       if pressed >= 0 and self.song:
-        self.doPick(pressed, hopo)
+        print "dopick2", hopo 
+        self.doPick2(pressed, hopo)
       
     if control == Player.CANCEL:
       self.pauseGame()
@@ -720,6 +739,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     return 0
 
   def keyReleased(self, key):
+    #RF style HOPO playing
+    if self.hopoStyle ==  0:
+      res = self.keyReleased2(key)
+      return res
     control = self.controls.keyReleased(key)
 
     num = self.getPlayerNum(control) 
@@ -751,7 +774,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     for i, guitar in enumerate(self.guitars):
       activeList = [k for k in self.keysList[i] if self.controls.getState(k) and k != control]
       if len(activeList) != 0 and guitar.hopoActive and activeList[0] != self.keysList[i][guitar.hopoLast] and control in self.keysList[i]:
-        self.keyPressed(None, 0, activeList[0])
+        self.keyPressed2(None, 0, activeList[0])
 
   def getPlayerNum(self, control):
     if control in (self.guitars[0].keys + self.guitars[0].actions):
@@ -816,9 +839,9 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         #Party mode
         if self.partyMode == True:
           now = self.getSongPosition()
-          timeleft = (now - self.lastSwitch) / 1000
+          timeleft = (now - self.partySwitch) / 1000
           if timeleft > self.partyTime:
-            self.lastSwitch = now
+            self.partySwitch = now
             if self.partyPlayer == 0:
               self.guitars[0].keys = PLAYER2KEYS
               self.guitars[0].actions = PLAYER2ACTIONS
@@ -830,7 +853,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
           t = "%d" % (self.partyTime - timeleft + 1)
           if self.partyTime - timeleft < 5:
             glColor3f(1, 0, 0)
-          elif self.lastSwitch != 0 and timeleft < 1:
+          elif self.partySwitch != 0 and timeleft < 1:
             t = "Switch"
             glColor3f(0, 1, 0)
           w, h = font.getStringSize(t)

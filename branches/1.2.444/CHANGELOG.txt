@@ -1,7 +1,19 @@
+4.05
+   Removed flame toggles
+   ported vbpm disable
+   fixed cheating reset for player2
+   Added 'Custom' font hook
+   Fixed lag in song/library lookups
+   Added toggle for song counting
+4.04
+   Added RF-hopo marking
+   Added RF-hopo style
+   Added HOPO toggles
+   Ported Bass screwups
 4.03
    Added POV settings
    Fixed library sort order
-   Added song sort order options
+   Added song sort order option
 
 4.0
    Added base_library

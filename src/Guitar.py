@@ -348,6 +348,8 @@ class Guitar:
           color = (.2 + .4, .2 + .4, .2 + .4, .5 * visibility * f)
           flat  = True
 
+      if z + length < -1.0:
+        continue
       glPushMatrix()
       glTranslatef(x, (1.0 - visibility) ** (event.number + 1), z)
       self.renderNote(length, color = color, flat = flat, tailOnly = tailOnly, isTappable = isTappable)

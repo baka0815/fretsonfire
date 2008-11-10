@@ -83,6 +83,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.camera.origin    = (0.0, 3.0, -3.0)
     self.camera.target    = (0.0, 1.0, 8.0)
     self.camera.origin    = (0.0, 2.0, -3.4)
+
     self.targetX          = 0.0
     self.targetY          = 1.0
     self.targetZ          = 8.0
@@ -97,6 +98,26 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.originY          = 2.4
     self.originZ          = -3.8
 
+    tempval               = self.engine.config.get("theme", "targetx")
+    if tempval != "None":
+      self.targetX        = float(tempval)
+    tempval               = self.engine.config.get("theme", "targety")
+    if tempval != "None":
+      self.targetY        = float(tempval)
+    tempval               = self.engine.config.get("theme", "targetz")
+    if tempval != "None":
+      self.targetZ        = float(tempval)      
+
+    tempval               = self.engine.config.get("theme", "originx")
+    if tempval != "None":
+      self.originX        = float(tempval)
+    tempval               = self.engine.config.get("theme", "originy")
+    if tempval != "None":
+      self.originY        = float(tempval)
+    tempval               = self.engine.config.get("theme", "originz")
+    if tempval != "None":
+      self.originZ        = float(tempval)
+      
     #new
     
     self.partyMode        = False    
@@ -147,15 +168,11 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     #y=4 rotate back
     #y=2 rotate front
     #z=-3
-    print self.targetX, self.targetY, self.targetZ, self.originX, self.originY, self.originZ
+
     if self.pov == 1:
-      #y between 2 and 3
       self.camera.target    = (0.0, 1.4, 2.0)
       self.camera.origin    = (0.0, 2.6, -3.6)
     elif self.pov == 2:
-      #self.camera.target    = (0.0, 1.0, 8.0)
-      #self.camera.origin    = (0.0, 3.5, -4.0)
-      #oy 3.0-3.5
       self.camera.target    = (self.targetX, self.targetY, self.targetZ)
       self.camera.origin    = (self.originX, self.originY, self.originZ)
     else:
@@ -640,44 +657,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.session.world.createScene("GameResultsScene", libraryName = self.libraryName, songName = self.songName, players = self.playerList)
 
   def keyPressed(self, key, unicode, control = None):
-    x = .2
-    if key == ord('a'):
-      self.originX += x
-      self.setCamera()
-    elif key == ord('z'):
-      self.originX -= x
-      self.setCamera()
-    elif key == ord('s'):
-      self.originY += x
-      self.setCamera()
-    elif key == ord('x'):
-      self.originY -= x
-      self.setCamera()
-    elif key == ord('d'):
-      self.originZ += x
-      self.setCamera()
-    elif key == ord('c'):
-      self.originZ -= x
-      self.setCamera()
-
-    if key == ord('f'):
-      self.targetX += x
-      self.setCamera()
-    elif key == ord('v'):
-      self.targetX -= x
-      self.setCamera()
-    elif key == ord('g'):
-      self.targetY += x
-      self.setCamera()
-    elif key == ord('b'):
-      self.targetY -= x
-      self.setCamera()
-    elif key == ord('h'):
-      self.targetZ += x
-      self.setCamera()
-    elif key == ord('n'):
-      self.targetZ -= x
-      self.setCamera()
     #RF style HOPO playing
     if self.hopoStyle ==  0:
       res = self.keyPressed2(key, unicode, control)

@@ -1,3 +1,9 @@
+4.07
+   variables for custom POV
+   POV changes
+   proper clipping for notes
+   Made accuracy a float
+
 4.06
    Made folder rotation nicer
    Toggle for rotation

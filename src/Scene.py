@@ -218,6 +218,7 @@ class SceneClient(Scene, KeyListener):
     Scene.__init__(self, engine, owner, **args)
     self.session = session
     self.player = self.session.world.getLocalPlayer()
+    self.player2 = self.session.world.getPlayer2()
     self.controls = Player.Controls()
     self.createClient(**args)
 

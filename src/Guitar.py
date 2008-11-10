@@ -28,10 +28,15 @@ import Theme
 from OpenGL.GL import *
 import math
 
-KEYS = [Player.KEY1, Player.KEY2, Player.KEY3, Player.KEY4, Player.KEY5]
+#KEYS = [Player.KEY1, Player.KEY2, Player.KEY3, Player.KEY4, Player.KEY5]
+PLAYER1KEYS    = [Player.KEY1, Player.KEY2, Player.KEY3, Player.KEY4, Player.KEY5]
+PLAYER1ACTIONS = [Player.ACTION1, Player.ACTION2]
+PLAYER2KEYS    = [Player.PLAYER_2_KEY1, Player.PLAYER_2_KEY2, Player.PLAYER_2_KEY3, Player.PLAYER_2_KEY4, Player.PLAYER_2_KEY5]
+PLAYER2ACTIONS = [Player.PLAYER_2_ACTION1, Player.PLAYER_2_ACTION2]
+
 
 class Guitar:
-  def __init__(self, engine, editorMode = False):
+  def __init__(self, engine, editorMode = False, player = 0):
     self.engine         = engine
     self.boardWidth     = 4.0
     self.boardLength    = 12.0
@@ -51,6 +56,24 @@ class Guitar:
     self.targetBpm      = self.currentBpm
     self.lastBpmChange  = -1.0
     self.baseBeat       = 0.0
+
+    self.twoChord       = 0
+    self.hopoActive     = 0
+    self.hopoLast       = -1
+    self.hopoColor      = (0, .5, .5)
+    self.player         = player
+    
+    if player == 0:
+      self.keys = PLAYER1KEYS
+      self.actions = PLAYER1ACTIONS
+      #self.ACTION1 = Player.ACTION1
+      #self.ACTION2 = Player.ACTION2
+    else:
+      self.keys = PLAYER2KEYS
+      self.actions = PLAYER2ACTIONS
+      #self.ACTION1 = Player.PLAYER_2_ACTION1
+      #self.ACTION2 = Player.PLAYER_2_ACTION2    
+    
     self.setBPM(self.currentBpm)
 
     engine.resource.load(self,  "noteMesh", lambda: Mesh(engine.resource.fileName("note.dae")))
@@ -58,6 +81,15 @@ class Guitar:
     engine.loadSvgDrawing(self, "glowDrawing", "glow.svg",  textureSize = (128, 128))
     engine.loadSvgDrawing(self, "neckDrawing", "neck.svg",  textureSize = (256, 256))
 
+    hopo_color  = self.engine.config.get("theme", "hopo_color")
+    if hopo_color != "None":
+      self.hopoColor = Theme.hexToColor(hopo_color)
+      
+    self.twoChordMax = self.engine.config.get("player%d" % (player), "two_chord_max")
+    self.disableNoteSFX  = self.engine.config.get("video", "disable_notesfx")
+    self.disableFretSFX  = self.engine.config.get("video", "disable_fretsfx")
+    self.disableVBPM  = self.engine.config.get("game", "disable_vbpm")
+    
   def selectPreviousString(self):
     self.selectedString = (self.selectedString - 1) % self.strings
 
@@ -254,7 +286,7 @@ class Guitar:
 
     beatsPerUnit = self.beatsPerBoard / self.boardLength
     w = self.boardWidth / self.strings
-    track = song.track
+    track = song.track[self.player]
 
     for time, event in track.getEvents(pos - self.currentPeriod * 2, pos + self.currentPeriod * self.beatsPerBoard):
       if isinstance(event, Tempo):
@@ -356,7 +388,7 @@ class Guitar:
       f = self.fretWeight[n]
       c = self.fretColors[n]
 
-      if f and (controls.getState(Player.ACTION1) or controls.getState(Player.ACTION2)):
+      if f and (controls.getState(self.actions[0]) or controls.getState(self.actions[1])):
         f += 0.25
 
       glColor4f(.1 + .8 * c[0] + f, .1 + .8 * c[1] + f, .1 + .8 * c[2] + f, visibility)
@@ -384,7 +416,7 @@ class Guitar:
 
       f = self.fretActivity[n]
 
-      if f:
+      if f and self.disableFretSFX != True:
         glBlendFunc(GL_ONE, GL_ONE)
 
         s = 0.0
@@ -448,7 +480,7 @@ class Guitar:
 
     m1      = self.lateMargin
     m2      = self.lateMargin * 2
-    track   = song.track
+    track   = song.track[self.player]
     notes   = [(time, event) for time, event in track.getEvents(pos - m1, pos - m2) if isinstance(event, Note)]
     notes   = [(time, event) for time, event in notes if (time >= (pos - m2)) and (time <= (pos - m1))]
     notes   = [(time, event) for time, event in notes if not event.played]
@@ -456,7 +488,7 @@ class Guitar:
     return notes
     
   def getRequiredNotes(self, song, pos):
-    track = song.track
+    track   = song.track[self.player]
     notes = [(time, event) for time, event in track.getEvents(pos - self.lateMargin, pos + self.earlyMargin) if isinstance(event, Note)]
     notes = [(time, event) for time, event in notes if not event.played]
     notes = [(time, event) for time, event in notes if (time >= (pos - self.lateMargin)) and (time <= (pos + self.earlyMargin))]
@@ -481,7 +513,7 @@ class Guitar:
       # matching keys?
       requiredKeys = [note.number for time, note in notes]
 
-      for n, k in enumerate(KEYS):
+      for n, k in enumerate(self.keys):
         if n in requiredKeys and not controls.getState(k):
           return False
         if not n in requiredKeys and controls.getState(k):
@@ -538,15 +570,15 @@ class Guitar:
     
     # update frets
     if self.editorMode:
-      if (controls.getState(Player.ACTION1) or controls.getState(Player.ACTION2)):
-        activeFrets = [i for i, k in enumerate(KEYS) if controls.getState(k)] or [self.selectedString]
+      if (controls.getState(self.actions[0]) or controls.getState(self.actions[1])):
+        activeFrets = [i for i, k in enumerate(self.keys) if controls.getState(k)] or [self.selectedString]
       else:
         activeFrets = []
     else:
       activeFrets = [note.number for time, note in self.playedNotes]
     
     for n in range(self.strings):
-      if controls.getState(KEYS[n]) or (self.editorMode and self.selectedString == n):
+      if controls.getState(self.keys[n]) or (self.editorMode and self.selectedString == n):
         self.fretWeight[n] = 0.5
       else:
         self.fretWeight[n] = max(self.fretWeight[n] - ticks / 64.0, 0.0)

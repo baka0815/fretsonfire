@@ -34,6 +34,7 @@ import MainMenu
 import Dialogs
 import Player
 import Song
+import Config
 
 class Lobby(Layer, KeyListener, MessageHandler):
   def __init__(self, engine, session, singlePlayer = False, tutorial = False):
@@ -50,7 +51,9 @@ class Lobby(Layer, KeyListener, MessageHandler):
 
     if self.singlePlayer:
       self.session.world.createPlayer(_("Player"))
+      self.session.world.createPlayer(_("Player2"))
       if self.tutorial:
+        Config.set("game", "selected_library", "songs")
         self.session.world.startGame(libraryName = Song.DEFAULT_LIBRARY, songName = "tutorial")
       else:
         self.session.world.startGame()

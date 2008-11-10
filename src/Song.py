@@ -34,6 +34,7 @@ import Cerealizer
 import urllib
 import Version
 import Theme
+import copy
 from Language import _
 
 DEFAULT_LIBRARY         = "songs"
@@ -42,6 +43,33 @@ AMAZING_DIFFICULTY      = 0
 MEDIUM_DIFFICULTY       = 1
 EASY_DIFFICULTY         = 2
 SUPAEASY_DIFFICULTY     = 3
+
+FOF_TYPE                = 0
+GH1_TYPE                = 1
+GH2_TYPE                = 2
+
+GUITAR_PART             = 0
+RHYTHM_PART             = 1
+BASS_PART               = 2
+LEAD_PART               = 3
+
+class Part:
+  def __init__(self, id, text):
+    self.id   = id
+    self.text = text
+    
+  def __str__(self):
+    return self.text
+
+  def __repr__(self):
+    return self.text
+
+parts = {
+  GUITAR_PART: Part(GUITAR_PART, _("Guitar")),
+  RHYTHM_PART: Part(RHYTHM_PART, _("Rhythm Guitar")),
+  BASS_PART:   Part(BASS_PART,   _("Bass Guitar")),
+  LEAD_PART:   Part(LEAD_PART,   _("Lead Guitar")),
+}
 
 class Difficulty:
   def __init__(self, id, text):
@@ -67,6 +95,7 @@ class SongInfo(object):
     self.fileName      = infoFileName
     self.info          = ConfigParser()
     self._difficulties = None
+    self._parts        = None
 
     try:
       self.info.read(infoFileName)
@@ -87,10 +116,58 @@ class SongInfo(object):
           continue
         for score, stars, name, hash in scores[difficulty.id]:
           if self.getScoreHash(difficulty, score, stars, name) == hash:
-            self.addHighscore(difficulty, score, stars, name)
+            self.addHighscore(difficulty, score, stars, name, part = parts[GUITAR_PART])
           else:
             Log.warn("Weak hack attempt detected. Better luck next time.")
 
+    self.highScoresRhythm = {}
+    
+    scores = self._get("scores_rhythm", str, "")
+    if scores:
+      scores = Cerealizer.loads(binascii.unhexlify(scores))
+      for difficulty in scores.keys():
+        try:
+          difficulty = difficulties[difficulty]
+        except KeyError:
+          continue
+        for score, stars, name, hash in scores[difficulty.id]:
+          if self.getScoreHash(difficulty, score, stars, name) == hash:
+            self.addHighscore(difficulty, score, stars, name, part = parts[RHYTHM_PART])
+          else:
+            Log.warn("Weak hack attempt detected. Better luck next time.")
+
+    self.highScoresBass = {}
+    
+    scores = self._get("scores_bass", str, "")
+    if scores:
+      scores = Cerealizer.loads(binascii.unhexlify(scores))
+      for difficulty in scores.keys():
+        try:
+          difficulty = difficulties[difficulty]
+        except KeyError:
+          continue
+        for score, stars, name, hash in scores[difficulty.id]:
+          if self.getScoreHash(difficulty, score, stars, name) == hash:
+            self.addHighscore(difficulty, score, stars, name, part = parts[BASS_PART])
+          else:
+            Log.warn("Weak hack attempt detected. Better luck next time.")
+
+    self.highScoresLead = {}
+    
+    scores = self._get("scores_lead", str, "")
+    if scores:
+      scores = Cerealizer.loads(binascii.unhexlify(scores))
+      for difficulty in scores.keys():
+        try:
+          difficulty = difficulties[difficulty]
+        except KeyError:
+          continue
+        for score, stars, name, hash in scores[difficulty.id]:
+          if self.getScoreHash(difficulty, score, stars, name) == hash:
+            self.addHighscore(difficulty, score, stars, name, part = parts[LEAD_PART])
+          else:
+            Log.warn("Weak hack attempt detected. Better luck next time.")            
+            
   def _set(self, attr, value):
     if not self.info.has_section("song"):
       self.info.add_section("song")
@@ -100,14 +177,28 @@ class SongInfo(object):
       value = str(value)
     self.info.set("song", attr, value)
     
-  def getObfuscatedScores(self):
+  def getObfuscatedScores(self, part = parts[GUITAR_PART]):
     s = {}
-    for difficulty in self.highScores.keys():
-      s[difficulty.id] = [(score, stars, name, self.getScoreHash(difficulty, score, stars, name)) for score, stars, name in self.highScores[difficulty]]
+    if part == parts[GUITAR_PART]:
+      highScores = self.highScores
+    elif part == parts[RHYTHM_PART]:
+      highScores = self.highScoresRhythm
+    elif part == parts[BASS_PART]:
+      highScores = self.highScoresBass
+    elif part == parts[LEAD_PART]:
+      highScores = self.highScoresLead
+    else:
+      highScores = self.highScores
+      
+    for difficulty in highScores.keys():
+      s[difficulty.id] = [(score, stars, name, self.getScoreHash(difficulty, score, stars, name)) for score, stars, name in highScores[difficulty]]
     return binascii.hexlify(Cerealizer.dumps(s))
 
   def save(self):
-    self._set("scores", self.getObfuscatedScores())
+    self._set("scores",        self.getObfuscatedScores(part = parts[GUITAR_PART]))
+    self._set("scores_rhythm", self.getObfuscatedScores(part = parts[RHYTHM_PART]))
+    self._set("scores_bass",   self.getObfuscatedScores(part = parts[BASS_PART]))
+    self._set("scores_lead",   self.getObfuscatedScores(part = parts[LEAD_PART]))
     
     f = open(self.fileName, "w")
     self.info.write(f)
@@ -145,6 +236,59 @@ class SongInfo(object):
       self._difficulties = difficulties.values()
     return self._difficulties
 
+  def getParts(self):
+    if self._parts is not None:
+      return self._parts
+
+    # See which parts are available
+    try:
+      noteFileName = os.path.join(os.path.dirname(self.fileName), "notes.mid")
+      info = MidiPartsReader()
+
+      midiIn = midi.MidiInFile(info, noteFileName)
+      try:
+        midiIn.read()
+      except MidiPartsReader.Done:
+        pass
+      if info.parts == []:
+        part = parts[GUITAR_PART]
+        info.parts.append(part)
+      info.parts.sort(lambda b, a: cmp(b.id, a.id))
+      self._parts = info.parts
+    except:
+      self._parts = parts.values()
+    return self._parts
+  
+  def getFrets(self):
+    return self._get("frets")
+
+  def setFrets(self, value):
+    self._set("frets", value)
+    
+  def getVersion(self):
+    return self._get("version")
+
+  def setVersion(self, value):
+    self._set("version", value)
+
+  def getTags(self):
+    return self._get("tags")
+
+  def setTags(self, value):
+    self._set("tags", value)
+
+  def getHopo(self):
+    return self._get("hopo")
+
+  def setHopo(self, value):
+    self._set("hopo", value)
+
+  def getCount(self):
+    return self._get("count")
+
+  def setCount(self, value):
+    self._set("count", value)
+    
   def getName(self):
     return self._get("name")
 
@@ -174,9 +318,20 @@ class SongInfo(object):
   def setDelay(self, value):
     return self._set("delay", value)
     
-  def getHighscores(self, difficulty):
+  def getHighscores(self, difficulty, part = parts[GUITAR_PART]):
+    if part == parts[GUITAR_PART]:
+      highScores = self.highScores
+    elif part == parts[RHYTHM_PART]:
+      highScores = self.highScoresRhythm
+    elif part == parts[BASS_PART]:
+      highScores = self.highScoresBass
+    elif part == parts[LEAD_PART]:
+      highScores = self.highScoresLead
+    else:
+      highScores = self.highScores
+      
     try:
-      return self.highScores[difficulty]
+      return highScores[difficulty]
     except KeyError:
       return []
       
@@ -196,13 +351,24 @@ class SongInfo(object):
       return False
     return True
   
-  def addHighscore(self, difficulty, score, stars, name):
-    if not difficulty in self.highScores:
-      self.highScores[difficulty] = []
-    self.highScores[difficulty].append((score, stars, name))
-    self.highScores[difficulty].sort(lambda a, b: {True: -1, False: 1}[a[0] > b[0]])
-    self.highScores[difficulty] = self.highScores[difficulty][:5]
-    for i, scores in enumerate(self.highScores[difficulty]):
+  def addHighscore(self, difficulty, score, stars, name, part = parts[GUITAR_PART]):
+    if part == parts[GUITAR_PART]:
+      highScores = self.highScores
+    elif part == parts[RHYTHM_PART]:
+      highScores = self.highScoresRhythm
+    elif part == parts[BASS_PART]:
+      highScores = self.highScoresBass
+    elif part == parts[LEAD_PART]:
+      highScores = self.highScoresLead
+    else:
+      highScores = self.highScores
+      
+    if not difficulty in highScores:
+      highScores[difficulty] = []
+    highScores[difficulty].append((score, stars, name))
+    highScores[difficulty].sort(lambda a, b: {True: -1, False: 1}[a[0] > b[0]])
+    highScores[difficulty] = highScores[difficulty][:5]
+    for i, scores in enumerate(highScores[difficulty]):
       _score, _stars, _name = scores
       if _score == score and _stars == stars and _name == name:
         return i
@@ -217,6 +383,16 @@ class SongInfo(object):
   tutorial      = property(isTutorial)
   difficulties  = property(getDifficulties)
   cassetteColor = property(getCassetteColor, setCassetteColor)
+  #New RF-mod Items
+  parts         = property(getParts)
+  frets         = property(getFrets, setFrets)
+  version       = property(getVersion, setVersion)
+  tags          = property(getTags, setTags)
+  hopo          = property(getHopo, setHopo)
+  count         = property(getCount, setCount)
+  #May no longer be necessary
+  folder        = False
+
 
 class LibraryInfo(object):
   def __init__(self, libraryName, infoFileName):
@@ -278,8 +454,7 @@ class LibraryInfo(object):
   
   def setColor(self, color):
     self._set("color", Theme.colorToHex(color))
-    
-    
+        
   name          = property(getName, setName)
   color         = property(getColor, setColor)
 
@@ -288,12 +463,16 @@ class Event:
     self.length = length
 
 class Note(Event):
-  def __init__(self, number, length, special = False, tappable = False):
+  def __init__(self, number, length, special = False, tappable = False, hopo = 0):
     Event.__init__(self, length)
     self.number   = number
     self.played   = False
     self.special  = special
     self.tappable = tappable
+    #RF-mod
+    self.hopo    = hopo
+    self.hopod   = False
+    self.skipped = False
     
   def __repr__(self):
     return "<#%d>" % self.number
@@ -364,6 +543,8 @@ class Track:
       for time, event in eventList:
         if isinstance(event, Note):
           event.played = False
+          event.hopod = False
+          event.skipped = False
 
   def update(self):
     # Determine which notes are tappable. The rules are:
@@ -420,16 +601,24 @@ class Track:
         currentTicks = ticks
 
 class Song(object):
-  def __init__(self, engine, infoFileName, songTrackName, guitarTrackName, rhythmTrackName, noteFileName, scriptFileName = None):
+  def __init__(self, engine, infoFileName, songTrackName, guitarTrackName, rhythmTrackName, noteFileName, scriptFileName = None, partlist = [parts[GUITAR_PART]]):
     self.engine        = engine
-    self.info          = SongInfo(infoFileName)
-    self.tracks        = [Track() for t in range(len(difficulties))]
-    self.difficulty    = difficulties[AMAZING_DIFFICULTY]
-    self._playing      = False
-    self.start         = 0.0
-    self.noteFileName  = noteFileName
-    self.bpm           = None
-    self.period        = 0
+    self.info         = SongInfo(infoFileName)
+    self.tracks       = [[Track() for t in range(len(difficulties))] for i in range(len(partlist))]
+    self.difficulty   = [difficulties[AMAZING_DIFFICULTY] for i in partlist]
+    self._playing     = False
+    self.start        = 0.0
+    self.noteFileName = noteFileName
+    self.bpm          = None
+    self.period       = 0
+    self.parts        = partlist
+    self.delay         = self.engine.config.get("audio", "delay")
+    self.delay         += self.info.delay
+    self.missVolume    = self.engine.config.get("audio", "miss_volume")
+
+    #RF-mod skip if folder (not needed anymore?)
+    #if self.info.folder == True:
+    #  return
 
     # load the tracks
     if songTrackName:
@@ -449,8 +638,8 @@ class Song(object):
         self.rhythmTrack = Audio.StreamingSound(self.engine, self.engine.audio.getChannel(2), rhythmTrackName)
     except Exception, e:
       Log.warn("Unable to load rhythm track: %s" % e)
-	
-    # load the notes
+
+    # load the notes   
     if noteFileName:
       midiIn = midi.MidiInFile(MidiReader(self), noteFileName)
       midiIn.read()
@@ -461,8 +650,10 @@ class Song(object):
       scriptReader.read()
 
     # update all note tracks
-    for track in self.tracks:
-      track.update()
+    #HOPO done here (should be in guitar scene, only do the track you are playing)
+    for tracks in self.tracks:
+      for track in tracks:
+        track.update()
 
   def getHash(self):
     h = sha.new()
@@ -491,6 +682,8 @@ class Song(object):
   def play(self, start = 0.0):
     self.start = start
     self.music.play(0, start / 1000.0)
+    #RF-mod No longer needed?
+    self.music.setVolume(1.0)
     if self.guitarTrack:
       assert start == 0.0
       self.guitarTrack.play()
@@ -507,22 +700,39 @@ class Song(object):
     self.music.unpause()
     self.engine.audio.unpause()
 
+  def setInstrumentVolume(self, volume, part):
+    if part == parts[GUITAR_PART]:
+      self.setGuitarVolume(volume)
+    else:
+      self.setRhythmVolume(volume)
+      
   def setGuitarVolume(self, volume):
     if self.guitarTrack:
-      self.guitarTrack.setVolume(volume)
+      if volume == 0:
+        self.guitarTrack.setVolume(self.missVolume)
+      else:
+        self.guitarTrack.setVolume(volume)
+    #This is only used if there is no guitar.ogg to lower the volume of song.ogg instead of muting this track
     else:
-      self.music.setVolume(volume)
+      if volume == 0:
+        self.music.setVolume(self.missVolume * 1.5)
+      else:
+        self.music.setVolume(volume)
 
   def setRhythmVolume(self, volume):
     if self.rhythmTrack:
-      self.rhythmTrack.setVolume(volume)
+      if volume == 0:
+        self.rhythmTrack.setVolume(self.missVolume)
+      else:
+        self.rhythmTrack.setVolume(volume)
   
   def setBackgroundVolume(self, volume):
     self.music.setVolume(volume)
   
   def stop(self):
-    for track in self.tracks:
-      track.reset()
+    for tracks in self.tracks:
+      for track in tracks:
+        track.reset()
       
     self.music.stop()
     self.music.rewind()
@@ -533,9 +743,13 @@ class Song(object):
     self._playing = False
 
   def fadeout(self, time):
-    for track in self.tracks:
-      track.reset()
-      
+    for tracks in self.tracks:
+      for track in tracks:
+        track.reset()
+    #RF-mod (not needed?)
+    #if self.info.folder == True:
+    #  return
+    
     self.music.fadeout(time)
     if self.guitarTrack:
       self.guitarTrack.fadeout(time)
@@ -550,7 +764,7 @@ class Song(object):
       pos = self.music.getPosition()
     if pos < 0.0:
       pos = 0.0
-    return pos + self.start
+    return pos + self.start - self.delay
 
   def isPlaying(self):
     return self._playing and self.music.isPlaying()
@@ -562,7 +776,7 @@ class Song(object):
     pass
 
   def getTrack(self):
-    return self.tracks[self.difficulty.id]
+    return [self.tracks[i][self.difficulty[i].id] for i in range(len(self.difficulty))]
 
   track = property(getTrack)
 
@@ -610,7 +824,7 @@ class MidiWriter:
       self.out.tempo(int(60.0 * 10.0**6 / 122.0))
 
     # Collect all events
-    events = [zip([difficulty] * len(track.getAllEvents()), track.getAllEvents()) for difficulty, track in enumerate(self.song.tracks)]
+    events = [zip([difficulty] * len(track.getAllEvents()), track.getAllEvents()) for difficulty, track in enumerate(self.song.tracks[0])]
     events = reduce(lambda a, b: a + b, events)
     events.sort(lambda a, b: {True: 1, False: -1}[a[1][0] > b[1][0]])
     heldNotes = []
@@ -620,7 +834,7 @@ class MidiWriter:
       if isinstance(event, Note):
         time = self.midiTime(time)
 
-        # Turn of any held notes that were active before this point in time
+        # Turn off any held notes that were active before this point in time
         for note, endTime in list(heldNotes):
           if endTime <= time:
             self.out.update_time(endTime, relative = 0)
@@ -633,7 +847,7 @@ class MidiWriter:
         heldNotes.append((note, time + self.midiTime(event.length)))
         heldNotes.sort(lambda a, b: {True: 1, False: -1}[a[1] > b[1]])
 
-    # Turn of any remaining notes
+    # Turn off any remaining notes
     for note, endTime in heldNotes:
       self.out.update_time(endTime, relative = 0)
       self.out.note_off(0, note)
@@ -663,7 +877,8 @@ class ScriptReader:
         continue
 
       for track in self.song.tracks:
-        track.addEvent(time, event)
+        for t in track:
+          t.addEvent(time, event)
 
 class MidiReader(midi.MidiOutStream):
   def __init__(self, song):
@@ -673,16 +888,33 @@ class MidiReader(midi.MidiOutStream):
     self.velocity  = {}
     self.ticksPerBeat = 480
     self.tempoMarkers = []
+    self.partTrack = 0
+    self.partnumber = -1
 
   def addEvent(self, track, event, time = None):
+    if self.partnumber == -1:
+      #Looks like notes have started appearing before any part information. Lets assume its part0
+      self.partnumber = self.song.parts[0]
+    
+    if (self.partnumber == None) and isinstance(event, Note):
+      return True
+
     if time is None:
       time = self.abs_time()
     assert time >= 0
+    
     if track is None:
       for t in self.song.tracks:
-        t.addEvent(time, event)
-    elif track < len(self.song.tracks):
-      self.song.tracks[track].addEvent(time, event)
+        for s in t:
+          s.addEvent(time, event)
+    else:
+      
+      tracklist = [i for i,j in enumerate(self.song.parts) if self.partnumber == j]
+      for i in tracklist:
+        #Each track needs it's own copy of the event, otherwise they'll interfere
+        eventcopy = copy.deepcopy(event)
+        if track < len(self.song.tracks[i]):
+          self.song.tracks[i][track].addEvent(time, eventcopy)
 
   def abs_time(self):
     def ticksToBeats(ticks, bpm):
@@ -707,6 +939,8 @@ class MidiReader(midi.MidiOutStream):
 
   def header(self, format, nTracks, division):
     self.ticksPerBeat = division
+    if nTracks == 2:
+      self.partTrack = 1
     
   def tempo(self, value):
     bpm = 60.0 * 10.0**6 / value
@@ -715,13 +949,31 @@ class MidiReader(midi.MidiOutStream):
       self.song.setBpm(bpm)
     self.addEvent(None, Tempo(bpm))
 
+  def sequence_name(self, text):
+    #if self.get_current_track() == 0:
+    self.partnumber = None
+      
+    if (text == "PART GUITAR" or text == "T1 GEMS" or text == "Click" or text == "MIDI out") and parts[GUITAR_PART] in self.song.parts:
+      self.partnumber = parts[GUITAR_PART]
+    elif text == "PART RHYTHM" and parts[RHYTHM_PART] in self.song.parts:
+      self.partnumber = parts[RHYTHM_PART]
+    elif text == "PART BASS" and parts[BASS_PART] in self.song.parts:
+      self.partnumber = parts[BASS_PART]
+    elif text == "PART GUITAR COOP" and parts[LEAD_PART] in self.song.parts:
+      self.partnumber = parts[LEAD_PART]
+    elif self.get_current_track() <= 1 and parts [GUITAR_PART] in self.song.parts:
+      #Oh dear, the track wasn't recognised, lets just assume it was the guitar part
+      self.partnumber = parts[GUITAR_PART]
+      
   def note_on(self, channel, note, velocity):
-    if self.get_current_track() > 1: return
+    if self.partnumber == None:
+      return
     self.velocity[note] = velocity
     self.heldNotes[(self.get_current_track(), channel, note)] = self.abs_time()
 
   def note_off(self, channel, note, velocity):
-    if self.get_current_track() > 1: return
+    if self.partnumber == None:
+      return
     try:
       startTime = self.heldNotes[(self.get_current_track(), channel, note)]
       endTime   = self.abs_time()
@@ -749,27 +1001,63 @@ class MidiInfoReader(midi.MidiOutStream):
       diff = difficulties[track]
       if not diff in self.difficulties:
         self.difficulties.append(diff)
+        #ASSUMES ALL parts (lead, rhythm, bass) have same difficulties of guitar part!
         if len(self.difficulties) == len(difficulties):
-          raise Done
+           raise Done
     except KeyError:
       pass
 
-def loadSong(engine, name, library = DEFAULT_LIBRARY, seekable = False, playbackOnly = False, notesOnly = False):
+class MidiPartsReader(midi.MidiOutStream):
+  # We exit via this exception so that we don't need to read the whole file in
+  class Done: pass
+  
+  def __init__(self):
+    midi.MidiOutStream.__init__(self)
+    self.parts = []
+    
+  def sequence_name(self, text):
+
+    if text == "PART GUITAR" or text == "T1 GEMS" or text == "Click":
+      if not parts[GUITAR_PART] in self.parts:
+        part = parts[GUITAR_PART]
+        self.parts.append(part)
+
+    if text == "PART RHYTHM":
+      if not parts[RHYTHM_PART] in self.parts:
+        part = parts[RHYTHM_PART]
+        self.parts.append(part)        
+     
+    if text == "PART BASS":
+      if not parts[BASS_PART] in self.parts:
+        part = parts[BASS_PART]
+        self.parts.append(part)
+
+    if text == "PART GUITAR COOP":
+      if not parts[LEAD_PART] in self.parts:
+        part = parts[LEAD_PART]
+        self.parts.append(part)
+
+def loadSong(engine, name, library = DEFAULT_LIBRARY, seekable = False, playbackOnly = False, notesOnly = False, part = [parts[GUITAR_PART]]):
+  #RF-mod (not needed?)
+  #library = Config.get("game", "selected_library")
   guitarFile = engine.resource.fileName(library, name, "guitar.ogg")
   songFile   = engine.resource.fileName(library, name, "song.ogg")
   rhythmFile = engine.resource.fileName(library, name, "rhythm.ogg")
   noteFile   = engine.resource.fileName(library, name, "notes.mid", writable = True)
   infoFile   = engine.resource.fileName(library, name, "song.ini", writable = True)
   scriptFile = engine.resource.fileName(library, name, "script.txt")
+  previewFile = engine.resource.fileName(library, name, "preview.ogg")
   
   if seekable:
     if os.path.isfile(guitarFile) and os.path.isfile(songFile):
       # TODO: perform mixing here
       songFile   = guitarFile
       guitarFile = None
+      rhythmFile = ""
     else:
       songFile   = guitarFile
       guitarFile = None
+      rhythmFile = ""
       
   if not os.path.isfile(songFile):
     songFile   = guitarFile
@@ -780,15 +1068,37 @@ def loadSong(engine, name, library = DEFAULT_LIBRARY, seekable = False, playback
   
   if playbackOnly:
     noteFile = None
+    if os.path.isfile(previewFile):
+      songFile = previewFile
+      guitarFile = None
+      rhythmFile = None
+      
+  if notesOnly:
+    songFile = None
+    guitarFile = None
+    rhythmFile = None
+    previewFile = None
+
+  if songFile != None and guitarFile != None:
+    #check for the same file
+    songStat = os.stat(songFile)
+    guitarStat = os.stat(guitarFile)
+    #Simply checking file size, no md5
+    if songStat.st_size == guitarStat.st_size:
+      guitarFile = None
   
-  song       = Song(engine, infoFile, songFile, guitarFile, rhythmFile, noteFile, scriptFile)
+  song       = Song(engine, infoFile, songFile, guitarFile, rhythmFile, noteFile, scriptFile, part)
   return song
 
 def loadSongInfo(engine, name, library = DEFAULT_LIBRARY):
+  #RF-mod (not needed?)
+  #library = Config.get("game", "selected_library")
   infoFile   = engine.resource.fileName(library, name, "song.ini", writable = True)
   return SongInfo(infoFile)
   
 def createSong(engine, name, guitarTrackName, backgroundTrackName, rhythmTrackName = None, library = DEFAULT_LIBRARY):
+  #RF-mod (not needed?)
+  #library = Config.get("game", "selected_library")
   path = os.path.abspath(engine.resource.fileName(library, name, writable = True))
   os.makedirs(path)
   

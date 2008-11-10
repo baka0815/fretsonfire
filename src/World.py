@@ -57,7 +57,7 @@ class World(MessageHandler):
     self.scenes = []
 
   def handlePlayerJoined(self, sender, id, owner, name):
-    player = Player(owner, name)
+    player = Player(owner, name, len(self.players))
     self.players.append(player)
     self.objects[id] = player
 
@@ -240,6 +240,9 @@ class WorldClient(World):
     for player in self.players:
       if player.owner == self.session.id:
         return player
+      
+  def getPlayer2(self):
+    return self.players[1]
         
   def handleSceneCreated(self, sender, id, owner, name, args):
     scene = SceneFactory.create(engine = self.engine, name = name, owner = owner, session = self.session, **args)

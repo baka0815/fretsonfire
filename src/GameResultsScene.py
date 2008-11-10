@@ -33,7 +33,9 @@ from Language import _
 import pygame
 import math
 import random
+
 from OpenGL.GL import *
+import Config
 
 class GameResultsScene:
   pass
@@ -42,18 +44,23 @@ class GameResultsSceneServer(GameResultsScene, SceneServer):
   pass
 
 class GameResultsSceneClient(GameResultsScene, SceneClient):
-  def createClient(self, libraryName, songName):
+  def createClient(self, libraryName, songName, players = None):
     self.libraryName     = libraryName
     self.songName        = songName
-    self.stars           = 0
-    self.accuracy        = 0
+    self.stars           = [0 for i in players]
+    self.accuracy        = [0 for i in players]
     self.counter         = 0
     self.showHighscores  = False
-    self.highscoreIndex  = None
+    self.highscoreIndex  = [None for i in players]
     self.taunt           = None
     self.uploadingScores = False
     self.nextScene       = None
-    
+    self.offset          = None
+    self.pauseScroll     = None
+    self.scorePart       = None
+    self.scoreDifficulty = None
+    self.playerList      = players
+
     items = [
       (_("Replay"),            self.replay),
       (_("Change Song"),       self.changeSong),
@@ -61,7 +68,7 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
     ]
     self.menu = Menu(self.engine, items, onCancel = self.quit, pos = (.2, .5))
       
-    self.engine.resource.load(self, "song", lambda: Song.loadSong(self.engine, songName, library = self.libraryName, notesOnly = True), onLoad = self.songLoaded)
+    self.engine.resource.load(self, "song", lambda: Song.loadSong(self.engine, songName, library = self.libraryName, notesOnly = True, part = [player.part for player in self.playerList]), onLoad = self.songLoaded)
     self.engine.loadSvgDrawing(self, "background", "keyboard.svg")
     Dialogs.showLoadingScreen(self.engine, lambda: self.song, text = _("Chilling..."))
     
@@ -70,26 +77,36 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
 
     c = self.controls.keyPressed(key)
     if self.song and (c in [Player.KEY1, Player.KEY2, Player.CANCEL, Player.ACTION1, Player.ACTION2] or key == pygame.K_RETURN):
-      scores = self.song.info.getHighscores(self.player.difficulty)
-      if not scores or self.player.score > scores[-1][0] or len(scores) < 5:
-        if self.player.cheating:
-          Dialogs.showMessage(self.engine, _("No highscores for cheaters!"))
-        else:
-          name = Dialogs.getText(self.engine, _("%d points is a new high score! Please enter your name:") % self.player.score, self.player.name)
-          if name:
-            self.player.name = name
-          self.highscoreIndex = self.song.info.addHighscore(self.player.difficulty, self.player.score, self.stars, self.player.name)
-          self.song.info.save()
+      for i,player in enumerate(self.playerList):
+        scores = self.song.info.getHighscores(player.difficulty, part = player.part)
+        if not scores or player.score > scores[-1][0] or len(scores) < 5:
+          if player.cheating:
+            Dialogs.showMessage(self.engine, _("No highscores for cheaters!"))
+          else:
+            name = Dialogs.getText(self.engine, _("%d points is a new high score! Player " + str(i+1) + " enter your name") % player.score, player.name)
+            if name:
+              player.name = name
+            self.highscoreIndex[i] = self.song.info.addHighscore(player.difficulty, player.score, self.stars[i], player.name, part = player.part)
+            self.song.info.save()
           
-          if self.engine.config.get("game", "uploadscores"):
-            self.uploadingScores = True
-            fn = lambda: self.song.info.uploadHighscores(self.engine.config.get("game", "uploadurl"), self.song.getHash())
-            self.engine.resource.load(self, "uploadResult", fn)
+            if self.engine.config.get("game", "uploadscores"):
+              self.uploadingScores = True
+              fn = lambda: self.song.info.uploadHighscores(self.engine.config.get("game", "uploadurl"), self.song.getHash())
+              self.engine.resource.load(self, "uploadResult", fn)
 
+      if len(self.playerList) > 1 and self.playerList[0].part == self.playerList[1].part and self.playerList[0].difficulty == self.playerList[1].difficulty and self.highscoreIndex[0] != None and self.highscoreIndex[1] != None and self.highscoreIndex[1] <= self.highscoreIndex[0]:
+        self.highscoreIndex[0] += 1
+      
+      if self.song.info.count:
+        count = int(self.song.info.count)
+      else:
+        count = 0
+      count += 1
+      self.song.info.count = "%d" % count
+      self.song.info.save()
       self.showHighscores = True
       self.engine.view.pushLayer(self.menu)
       return True
-    
     return ret
 
   def hidden(self):
@@ -98,47 +115,84 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
       self.nextScene()
     
   def quit(self):
+    self.background = None
+    self.song = None
     self.engine.view.popLayer(self.menu)
     self.session.world.finishGame()
     
   def replay(self):
+    self.background = None
+    self.song = None
     self.engine.view.popLayer(self.menu)
     self.session.world.deleteScene(self)
-    self.nextScene = lambda: self.session.world.createScene("GuitarScene", libraryName = self.libraryName, songName = self.songName)
+    self.nextScene = lambda: self.session.world.createScene("GuitarScene", libraryName = self.libraryName, songName = self.songName, Players = len(self.playerList))
   
   def changeSong(self):
+    self.background = None
+    self.song = None
     self.engine.view.popLayer(self.menu)
     self.session.world.deleteScene(self)
     self.nextScene = lambda: self.session.world.createScene("SongChoosingScene")
    
   def songLoaded(self, song):
-    song.difficulty = self.player.difficulty
-    notes = len([1 for time, event in song.track.getAllEvents() if isinstance(event, Song.Note)])
+    for i,player in enumerate(self.playerList):
+      song.difficulty[i] = player.difficulty
+      notes = len([1 for time, event in song.track[i].getAllEvents() if isinstance(event, Song.Note)])
     
-    if notes:
-      # 5 stars at 95%, 4 stars at 75%
-      f = float(self.player.notesHit) / notes
-      self.stars    = int(5.0   * (f + .05))
-      self.accuracy = int(100.0 * f)
+      if notes:
+        # 5 stars at 95%, 4 stars at 75%
+        f = float(player.notesHit) / notes
+        self.stars[i]    = int(5.0   * (f + .05))
+        self.accuracy[i] = int(100.0 * f)
 
-      taunt = None
-      if self.player.score == 0:
-        taunt = "jurgen1.ogg"
-      elif self.accuracy >= 99.0:
-        taunt = "myhero.ogg"
-      elif self.stars in [0, 1]:
-        taunt = random.choice(["jurgen2.ogg", "jurgen3.ogg", "jurgen4.ogg", "jurgen5.ogg"])
-      elif self.stars == 5:
-        taunt = random.choice(["perfect1.ogg", "perfect2.ogg", "perfect3.ogg"])
+        if self.accuracy[i] == 100.0:
+          self.stars[i] = 6
+        
+        taunt = None
+        if player.score == 0:
+          taunt = "jurgen1.ogg"
+        elif self.accuracy[i] >= 99.0:
+          taunt = "myhero.ogg"
+        elif self.stars[i] in [0, 1]:
+          taunt = random.choice(["jurgen2.ogg", "jurgen3.ogg", "jurgen4.ogg", "jurgen5.ogg"])
+        elif self.stars[i] == 5:
+          taunt = random.choice(["perfect1.ogg", "perfect2.ogg", "perfect3.ogg"])
         
       if taunt:
         self.engine.resource.load(self, "taunt", lambda: Sound(self.engine.resource.fileName(taunt)))
 
+  def nextHighScore(self):
+    if self.scoreDifficulty == None:
+      self.scoreDifficulty = self.player.difficulty
+    if self.scorePart == None:
+      self.scorePart = self.player.part
+      return
+    
+    found = 0  
+    for part in self.song.info.parts:
+      for difficulty in self.song.info.difficulties:
+        if found == 1:
+          self.scoreDifficulty = difficulty
+          self.scorePart = part
+          return
+        
+        if self.scoreDifficulty == difficulty and self.scorePart == part:
+          found = 1
+
+    self.scoreDifficulty = self.song.info.difficulties[0]
+    self.scorePart = self.song.info.parts[0]
+        
   def run(self, ticks):
     SceneClient.run(self, ticks)
     self.time    += ticks / 50.0
     self.counter += ticks
-    
+
+    if self.offset != None:
+      self.offset -= ticks / 20000.0
+    if self.pauseScroll != None:
+      self.pauseScroll += ticks / 20000.0
+      
+
     if self.counter > 5000 and self.taunt:
       self.taunt.setVolume(self.engine.config.get("audio", "guitarvol"))
       self.taunt.play()
@@ -164,64 +218,135 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
       t = self.time / 100
       w, h, = self.engine.view.geometry[2:4]
       r = .5
-      self.background.transform.reset()
-      self.background.transform.translate(v * 2 * w + w / 2 + math.cos(t / 2) * w / 2 * r, h / 2 + math.sin(t) * h / 2 * r)
-      self.background.transform.rotate(-t)
-      self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
-      self.background.draw()
+      if self.background:
+        self.background.transform.reset()
+        self.background.transform.translate(v * 2 * w + w / 2 + math.cos(t / 2) * w / 2 * r, h / 2 + math.sin(t) * h / 2 * r)
+        self.background.transform.rotate(-t)
+        self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
+        self.background.draw()
       
       if self.showHighscores:
-        scale = 0.0017
-        d = self.player.difficulty
+        for j,player in enumerate(self.playerList):
+          #self.engine.view.setViewportHalf(len(self.playerList),j)
+          scale = 0.0017
+          endScroll = -.14
         
-        text = _("Highest Scores (%s)") % d
-        w, h = font.getStringSize(text)
-        Theme.setBaseColor(1 - v)
-        font.render(text, (.5 - w / 2, .05 - v))
+          if self.pauseScroll != None:
+            self.offset = 0.0
+
+          if self.pauseScroll > 0.5:
+            self.pauseScroll = None
+          if self.offset == None:
+            self.offset = 0
+            self.pauseScroll = 0
+            self.nextHighScore()
+
+          
+          text = _("%s High Scores") % (self.scorePart)
+          w, h = font.getStringSize(text)
+
+          Theme.setBaseColor(1 - v)
+          font.render(text, (.5 - w / 2, .01 - v + self.offset))
+
+          text = _("Difficulty: %s") % (self.scoreDifficulty)
+          w, h = font.getStringSize(text)
+          Theme.setBaseColor(1 - v)
+          font.render(text, (.5 - w / 2, .01 - v + h + self.offset))
         
-        x = .1
-        y = .15 + v
-        for i, scores in enumerate(self.song.info.getHighscores(d)):
-          score, stars, name = scores
-          if i == self.highscoreIndex and (self.time % 10.0) < 5.0:
-            Theme.setSelectedColor(1 - v)
-          else:
-            Theme.setBaseColor(1 - v)
-          font.render("%d." % (i + 1), (x, y),    scale = scale)
-          font.render(unicode(score), (x + .05, y),   scale = scale)
-          font.render(unicode(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x + .25, y), scale = scale * .9)
-          font.render(name, (x + .5, y), scale = scale)
-          y += h
+          x = .1
+          y = .16 + v
+          
+        if self.song:
+          i = -1
+          for i, scores in enumerate(self.song.info.getHighscores(self.scoreDifficulty, part = self.scorePart)):
+            score, stars, name = scores
+            if stars == 6:
+              stars = 5
+              perfect = 1
+            else:
+              perfect = 0
+            for j,player in enumerate(self.playerList):
+              if (self.time % 10.0) < 5.0 and i == self.highscoreIndex[j] and self.scoreDifficulty == player.difficulty and self.scorePart == player.part:
+                Theme.setSelectedColor(1 - v)
+                break
+              else:
+                Theme.setBaseColor(1 - v)
+            font.render("%d." % (i + 1), (x, y + self.offset),    scale = scale)
+            font.render(unicode(score), (x + .05, y + self.offset),   scale = scale)
+            if perfect == 1:
+              glColor3f(0, 1, 0)
+            font.render(unicode(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x + .25, y + self.offset), scale = scale * .9)
+            for j,player in enumerate(self.playerList):
+              if (self.time % 10.0) < 5.0 and i == self.highscoreIndex[j] and self.scoreDifficulty == player.difficulty and self.scorePart == player.part:
+                Theme.setSelectedColor(1 - v)
+                break
+              else:
+                Theme.setBaseColor(1 - v)
+            font.render(name, (x + .5, y + self.offset), scale = scale)
+            y += h
+            endScroll -= .07
+            
+          if self.offset < endScroll or i == -1:
+            self.offset = .8
+            self.nextHighScore()
+            endScroll = -0.14
           
         if self.uploadingScores and self.uploadResult is None:
           Theme.setBaseColor(1 - v)
           font.render(_("Uploading Scores..."), (.05, .7 + v), scale = 0.001)
+        #self.engine.view.setViewport(1,0)
         return
-      
+
+
+
+   
       Theme.setBaseColor(1 - v)
-      text = _("Song Finished!")
+      if self.playerList[0].cheating:
+        text = _("%s Cheated!" % self.song.info.name)
+        self.stars[i] = 0
+        self.accuracy[i] = 0.0
+        
+      else:
+        text = _("%s Finished!" % self.song.info.name)
       w, h = font.getStringSize(text)
-      font.render(text, (.5 - w / 2, .05 - v))
+      Dialogs.wrapText(font, (.05, .05 - v), text)
+        
+      for j,player in enumerate(self.playerList):
+        self.engine.view.setViewportHalf(len(self.playerList),j)
+        text = "%d" % (player.score * self.anim(1000, 2000))
+        w, h = bigFont.getStringSize(text)
+        bigFont.render(text, (.5 - w / 2, .11 + v + (1.0 - self.anim(0, 1000) ** 3)), scale = 0.0025)
       
-      text = "%d" % (self.player.score * self.anim(1000, 2000))
-      w, h = bigFont.getStringSize(text)
-      bigFont.render(text, (.5 - w / 2, .11 + v + (1.0 - self.anim(0, 1000) ** 3)), scale = 0.0025)
+        if self.counter > 1000:
+          scale = 0.0017
+          if self.stars[j] == 6:
+            glColor3f(0, 1, 0)  
+            text = (Data.STAR2 * (self.stars[j] - 1))
+          else:
+            text = (Data.STAR2 * self.stars[j] + Data.STAR1 * (5 - self.stars[j]))
+
+          w, h = bigFont.getStringSize(Data.STAR1, scale = scale)
+          x = .5 - w * len(text) / 2
+          for i, ch in enumerate(text):
+            bigFont.render(ch, (x + 100 * (1.0 - self.anim(1000 + i * 200, 1000 + (i + 1) * 200)) ** 2, .35 + v), scale = scale)
+            x += w
       
-      if self.counter > 1000:
-        scale = 0.0017
-        text = (Data.STAR2 * self.stars + Data.STAR1 * (5 - self.stars))
-        w, h = bigFont.getStringSize(Data.STAR1, scale = scale)
-        x = .5 - w * len(text) / 2
-        for i, ch in enumerate(text):
-          bigFont.render(ch, (x + 100 * (1.0 - self.anim(1000 + i * 200, 1000 + (i + 1) * 200)) ** 2, .35 + v), scale = scale)
-          x += w
-      
-      if self.counter > 2500:
-        text = _("Accuracy: %d%%") % self.accuracy      
-        w, h = font.getStringSize(text)
-        font.render(text, (.5 - w / 2, .55 + v))
-        text = _("Longest note streak: %d") % self.player.longestStreak
-        w, h = font.getStringSize(text)
-        font.render(text, (.5 - w / 2, .55 + h + v))
+        if self.counter > 2500:
+          Theme.setBaseColor(1 - v)
+          text = _("Accuracy: %d%%") % self.accuracy[j]
+          w, h = font.getStringSize(text)
+          font.render(text, (.5 - w / 2, .54 + v))
+          text = _("Longest note streak: %d") % player.longestStreak
+          w, h = font.getStringSize(text)
+          font.render(text, (.5 - w / 2, .54 + h + v))
+        # self.player.twoChord
+          if player.twoChord > 0:
+            text = _("Part: %s on %s (2 chord)") % (player.part, player.difficulty)
+          else:
+            text = _("Part: %s on %s") % (player.part, player.difficulty)
+          w, h = font.getStringSize(text)
+          font.render(text, (.5 - w / 2, .54 + (2 * h)+ v))
+      self.engine.view.setViewport(1,0)
     finally:
+      self.engine.view.setViewport(1,0)
       self.engine.view.resetProjection()

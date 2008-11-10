@@ -145,7 +145,7 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
         # 5 stars at 95%, 4 stars at 75%
         f = float(player.notesHit - player.twoChord) / notes
         self.stars[i]    = int(5.0   * (f + .05))
-        self.accuracy[i] = int(100.0 * f)
+        self.accuracy[i] = 100.0 * f
 
         if self.accuracy[i] == 100.0 and player.notesHit - player.twoChord == notes:
           self.stars[i] = 6
@@ -338,7 +338,7 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
       
         if self.counter > 2500:
           Theme.setBaseColor(1 - v)
-          text = _("Accuracy: %d%%") % self.accuracy[j]
+          text = _("Accuracy: %.1f%%") % self.accuracy[j]
           w, h = font.getStringSize(text)
           font.render(text, (.5 - w / 2, .54 + v))
           text = _("Longest note streak: %d") % player.longestStreak

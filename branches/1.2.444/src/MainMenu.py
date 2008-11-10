@@ -1,4 +1,4 @@
-#####################################################################
+####################################################################
 # -*- coding: iso-8859-1 -*-                                        #
 #                                                                   #
 # Frets on Fire                                                     #
@@ -35,6 +35,8 @@ import Dialogs
 import Config
 import Audio
 import Settings
+import datetime
+import sys
 
 class MainMenu(BackgroundLayer):
   def __init__(self, engine):
@@ -52,6 +54,13 @@ class MainMenu(BackgroundLayer):
     self.song.setVolume(self.engine.config.get("audio", "songvol"))
     self.song.play(-1)
 
+    expire = datetime.date(2007, 8, 15) 
+    today = datetime.date.today()
+    diff = today-expire
+    if diff.days > 30:
+      print "Beta Expired"
+      sys.exit(2)
+      
     newMultiplayerMenu = [
       (_("Host Multiplayer Game"), self.hostMultiplayerGame),
       (_("Join Multiplayer Game"), self.joinMultiplayerGame),

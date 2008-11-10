@@ -1,3 +1,20 @@
+4.14
+   Added some fixes for linux crashes in pygame.init
+   Fixed resolution type errors for linux
+   Fixed linux restart issue (zelurker)
+   Fixed playing no notes bug (zelurker)
+   Added new save file extensions to save %age, streak, options, etc
+   Added uploading of bass/rhythm/lead
+   Added uploading of extended score info
+   Changed some fretsonfire.ini options to make 0 represent 'default'
+   Fixed bugs in HOPO marking with 170
+   Fixed 2note chord bug with FoF keys
+   Fixed multiplier reset with RFmod2 keystyle
+   Fixed HOPO marking bugs
+   Fixed volume setting with 2 players
+   Updated worldcharts URL
+   Made RFmod2 keystyle default
+
 4.13
    Made cheater splash less in the way
    Added glow_color theme variable (also can turn key shaped glow off)
@@ -11,13 +28,10 @@
    Added -c flag for specifying alternate ini file
    Added -c reset argument for reseting default ini file
    Added HOPO fix for held notes (Capo)
+   Changed HOPO threshold to 170
    Added debug dump to debug.txt (neat)
    Added theme and stage to debug.txt
    Added Disk selection at top level (windows only)
-   Added some fixes for linux crashes in pygame.init
-   Fixed resolution type errors for linux
-   Fixed linux restart issue (zelurker)
-   Fixed playing no notes bug (zelurker)
 
    
 4.12

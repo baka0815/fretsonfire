@@ -34,10 +34,13 @@ def branch():
   return "RF-mod"
 
 def branchrevision():
-  return 4.13
+  return 4.14
+
+def branchVersion():
+  return "%s-%.2f" % (branch(), branchrevision())
 
 def version():
-  return "%s.%d-%s-%.2f" % (VERSION, revision(), branch(), branchrevision())
+  return "%s.%d-%s" % (VERSION, revision(), branchVersion())
 
 def dataPath():
   # Determine whether were running from an exe or not

@@ -93,7 +93,7 @@ DEFAULT_Y_ORIGIN_POV     = 3.0
 DEFAULT_Z_ORIGIN_POV     = -3.0
 
 DEFAULT_PHRASE_LOADING   = "Tuning Guitar..."
-DEFAULT_PHRASE_RESULTS   = "Shilling"
+DEFAULT_PHRASE_RESULTS   = "Chilling"
 DEFAULT_SONG_CREDIT      = "defy"
 
 # read the color scheme from the config file

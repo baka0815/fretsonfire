@@ -1,4 +1,4 @@
-#####################################################################
+ #####################################################################
 # -*- coding: iso-8859-1 -*-                                        #
 #                                                                   #
 # Frets on Fire                                                     #
@@ -96,7 +96,7 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
             notesTotal = len([1 for time, event in self.song.track[i].getAllEvents() if isinstance(event, Song.Note)])
             modOptions1 = self.engine.config.getModOptions1(player.twoChord, 0)
             modOptions2 = self.engine.config.getModOptions2()
-            scoreExt = (player.notesHit, notesTotal, player.longestStreak, Version.version(), modOptions1, modOptions2)
+            scoreExt = (player.notesHit, notesTotal, player.longestStreak, Version.branchVersion(), modOptions1, modOptions2)
             self.highscoreIndex[i] = self.song.info.addHighscore(player.difficulty, player.score, self.stars[i], player.name, part = player.part, scoreExt = scoreExt)
             self.song.info.save()
           
@@ -291,8 +291,11 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
             if noteStreak != 0:
               score = "%s %d" % (score, noteStreak)
             font.render(unicode(score), (x + .05, y + self.offset),   scale = scale)
-            options = "%s,%s" % (modOptions1, modOptions2)
-            font.render(unicode(options), (x + .3, y + self.offset),   scale = scale)
+            options = ""
+            #options = "%s,%s" % (modOptions1, modOptions2)
+            #options = self.engine.config.prettyModOptions(options)
+            w2, h2 = font.getStringSize(options, scale = scale / 2)
+            font.render(unicode(options), (.6 - w2, y + self.offset),   scale = scale / 2)
             if perfect == 1:
               glColor3f(0, 1, 0)
             font.render(unicode(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x + .6, y + self.offset), scale = scale * .9)

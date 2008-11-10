@@ -7,6 +7,8 @@ fix funny hopo in pride and joy (expert)
 
 make a second background to load if playing 2 player split screen
 
+Allow 2nd neck.svg/png for player 2
+
 Somehow disable windows screensaver when game is running (needs ctypes)
 
 Add a 'uploadas' option in song.ini (can be abused)

@@ -65,7 +65,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.playerList = self.playerList + [self.player2]
       self.keysList   = self.keysList + [PLAYER2KEYS]
 
-    self.guitars          = [Guitar(self.engine,False,i) for i,player in enumerate(self.playerList)]
+    self.guitars          = [Guitar(self.engine,False,i) for i, player in enumerate(self.playerList)]
     
     self.visibility       = 0.0
     self.libraryName      = libraryName
@@ -185,6 +185,11 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.hopoMark         = self.engine.config.get("game", "hopo_mark")
     self.hopoStyle        = self.engine.config.get("game", "hopo_style")
     self.pov              = self.engine.config.get("game", "pov")
+
+    if len(self.playerList) == 1:
+      #De-emphasize non played part
+      self.rhythmVolume *= 0.6
+      
     for i,guitar in enumerate(self.guitars):
       guitar.leftyMode = self.engine.config.get("player%d" % (i), "leftymode")
       guitar.twoChordMax  = self.engine.config.get("player%d" % (i), "two_chord_max")
@@ -196,7 +201,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       
   def songLoaded(self, song):
 
-    for i,player in enumerate(self.playerList):
+    for i, player in enumerate(self.playerList):
       song.difficulty[i] = player.difficulty
     #self.delay += song.info.delay
 
@@ -326,13 +331,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
           self.song.setGuitarVolume(self.guitarVolume)
           self.song.setBackgroundVolume(self.songVolume)
           self.song.setRhythmVolume(self.rhythmVolume)
-          #Lower volume of non played part to emhpasize what you are playing
-          if len(self.playerList) == 1:
-            if `self.player.part` == "Bass Guitar" or `self.player.part` == "Rhythm Guitar" :
-              self.song.setGuitarVolume(self.guitarVolume * 0.6)
-            else:
-              self.song.setRhythmVolume(self.rhythmVolume * 0.6)
-
           self.song.play()
 
     # update board
@@ -342,7 +340,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         self.endPick(i)
 
       # missed some notes?
-      if not guitar.playedNotes and guitar.getMissedNotes(self.song, pos):
+      if self.playerList[i].streak != 0 and not guitar.playedNotes and guitar.getMissedNotes(self.song, pos):
         self.playerList[i].streak = 0
         self.guitars[i].setMultiplier(1)
         guitar.hopoLast = -1
@@ -483,7 +481,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       return
   
     pos = self.getSongPosition()
-    #clear out any missed notes before this pick since they are already missed by virtue of the pick
+    #clear out any past the window missed notes before this pick since they are already missed by virtue of the pick
     missedNotes = self.guitars[num].getMissedNotes(self.song, pos, catchup = True)
 
     if len(missedNotes) > 0:
@@ -504,6 +502,9 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
     if self.guitars[num].startPick3(self.song, pos, self.controls, hopo):
       self.song.setInstrumentVolume(self.guitarVolume, self.playerList[num].part)
+      #Any previous notes missed, but new ones hit, reset streak counter
+      if len(self.guitars[num].missedNotes) != 0:
+        self.playerList[num].streak = 0
       if self.guitars[num].playedNotes:
         self.playerList[num].streak += 1
       self.playerList[num].notesHit += len(self.guitars[num].playedNotes)

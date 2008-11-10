@@ -60,10 +60,8 @@ class MyConfigParser(ConfigParser):
           continue
         fp.write("[%s]\n" % section)
         sectList = self._sections[section].items()
-        print self._sections[section]
         sectList.sort()
         for key, value in sectList:
-          #print key, value
           if key != "__name__":
             fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
         fp.write("\n")
@@ -191,43 +189,99 @@ class Config:
     self.config.write(f)
     f.close()
 
-  def getModOptions1(self, twoChord, hopo8th):
+  def getModOptions1(self, twoChord, hopo8th, compact = False):
+    #For use with single digit flags
     #Do not change the order
+
+    #0    
     #Value 0 not used / 1 used
     if twoChord > 0:
       twoChordUsed = 1
     else:
       twoChordUsed = 0
+
+    #1      
     #Value 0 off / 1 on
     disableVBPMUsed = int(self.get("game", "disable_vbpm"))
+
+    #2    
     #Value 0 on / 1 on
     if self.get("game", "tapping") == False:
       hopoDisableUsed = 0
     else:
       hopoDisableUsed = 1
+
+    #3
     #Value 0 FoF / 1 RFmod
     hopoMarks = int(self.get("game", "hopo_mark"))
+
+    #4    
     #Value 0 FoF / 1 RFmod / 2 RFmod2
     hopoStyle = int(self.get("game", "hopo_style"))
+
+    #5    
     #Value 0 FoF / 1 GH / 2 Custom
     pov = int(self.get("game", "pov"))
+
+    #6    
     #Value 0 FoF / 1 Capo
-    #margin = int(self.get("game", "margin"))
-    margin = 0
+    margin = int(self.get("game", "margin"))
+
+    #7    
     #Value 0 no / 1 yes
     hopo8thUsed = int(hopo8th)
+
+    #8    
     #Value 0 bpm / 1 difficulty
-    #boardSpeed = int(self.get("game", "board_speed"))
-    boardSpeed = 0
+    boardSpeed = int(self.get("game", "board_speed"))
+
     encode = "%d%d%d%d%d%d%d%d%d" % (twoChordUsed, disableVBPMUsed, hopoDisableUsed, hopoMarks, hopoStyle, pov, margin, hopo8thUsed, boardSpeed)
-    print twoChordUsed, disableVBPMUsed, hopoDisableUsed, hopoMarks, hopoStyle, margin, pov, hopo8thUsed, boardSpeed
     return encode
   def getModOptions2(self):
-    #
-    encode = "1.5"
+    #For use with more than single digit flags
+    #Do not change order
+    #Will be used for some of the Cmod values
+    encode = ""
+    boardSpeedMult = self.get("game", "board_speed")
     return encode
     
+
+  def prettyModOptions(self, modOptions):
+    encode = ""
     
+    modOptions1, mod2 = modOptions.split(',', 2)
+
+    if modOptions1 != "" and modOptions1 != "Default":
+      if modOptions1[0] == '1':
+        encode += "2"
+      if modOptions1[1] == '1':
+        encode += "v"
+      if modOptions1[2] == '1':
+        encode += "h"
+      if modOptions1[3] == '1':
+        encode += "m"
+      if modOptions1[4] == '1':
+        encode += "k"
+      elif modOptions1[4] == '2':
+        encode += "K"
+      if modOptions1[5] == '1':
+        encode += "p"
+      elif modOptions1[5] == '2':
+        encode += "P"
+      if modOptions1[6] == '1':
+        encode += "C"
+      if modOptions1[7] == '1':
+        encode += "9"
+      if modOptions1[8] == '1':
+        encode += "d"
+
+    if mod2 != "" and mod2 != "Default":
+      encode += ","
+      modOptions2 = mod2.split(',')
+      if modOptions2[0] != "":
+        encode += "BS=%s" % (modOptions2[0])
+    return encode
+  
 def get(section, option):
   """
   Read the value of a global configuration key.

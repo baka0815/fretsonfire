@@ -1,3 +1,25 @@
+4.09
+   Updated credits
+   Added gameresults.svg (raph)
+   Fixed disable spinny in editor
+   Fixed cancel button in RF-mod keys
+   Added GH key and note mesh customizations (raph)
+   Added spot_color
+   Fixed Mod code to load all activated theme.ini's
+   Revamped theme.ini variables
+   Added lyrics mod (YMS)
+   Fixed timer when handling text events
+   Added as made famous by if tag cover
+   Added tracks_color and bars_color (capo)
+   Added hit flames (capo)
+   Added variables for hit flames (capo)
+   optimized some vbpm
+   Added custom loading and results phrases
+   Fixed label not showing for standard FoF folders
+   Fixed N+-1 loading of folder labels
+   Fixed Doublehopo counting again
+   Added more cheating stuff
+
 4.08
    Pretty ConfigParser
    Fixed tutorial
@@ -11,6 +33,7 @@
    POV changes
    proper clipping for notes
    Made accuracy a float
+   Cleaned up for beta
 4.06
    Made folder rotation nicer
    Toggle for rotation

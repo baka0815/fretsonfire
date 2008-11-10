@@ -258,6 +258,36 @@ class SongInfo(object):
     except:
       self._parts = parts.values()
     return self._parts
+
+  def getName(self):
+    return self._get("name")
+
+  def setName(self, value):
+    self._set("name", value)
+
+  def getArtist(self):
+    return self._get("artist")
+
+  def getCassetteColor(self):
+    c = self._get("cassettecolor")
+    if c:
+      return Theme.hexToColor(c)
+  
+  def setCassetteColor(self, color):
+    self._set("cassettecolor", Theme.colorToHex(color))
+  
+  def setArtist(self, value):
+    self._set("artist", value)
+    
+  def getScoreHash(self, difficulty, score, stars, name):
+    return sha.sha("%d%d%d%s" % (difficulty.id, score, stars, name)).hexdigest()
+    
+  def getDelay(self):
+    return self._get("delay", int, 0)
+    
+  def setDelay(self, value):
+    return self._set("delay", value)
+
   
   def getFrets(self):
     return self._get("frets")
@@ -288,36 +318,13 @@ class SongInfo(object):
 
   def setCount(self, value):
     self._set("count", value)
-    
-  def getName(self):
-    return self._get("name")
 
-  def setName(self, value):
-    self._set("name", value)
+  def getLyrics(self):
+    return self._get("lyrics")
 
-  def getArtist(self):
-    return self._get("artist")
-
-  def getCassetteColor(self):
-    c = self._get("cassettecolor")
-    if c:
-      return Theme.hexToColor(c)
-  
-  def setCassetteColor(self, color):
-    self._set("cassettecolor", Theme.colorToHex(color))
-  
-  def setArtist(self, value):
-    self._set("artist", value)
-    
-  def getScoreHash(self, difficulty, score, stars, name):
-    return sha.sha("%d%d%d%s" % (difficulty.id, score, stars, name)).hexdigest()
-    
-  def getDelay(self):
-    return self._get("delay", int, 0)
-    
-  def setDelay(self, value):
-    return self._set("delay", value)
-    
+  def setLyrics(self, value):
+    self._set("lyrics", value)    
+        
   def getHighscores(self, difficulty, part = parts[GUITAR_PART]):
     if part == parts[GUITAR_PART]:
       highScores = self.highScores
@@ -376,6 +383,18 @@ class SongInfo(object):
 
   def isTutorial(self):
     return self._get("tutorial", int, 0) == 1
+
+  def findTag(self, find, value = None):
+    for tag in self.tags.split(','):
+      temp = tag.split('=')
+      if find == temp[0]:
+        if value == None:
+          return True
+        elif len(temp) == 2 and value == temp[1]:
+          return True
+
+    return False
+      
     
   name          = property(getName, setName)
   artist        = property(getArtist, setArtist)
@@ -390,6 +409,7 @@ class SongInfo(object):
   tags          = property(getTags, setTags)
   hopo          = property(getHopo, setHopo)
   count         = property(getCount, setCount)
+  lyrics        = property(getLyrics, setLyrics)
   #May no longer be necessary
   folder        = False
 
@@ -473,6 +493,7 @@ class Note(Event):
     #RF-mod
     self.hopod   = False
     self.skipped = False
+    self.flameCount = 0
     
   def __repr__(self):
     return "<#%d>" % self.number
@@ -545,6 +566,7 @@ class Track:
           event.played = False
           event.hopod = False
           event.skipped = False
+          event.flameCount = 0
 
   def markTappable(self):
     # Determine which notes are tappable. The rules are:
@@ -1036,8 +1058,8 @@ class ScriptReader:
     self.file = scriptFile
 
   def read(self):
-    for line in self.file.xreadlines():
-      if line.startswith("#"): continue
+    for line in self.file:
+      if line.startswith("#") or line.isspace(): continue
       time, length, type, data = re.split("[\t ]+", line.strip(), 3)
       time   = float(time)
       length = float(length)

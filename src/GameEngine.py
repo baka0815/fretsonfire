@@ -70,7 +70,7 @@ Config.define("audio",  "rhythmvol",  float,    1.0,  text = _("Rhythm Volume"),
 Config.define("video",  "fontscale",  float,    1.0,  text = _("Text scale"),      options = dict([(n / 100.0, "%3d%%" % n) for n in range(50, 260, 10)]))
 
 #RF-mod items
-Config.define("engine", "game_priority",       int,   2,      text = _("Priority"), options = {0: _("Idle"), 1: _("Low"), 2: _("Normal"), 4:_("High"), 5:_("Realtime")})
+Config.define("engine", "game_priority",       int,   2,      text = _("Priority"), options = {0: _("Idle"), 1: _("Low"), 2: _("Normal"), 3:_("Above Normal"), 4:_("High"), 5:_("Realtime")})
 Config.define("game",   "alt_keys",            bool,  False,  text = _("Alternate Controller"), options = {False: _("No"), True: _("Yes")})
 Config.define("game",   "strum_burst",         int,   0,      text = _("Strum Sensitivity"), options = {0: _("FoF"), 1: _("GH1"), 2: _("GH2")})
 Config.define("game",   "hopo_mark",           int,   0,      text = _("HO/PO Note Marks"), options = {0: _("RFmod"), 1: _("FoF")})
@@ -84,9 +84,10 @@ Config.define("game",   "disable_librotation", bool,  False,  text = _("Disable 
 Config.define("video",  "disable_stats",       bool,  False,  text = _("Disable Stats"),    options = {False: _("No"), True: _("Yes")})
 Config.define("video",  "disable_notesfx",     bool,  False,  text = _("Disable Note SFX"),    options = {False: _("No"), True: _("Yes")})
 Config.define("video",  "disable_fretsfx",     bool,  False,  text = _("Disable Fret SFX"),    options = {False: _("No"), True: _("Yes")})
+Config.define("video",  "disable_flamesfx",    bool,  False,  text = _("Disable Flame SFX"),    options = {False: _("No"), True: _("Yes")})
 Config.define("theme",  "disable_spinny",      bool,  False,  text = _("Disable Spinning BGs"),    options = {False: _("No"), True: _("Yes")})
 Config.define("audio",  "disable_preview",     bool,  False,  text = _("Disable Preview"),    options = {False: _("No"), True: _("Yes")})
-Config.define("audio",  "miss_volume",         float, 0.5,    text = _("Miss Volume"), options = dict([(n / 100.0, "%d%%" % n) for n in range(0, 100, 10)]))
+Config.define("audio",  "miss_volume",         float, 0.2,    text = _("Miss Volume"), options = dict([(n / 100.0, "%d%%" % n) for n in range(0, 100, 10)]))
 Config.define("player0","two_chord_max",       bool,  False,  text = _("Two Key Chords Only"),  options = {False: _("No"), True: _("Yes")})
 Config.define("player0","leftymode",           bool,  False,  text = _("Lefty mode"),           options = {False: _("No"), True: _("Yes")})
 Config.define("player1","two_chord_max",       bool,  False,  text = _("Two Key Chords Only"),  options = {False: _("No"), True: _("Yes")})
@@ -199,11 +200,13 @@ class GameEngine(Engine):
     self.server    = None
     self.sessions  = []
     self.mainloop  = self.loading
+
+    # Load default theme
+    theme = Config.load(self.resource.fileName("theme.ini"))
+    Theme.open(theme)
     
     # Load game modifications
     Mod.init(self)
-    theme = Config.load(self.resource.fileName("theme.ini"))
-    Theme.open(theme)
     
     self.addTask(self.input, synchronized = False)
     self.addTask(self.view)

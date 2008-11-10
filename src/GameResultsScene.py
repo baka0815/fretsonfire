@@ -71,8 +71,12 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
     self.menu = Menu(self.engine, items, onCancel = self.quit, pos = (.2, .5))
       
     self.engine.resource.load(self, "song", lambda: Song.loadSong(self.engine, songName, library = self.libraryName, notesOnly = True, part = [player.part for player in self.playerList]), onLoad = self.songLoaded)
-    self.engine.loadSvgDrawing(self, "background", "keyboard.svg")
-    Dialogs.showLoadingScreen(self.engine, lambda: self.song, text = _("Chilling..."))
+    self.engine.loadSvgDrawing(self, "background", "gameresults.svg")
+
+    phrase = random.choice(Theme.resultsPhrase.split(","))
+    if phrase == "None":
+      phrase = _("Chilling...")
+    Dialogs.showLoadingScreen(self.engine, lambda: self.song, text = phrase)
     
   def keyPressed(self, key, unicode):
     ret = SceneClient.keyPressed(self, key, unicode)

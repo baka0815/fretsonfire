@@ -427,7 +427,11 @@ class SongChooser(Layer, KeyListener):
   def updateSelection(self):
     self.selectedItem  = self.items[self.selectedIndex]
     self.songCountdown = 1024
+    if self.selectedIndex > 1:
+      self.loadItemLabel(self.selectedIndex - 1)
     self.loadItemLabel(self.selectedIndex)
+    if self.selectedIndex < len(self.items) - 1:
+      self.loadItemLabel(self.selectedIndex + 1)
     
   def keyPressed(self, key, unicode):
     if not self.items or self.accepted:
@@ -629,7 +633,7 @@ class SongChooser(Layer, KeyListener):
       glMatrixMode(GL_TEXTURE)
       glScalef(1, -1, 1)
       glMatrixMode(GL_MODELVIEW)
-      self.libraryLabel.render("Mesh_001")
+      self.libraryLabel.render()
       glMatrixMode(GL_TEXTURE)
       glLoadIdentity()
       glMatrixMode(GL_MODELVIEW)

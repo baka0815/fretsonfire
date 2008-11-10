@@ -54,6 +54,7 @@ class Guitar:
     self.currentBpm     = 50.0
     self.currentPeriod  = 60000.0 / self.currentBpm
     self.targetBpm      = self.currentBpm
+    self.targetPeriod   = 60000.0 / self.targetBpm
     self.lastBpmChange  = -1.0
     self.baseBeat       = 0.0
 
@@ -62,6 +63,7 @@ class Guitar:
     self.hopoLast       = -1
     self.hopoColor      = (0, .5, .5)
     self.player         = player
+    self.scoreMultiplier = 1
     
     if player == 0:
       self.keys = PLAYER1KEYS
@@ -80,16 +82,27 @@ class Guitar:
     engine.resource.load(self,  "keyMesh",  lambda: Mesh(engine.resource.fileName("key.dae")))
     engine.loadSvgDrawing(self, "glowDrawing", "glow.svg",  textureSize = (128, 128))
     engine.loadSvgDrawing(self, "neckDrawing", "neck.svg",  textureSize = (256, 256))
+    engine.loadSvgDrawing(self, "hitflames1Drawing", "hitflames1.svg",  textureSize = (128, 128))
+    engine.loadSvgDrawing(self, "hitflames2Drawing", "hitflames2.svg",  textureSize = (128, 128))
+    engine.loadSvgDrawing(self, "hitglowDrawing", "hitglow.svg",  textureSize = (128, 128))
+    engine.loadSvgDrawing(self, "hitglow2Drawing", "hitglow2.svg",  textureSize = (128, 128))
 
-    hopo_color  = self.engine.config.get("theme", "hopo_color")
-    if hopo_color != "None":
-      self.hopoColor = Theme.hexToColor(hopo_color)
-      
+
+    self.hopoColor  = Theme.hopoColor
+    self.spotColor = Theme.spotColor   
+    self.keyColor = Theme.keyColor
+    self.key2Color = Theme.key2Color
+    self.tracksColor = Theme.tracksColor
+    self.barsColor = Theme.barsColor
+    self.flameColors = Theme.flameColors
+    self.flameSizes = Theme.flameSizes
+          
     self.twoChordMax = self.engine.config.get("player%d" % (player), "two_chord_max")
+    self.disableVBPM  = self.engine.config.get("game", "disable_vbpm")
     self.disableNoteSFX  = self.engine.config.get("video", "disable_notesfx")
     self.disableFretSFX  = self.engine.config.get("video", "disable_fretsfx")
-    self.disableVBPM  = self.engine.config.get("game", "disable_vbpm")
-    
+    self.disableFlameSFX  = self.engine.config.get("video", "disable_flamesfx")
+
   def selectPreviousString(self):
     self.selectedString = (self.selectedString - 1) % self.strings
 
@@ -105,7 +118,10 @@ class Guitar:
     self.noteReleaseMargin = 60000.0 / bpm / 2
     self.bpm               = bpm
     self.baseBeat          = 0.0
-      
+
+  def setMultiplier(self, multiplier):
+    self.scoreMultiplier = multiplier
+    
   def renderNeck(self, visibility, song, pos):
     if not song:
       return
@@ -116,8 +132,11 @@ class Guitar:
     v            = visibility
     w            = self.boardWidth
     l            = self.boardLength
+
     beatsPerUnit = self.beatsPerBoard / self.boardLength
-    offset       = (pos - self.lastBpmChange) / self.currentPeriod + self.baseBeat
+    offset       = (pos - self.lastBpmChange) / self.targetPeriod + self.baseBeat
+
+    #print self.lastBpmChange, self.currentPeriod, self.targetPeriod, self.baseBeat    
 
     glEnable(GL_TEXTURE_2D)
     self.neckDrawing.texture.bind()
@@ -171,16 +190,16 @@ class Guitar:
     sw = 0.025
     for n in range(self.strings - 1, -1, -1):
       glBegin(GL_TRIANGLE_STRIP)
-      Theme.setBaseColor(0)
+      glColor4f(self.tracksColor[0], self.tracksColor[1], self.tracksColor[2], 0)
       glVertex3f((n - self.strings / 2) * w - sw, -v, -2)
       glVertex3f((n - self.strings / 2) * w + sw, -v, -2)
-      Theme.setBaseColor((1.0 - v) * .75)
+      glColor4f(self.tracksColor[0], self.tracksColor[1], self.tracksColor[2], (1.0 - v) * .75)
       glVertex3f((n - self.strings / 2) * w - sw, -v, -1)
       glVertex3f((n - self.strings / 2) * w + sw, -v, -1)
-      Theme.setBaseColor((1.0 - v) * .75)
+      glColor4f(self.tracksColor[0], self.tracksColor[1], self.tracksColor[2], (1.0 - v) * .75)
       glVertex3f((n - self.strings / 2) * w - sw, -v, self.boardLength * .7)
       glVertex3f((n - self.strings / 2) * w + sw, -v, self.boardLength * .7)
-      Theme.setBaseColor(0)
+      glColor4f(self.tracksColor[0], self.tracksColor[1], self.tracksColor[2], 0)
       glVertex3f((n - self.strings / 2) * w - sw, -v, self.boardLength)
       glVertex3f((n - self.strings / 2) * w + sw, -v, self.boardLength)
       glEnd()
@@ -217,9 +236,9 @@ class Guitar:
       glRotate(v * 90, 0, 0, 1)
 
       if (beat % 1.0) < 0.001:
-        Theme.setBaseColor(visibility * c * .75)
+        glColor4f(self.barsColor[0], self.barsColor[1], self.barsColor[2], visibility * c * .75)
       else:
-        Theme.setBaseColor(visibility * c * .5)
+        glColor4f(self.barsColor[0], self.barsColor[1], self.barsColor[2], visibility * c * .5)
 
       glBegin(GL_TRIANGLE_STRIP)
       glVertex3f(-(w / 2), -v, z + sw)
@@ -264,7 +283,7 @@ class Guitar:
 
     #mesh = outer ring (black) 
     #mesh_001 = main note (key color) 
-    #mesh_002 = top (white or hopo if no mesh_003) 
+    #mesh_002 = top (spot or hopo if no mesh_003) 
     #mesh_003 = hopo bump (hopo color)
     
     glPushMatrix()
@@ -273,11 +292,15 @@ class Guitar:
     glShadeModel(GL_SMOOTH)
 
     self.noteMesh.render("Mesh_001")
-    glColor3f(1, 1, 1)
+    glColor3f(self.spotColor[0], self.spotColor[1], self.spotColor[2])
     if isTappable:
-      glColor3f(self.hopoColor[0], self.hopoColor[1], self.hopoColor[2])
-      if(self.noteMesh.render("Mesh_003")) == True:
-        glColor3f(1, 1, 1)
+      if self.hopoColor == "fret":
+        glColor4f(*color)
+      else:
+        glColor3f(self.hopoColor[0], self.hopoColor[1], self.hopoColor[2])
+      if(self.noteMesh.find("Mesh_003")) == True:
+        self.noteMesh.render("Mesh_003")
+        glColor3f(self.spotColor[0], self.spotColor[1], self.spotColor[2])
     self.noteMesh.render("Mesh_002")
     glColor3f(0, 0, 0)
     self.noteMesh.render("Mesh")
@@ -292,8 +315,8 @@ class Guitar:
       return
 
     # Update dynamic period
-    self.currentPeriod = 60000.0 / self.currentBpm
-    self.targetPeriod  = 60000.0 / self.targetBpm
+    self.currentPeriod = round(60000.0 / self.currentBpm, 4)
+    self.targetPeriod  = round(60000.0 / self.targetBpm, 4)
 
     beatsPerUnit = self.beatsPerBoard / self.boardLength
     w = self.boardWidth / self.strings
@@ -433,7 +456,22 @@ class Guitar:
         glLightfv(GL_LIGHT0, GL_DIFFUSE,  (1.0, 1.0, 1.0, 0.0))
         glRotatef(-90, 1, 0, 0)
         glRotatef(-90, 0, 0, 1)
-        self.keyMesh.render()
+        glColor4f(.1 + .8 * c[0] + f, .1 + .8 * c[1] + f, .1 + .8 * c[2] + f, visibility)
+
+        #Mesh - Main fret
+        #Key_001 - Top of fret (key_color)
+        #Key_002 - Bottom of fret (key2_color)
+        #Glow_001 - Only rendered when a note is hit along with the glow.svg
+        
+        if(self.keyMesh.find("Glow_001")) == True:
+          self.keyMesh.render("Mesh")
+          glColor3f(self.keyColor[0], self.keyColor[1], self.keyColor[2])
+          self.keyMesh.render("Key_001")
+          glColor3f(self.key2Color[0], self.key2Color[1], self.key2Color[2])
+          self.keyMesh.render("Key_002")
+        else:
+          self.keyMesh.render()
+          
         glDisable(GL_LIGHTING)
         glDisable(GL_LIGHT0)
         glDepthMask(0)
@@ -454,7 +492,10 @@ class Guitar:
           glRotatef( 90, 0, 1, 0)
           glRotatef(-90, 1, 0, 0)
           glRotatef(-90, 0, 0, 1)
-          self.keyMesh.render()
+          if(self.keyMesh.find("Glow_001")) == True:
+            self.keyMesh.render("Glow_001")
+          else:
+            self.keyMesh.render()
           glPopMatrix()
           s += 0.2
 
@@ -484,6 +525,294 @@ class Guitar:
       v *= 1.5
     glDisable(GL_DEPTH_TEST)
 
+  def renderFlames(self, visibility, song, pos, controls):
+    if not song:
+      return
+
+    beatsPerUnit = self.beatsPerBoard / self.boardLength
+    w = self.boardWidth / self.strings
+    track = song.track[self.player]
+
+    size = (.22, .22)
+    v = 1.0 - visibility
+
+    if self.disableFlameSFX != True:
+      for n in range(self.strings):
+        f = self.fretWeight[n]
+        c = self.fretColors[n]
+        if f and (controls.getState(self.actions[0]) or controls.getState(self.actions[1])):
+          f += 0.25      
+        y = v + f / 6
+        x = (self.strings / 2 - n) * w
+        f = self.fretActivity[n]
+
+        if f:
+          ms = math.sin(self.time) * .25 + 1
+          ff = f
+          ff += 1.2
+          
+          glBlendFunc(GL_ONE, GL_ONE)
+          
+          flameSize = self.flameSizes[self.scoreMultiplier - 1][n]        
+          flameColor = self.flameColors[self.scoreMultiplier - 1][n]
+
+          flameColorMod0 = 1.1973333333333333333333333333333
+          flameColorMod1 = 1.9710526315789473684210526315789
+          flameColorMod2 = 10.592592592592592592592592592593
+
+          glColor3f(flameColor[0] * flameColorMod0, flameColor[1] * flameColorMod1, flameColor[2] * flameColorMod2)          
+          glEnable(GL_TEXTURE_2D)
+          self.hitglowDrawing.texture.bind()    
+          glPushMatrix()
+          glTranslate(x, y + .125, 0)
+          glRotate(90, 1, 0, 0)
+          glScalef(0.5 + .6 * ms * ff, 1.5 + .6 * ms * ff, 1 + .6 * ms * ff)
+          glBegin(GL_TRIANGLE_STRIP)
+          glTexCoord2f(0.0, 0.0)
+          glVertex3f(-flameSize * ff, 0, -flameSize * ff)
+          glTexCoord2f(1.0, 0.0)
+          glVertex3f( flameSize * ff, 0, -flameSize * ff)
+          glTexCoord2f(0.0, 1.0)
+          glVertex3f(-flameSize * ff, 0,  flameSize * ff)
+          glTexCoord2f(1.0, 1.0)
+          glVertex3f( flameSize * ff, 0,  flameSize * ff)
+          glEnd()
+          glPopMatrix()
+          glDisable(GL_TEXTURE_2D)
+
+          ff += .3
+
+          flameSize = self.flameSizes[self.scoreMultiplier - 1][n]
+          flameColor = self.flameColors[self.scoreMultiplier - 1][n]
+
+          flameColorMod0 = 1.1973333333333333333333333333333
+          flameColorMod1 = 1.7842105263157894736842105263158
+          flameColorMod2 = 12.222222222222222222222222222222
+          
+          glColor3f(flameColor[0] * flameColorMod0, flameColor[1] * flameColorMod1, flameColor[2] * flameColorMod2)
+          glEnable(GL_TEXTURE_2D)
+          self.hitglow2Drawing.texture.bind()    
+          glPushMatrix()
+          glTranslate(x, y + .25, .05)
+          glRotate(90, 1, 0, 0)
+          glScalef(.40 + .6 * ms * ff, 1.5 + .6 * ms * ff, 1 + .6 * ms * ff)
+          glBegin(GL_TRIANGLE_STRIP)
+          glTexCoord2f(0.0, 0.0)
+          glVertex3f(-flameSize * ff, 0, -flameSize * ff)
+          glTexCoord2f(1.0, 0.0)
+          glVertex3f( flameSize * ff, 0, -flameSize * ff)
+          glTexCoord2f(0.0, 1.0)
+          glVertex3f(-flameSize * ff, 0,  flameSize * ff)
+          glTexCoord2f(1.0, 1.0)
+          glVertex3f( flameSize * ff, 0,  flameSize * ff)
+          glEnd()
+          glPopMatrix()
+          glDisable(GL_TEXTURE_2D)
+          
+          glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    if self.disableFlameSFX != True:
+      flameLimit = 10.0
+      flameLimitHalf = round(flameLimit/2.0)
+      for time, event in track.getEvents(pos - self.currentPeriod * 2, pos + self.currentPeriod * self.beatsPerBoard):
+        if isinstance(event, Tempo):
+          continue
+        
+        if not isinstance(event, Note):
+          continue
+        
+        if (event.played or event.hopod) and event.flameCount < flameLimit:
+          ms = math.sin(self.time) * .25 + 1
+          x  = (self.strings / 2 - event.number) * w
+          ff = 1 + 0.25       
+          y = v + ff / 6
+          glBlendFunc(GL_ONE, GL_ONE)
+          flameSize = self.flameSizes[self.scoreMultiplier - 1][event.number]
+          flameColor = self.flameColors[self.scoreMultiplier - 1][event.number]
+          
+          ff += 1.5
+
+          if event.flameCount < flameLimitHalf:
+            glColor3f(flameColor[0], flameColor[1], flameColor[2])
+            glEnable(GL_TEXTURE_2D)
+            self.hitflames2Drawing.texture.bind()    
+            glPushMatrix()
+            glTranslate(x, y + .20, 0)
+            glRotate(90, 1, 0, 0)
+            glScalef(.25 + .6 * ms * ff, event.flameCount/6.0 + .6 * ms * ff, event.flameCount / 6.0 + .6 * ms * ff)
+            glBegin(GL_TRIANGLE_STRIP)
+            glTexCoord2f(0.0, 0.0)
+            glVertex3f(-flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(1.0, 0.0)
+            glVertex3f( flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(0.0, 1.0)
+            glVertex3f(-flameSize * ff, 0,  flameSize * ff)
+            glTexCoord2f(1.0, 1.0)
+            glVertex3f( flameSize * ff, 0,  flameSize * ff)
+            glEnd()
+            glPopMatrix()
+            glDisable(GL_TEXTURE_2D) 
+
+            glColor3f(flameColor[0], flameColor[1], flameColor[2])           
+            glEnable(GL_TEXTURE_2D)
+            self.hitflames2Drawing.texture.bind()    
+            glPushMatrix()
+            glTranslate(x - .005, y + .25 + .005, 0)
+            glRotate(90, 1, 0, 0)
+            glScalef(.30 + .6 * ms * ff, (event.flameCount + 1) / 5.5 + .6 * ms * ff, (event.flameCount + 1) / 5.5 + .6 * ms * ff)
+            glBegin(GL_TRIANGLE_STRIP)
+            glTexCoord2f(0.0, 0.0)
+            glVertex3f(-flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(1.0, 0.0)
+            glVertex3f( flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(0.0, 1.0)
+            glVertex3f(-flameSize * ff, 0,  flameSize * ff)
+            glTexCoord2f(1.0, 1.0)
+            glVertex3f( flameSize * ff, 0,  flameSize * ff)
+            glEnd()
+            glPopMatrix()	  
+            glDisable(GL_TEXTURE_2D)
+
+            glColor3f(flameColor[0], flameColor[1], flameColor[2])
+            glEnable(GL_TEXTURE_2D)
+            self.hitflames2Drawing.texture.bind()    
+            glPushMatrix()
+            glTranslate(x+.005, y +.25 +.005, 0)
+            glRotate(90, 1, 0, 0)
+            glScalef(.35 + .6 * ms * ff, (event.flameCount + 1) / 5.0 + .6 * ms * ff, (event.flameCount + 1) / 5.0 + .6 * ms * ff)
+            glBegin(GL_TRIANGLE_STRIP)
+            glTexCoord2f(0.0, 0.0)
+            glVertex3f(-flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(1.0, 0.0)
+            glVertex3f( flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(0.0, 1.0)
+            glVertex3f(-flameSize * ff, 0,  flameSize * ff)
+            glTexCoord2f(1.0, 1.0)
+            glVertex3f( flameSize * ff, 0,  flameSize * ff)
+            glEnd()
+            glPopMatrix()	  
+            glDisable(GL_TEXTURE_2D)
+
+            glColor3f(flameColor[0], flameColor[1], flameColor[2])  
+            glEnable(GL_TEXTURE_2D)
+            self.hitflames2Drawing.texture.bind()    
+            glPushMatrix()
+            glTranslate(x, y +.25 +.005, 0)
+            glRotate(90, 1, 0, 0)
+            glScalef(.40 + .6 * ms * ff, (event.flameCount + 1)/ 4.7 + .6 * ms * ff, (event.flameCount + 1) / 4.7 + .6 * ms * ff)
+            glBegin(GL_TRIANGLE_STRIP)
+            glTexCoord2f(0.0, 0.0)
+            glVertex3f(-flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(1.0, 0.0)
+            glVertex3f( flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(0.0, 1.0)
+            glVertex3f(-flameSize * ff, 0,  flameSize * ff)
+            glTexCoord2f(1.0, 1.0)
+            glVertex3f( flameSize * ff, 0,  flameSize * ff)
+            glEnd()
+            glPopMatrix()	  
+            glDisable(GL_TEXTURE_2D)
+          else:
+            flameColorMod0 = 0.1 * (flameLimit - event.flameCount)
+            flameColorMod1 = 0.1 * (flameLimit - event.flameCount)
+            flameColorMod2 = 0.1 * (flameLimit - event.flameCount)
+            
+            glColor3f(flameColor[0] * flameColorMod0, flameColor[1] * flameColorMod1, flameColor[2] * flameColorMod2)
+            glEnable(GL_TEXTURE_2D)
+            self.hitflames1Drawing.texture.bind()    
+            glPushMatrix()
+            glTranslate(x, y + .35, 0)
+            glRotate(90, 1, 0, 0)
+            glScalef(.25 + .6 * ms * ff, event.flameCount / 3.0 + .6 * ms * ff, event.flameCount / 3.0 + .6 * ms * ff)
+            glBegin(GL_TRIANGLE_STRIP)
+            glTexCoord2f(0.0, 0.0)
+            glVertex3f(-flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(1.0, 0.0)
+            glVertex3f( flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(0.0, 1.0)
+            glVertex3f(-flameSize * ff, 0,  flameSize * ff)
+            glTexCoord2f(1.0, 1.0)
+            glVertex3f( flameSize * ff, 0,  flameSize * ff)
+            glEnd()
+            glPopMatrix()
+            glDisable(GL_TEXTURE_2D)
+
+            flameColorMod0 = 0.1 * (flameLimit - event.flameCount)
+            flameColorMod1 = 0.1 * (flameLimit - event.flameCount)
+            flameColorMod2 = 0.1 * (flameLimit - event.flameCount)
+            
+            glColor3f(flameColor[0] * flameColorMod0, flameColor[1] * flameColorMod1, flameColor[2] * flameColorMod2)      
+            glEnable(GL_TEXTURE_2D)
+            self.hitflames1Drawing.texture.bind()    
+            glPushMatrix()
+            glTranslate(x - .005, y + .40 + .005, 0)
+            glRotate(90, 1, 0, 0)
+            glScalef(.30 + .6 * ms * ff, (event.flameCount + 1)/ 2.5 + .6 * ms * ff, (event.flameCount + 1) / 2.5 + .6 * ms * ff)
+            glBegin(GL_TRIANGLE_STRIP)
+            glTexCoord2f(0.0, 0.0)
+            glVertex3f(-flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(1.0, 0.0)
+            glVertex3f( flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(0.0, 1.0)
+            glVertex3f(-flameSize * ff, 0,  flameSize * ff)
+            glTexCoord2f(1.0, 1.0)
+            glVertex3f( flameSize * ff, 0,  flameSize * ff)
+            glEnd()
+            glPopMatrix()  
+            glDisable(GL_TEXTURE_2D)
+
+            flameColorMod0 = 0.1 * (flameLimit - event.flameCount)
+            flameColorMod1 = 0.1 * (flameLimit - event.flameCount)
+            flameColorMod2 = 0.1 * (flameLimit - event.flameCount)
+            
+            glColor3f(flameColor[0] * flameColorMod0, flameColor[1] * flameColorMod1, flameColor[2] * flameColorMod2)
+            glEnable(GL_TEXTURE_2D)
+            self.hitflames1Drawing.texture.bind()    
+            glPushMatrix()
+            glTranslate(x + .005, y + .35 + .005, 0)
+            glRotate(90, 1, 0, 0)
+            glScalef(.35 + .6 * ms * ff, (event.flameCount + 1) / 2.0 + .6 * ms * ff, (event.flameCount + 1) / 2.0 + .6 * ms * ff)
+            glBegin(GL_TRIANGLE_STRIP)
+            glTexCoord2f(0.0, 0.0)
+            glVertex3f(-flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(1.0, 0.0)
+            glVertex3f( flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(0.0, 1.0)
+            glVertex3f(-flameSize * ff, 0,  flameSize * ff)
+            glTexCoord2f(1.0, 1.0)
+            glVertex3f( flameSize * ff, 0,  flameSize * ff)
+            glEnd()
+            glPopMatrix()  
+            glDisable(GL_TEXTURE_2D)
+
+            flameColorMod0 = 0.1 * (flameLimit - event.flameCount)
+            flameColorMod1 = 0.1 * (flameLimit - event.flameCount)
+            flameColorMod2 = 0.1 * (flameLimit - event.flameCount)
+            
+            glColor3f(flameColor[0] * flameColorMod0, flameColor[1] * flameColorMod1, flameColor[2] * flameColorMod2)
+            glEnable(GL_TEXTURE_2D)
+            self.hitflames1Drawing.texture.bind()    
+            glPushMatrix()
+            glTranslate(x+.005, y +.35 +.005, 0)
+            glRotate(90, 1, 0, 0)
+            glScalef(.40 + .6 * ms * ff, (event.flameCount + 1) / 1.7 + .6 * ms * ff, (event.flameCount + 1) / 1.7 + .6 * ms * ff)
+            glBegin(GL_TRIANGLE_STRIP)
+            glTexCoord2f(0.0, 0.0)
+            glVertex3f(-flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(1.0, 0.0)
+            glVertex3f( flameSize * ff, 0, -flameSize * ff)
+            glTexCoord2f(0.0, 1.0)
+            glVertex3f(-flameSize * ff, 0,  flameSize * ff)
+            glTexCoord2f(1.0, 1.0)
+            glVertex3f( flameSize * ff, 0,  flameSize * ff)
+            glEnd()
+            glPopMatrix()  
+            glDisable(GL_TEXTURE_2D)
+         
+
+          glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+          event.flameCount += 1
+        
   def render(self, visibility, song, pos, controls):
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -492,10 +821,14 @@ class Guitar:
       glScale(-1, 1, 1)
 
     self.renderNeck(visibility, song, pos)
-    self.renderTracks(visibility)
-    self.renderBars(visibility, song, pos)
+    if self.tracksColor != "off":
+      self.renderTracks(visibility)
+    if self.barsColor != "off":
+      self.renderBars(visibility, song, pos)
     self.renderNotes(visibility, song, pos)
     self.renderFrets(visibility, song, controls)
+    self.renderFlames(visibility, song, pos, controls)
+    
     if self.leftyMode:
       glScale(-1, 1, 1)
 
@@ -727,6 +1060,7 @@ class Guitar:
 
     # update bpm
     diff = self.targetBpm - self.currentBpm
-    self.currentBpm += diff * .03
+    self.currentBpm = round(self.currentBpm + (diff * .03), 4)
+    
 
     return True

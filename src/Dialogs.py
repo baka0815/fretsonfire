@@ -320,6 +320,7 @@ class SongChooser(Layer, KeyListener):
     self.prompt         = prompt
     self.engine         = engine
     self.time           = 0
+    self.lastTime       = 0
     self.accepted       = False
     self.selectedIndex  = 0
     self.camera         = Camera()
@@ -338,11 +339,14 @@ class SongChooser(Layer, KeyListener):
     self.initialItem    = selectedSong
     self.library        = selectedLibrary
     self.searchText     = ""
+    self.searching      = False
 
     #RF-mod
     self.previewDisabled  = self.engine.config.get("audio", "disable_preview")
     self.sortOrder        = self.engine.config.get("game", "sort_order")
-
+    self.rotationDisabled = self.engine.config.get("game", "disable_librotation")
+    self.spinnyDisabled   = self.engine.config.get("theme", "disable_spinny")
+    
     # Use the default library if this one doesn't exist
     if not self.library or not os.path.isdir(self.engine.resource.fileName(self.library)):
       self.library = Song.DEFAULT_LIBRARY
@@ -372,6 +376,7 @@ class SongChooser(Layer, KeyListener):
     self.itemLabels    = [None] * len(self.items)
     self.loaded        = True
     self.searchText    = ""
+    self.searching     = False
     if self.initialItem is not None:
       for i, item in enumerate(self.items):
         if isinstance(item, Song.SongInfo) and self.initialItem == item.songName:
@@ -428,6 +433,7 @@ class SongChooser(Layer, KeyListener):
     if not self.items or self.accepted:
       return
 
+    self.lastTime = self.time
     c = self.engine.input.controls.getMapping(key)
     if c in Player.KEY1S or key == pygame.K_RETURN:
       if self.matchesSearch(self.selectedItem):
@@ -474,9 +480,38 @@ class SongChooser(Layer, KeyListener):
         self.engine.data.selectSound.play()
     elif key == pygame.K_BACKSPACE and not self.accepted:
       self.searchText = self.searchText[:-1]
-    elif unicode and ord(unicode) > 31 and not self.accepted:
+      if self.searchText == "":
+        self.searching = False
+    elif key == 47:
+      if self.searching == False:
+        self.searching = True
+      else:
+        self.searching == False
+    elif self.searching == True and unicode and ord(unicode) > 31 and not self.accepted:
       self.searchText += unicode
       self.doSearch()
+    elif self.searching == False and ((key >= 97 and key <= 122) or (key >= 49 and key <= 57)):
+      k1 = unicode
+      k2 = k1.capitalize()
+      found = 0
+      
+      for i in range(len(self.items)):
+        if self.sortOrder == 1:
+          if not self.items[i].artist:
+            continue
+          if self.items[i].artist[0] == k1 or self.items[i].artist[0] == k2:
+            found = 1
+            break
+        else:
+          if not self.items[i].name:
+            continue
+          if self.items[i].name[0] == k1 or self.items[i].name[0] == k2:
+            found = 1
+            break
+      if found == 1 and self.selectedIndex != i:
+        self.selectedIndex = i
+        self.updateSelection()
+        
     return True
 
   def matchesSearch(self, item):
@@ -608,10 +643,12 @@ class SongChooser(Layer, KeyListener):
     t = self.time / 100
     w, h, = self.engine.view.geometry[2:4]
     r = .5
-    self.background.transform.reset()
-    self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
-    self.background.transform.rotate(-t)
-    self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
+    
+    if self.spinnyDisabled != True:
+      self.background.transform.reset()
+      self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
+      self.background.transform.rotate(-t)
+      self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
     self.background.draw()
       
     # render the item list
@@ -661,8 +698,8 @@ class SongChooser(Layer, KeyListener):
             self.renderCassette(item.cassetteColor, self.itemLabels[i])
           elif isinstance(item, Song.LibraryInfo):
             glRotate(-self.itemAngles[i], 0, 0, 1)
-            if i == self.selectedIndex:
-              glRotate(self.time * 4, 1, 0, 0)
+            if i == self.selectedIndex and self.rotationDisabled == False:
+              glRotate(((self.time - self.lastTime) * 4 % 360) - 90, 1, 0, 0)
             self.renderLibrary(item.color, self.itemLabels[i])
         glPopMatrix()
         
@@ -769,6 +806,7 @@ class FileChooser(BackgroundLayer, KeyListener):
     self.selectedFile   = None
     self.time           = 0.0
     self.menu           = None
+    self.spinnyDisabled = self.engine.config.get("theme", "disable_spinny")
 
     self.engine.loadSvgDrawing(self, "background", "editor.svg")
 
@@ -837,14 +875,17 @@ class FileChooser(BackgroundLayer, KeyListener):
   def render(self, visibility, topMost):
     v = (1 - visibility) ** 2
 
-    # render the background    
+    # render the background
+
     t = self.time / 100
     w, h, = self.engine.view.geometry[2:4]
     r = .5
-    self.background.transform.reset()
-    self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
-    self.background.transform.rotate(-t)
-    self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
+
+    if self.spinnyDisabled != True:      
+      self.background.transform.reset()
+      self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
+      self.background.transform.rotate(-t)
+      self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
     self.background.draw()
       
     self.engine.view.setOrthogonalProjection(normalize = True)
@@ -868,6 +909,8 @@ class ItemChooser(BackgroundLayer, KeyListener):
     self.selectedItem   = None
     self.time           = 0.0
     self.menu = Menu(self.engine, choices = [(c, self._callbackForItem(c)) for c in items], onClose = self.close, onCancel = self.cancel)
+    self.spinnyDisabled = self.engine.config.get("theme", "disable_spinny")
+    
     if selected and selected in items:
       self.menu.selectItem(items.index(selected))
     self.engine.loadSvgDrawing(self, "background", "editor.svg")
@@ -903,14 +946,16 @@ class ItemChooser(BackgroundLayer, KeyListener):
   def render(self, visibility, topMost):
     v = (1 - visibility) ** 2
 
-    # render the background    
+    # render the background
     t = self.time / 100
     w, h, = self.engine.view.geometry[2:4]
     r = .5
-    self.background.transform.reset()
-    self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
-    self.background.transform.rotate(-t)
-    self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
+    
+    if self.spinnyDisabled != True:
+      self.background.transform.reset()
+      self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
+      self.background.transform.rotate(-t)
+      self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
     self.background.draw()
       
     self.engine.view.setOrthogonalProjection(normalize = True)

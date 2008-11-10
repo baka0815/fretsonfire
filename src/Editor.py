@@ -62,6 +62,8 @@ class Editor(Layer, KeyListener):
     self.libraryName = libraryName
     self.heldFrets   = set()
 
+    self.spinnyDisabled   = self.engine.config.get("theme", "disable_spinny")    
+
     mainMenu = [
       (_("Save Song"),                  self.save),
       (_("Set Song Name"),              self.setSongName),
@@ -305,10 +307,12 @@ class Editor(Layer, KeyListener):
     t = self.time / 100 + 34
     w, h, = self.engine.view.geometry[2:4]
     r = .5
-    self.background.transform.reset()
-    self.background.transform.translate(w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
-    self.background.transform.rotate(-t)
-    self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
+
+    if spinnyDisabled != True:    
+      self.background.transform.reset()
+      self.background.transform.translate(w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
+      self.background.transform.rotate(-t)
+      self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
     self.background.draw()
 
     self.camera.target = ( 2, 0, 5.5)

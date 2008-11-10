@@ -79,8 +79,23 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.lastSongPos      = 0.0
     self.keyBurstTimeout  = [None for i in self.playerList]
     self.keyBurstPeriod   = 30
-    self.camera.target    = (0, 0, 4)
-    self.camera.origin    = (0, 3, -3)
+    self.camera.target    = (0.0, 0.0, 4.0)
+    self.camera.origin    = (0.0, 3.0, -3.0)
+    self.camera.target    = (0.0, 1.0, 8.0)
+    self.camera.origin    = (0.0, 2.0, -3.4)
+    self.targetX          = 0.0
+    self.targetY          = 1.0
+    self.targetZ          = 8.0
+    self.originX          = 0.0
+    self.originY          = 2.0
+    self.originZ          = -3.4
+    
+    self.targetX          = 0.0
+    self.targetY          = 1.0
+    self.targetZ          = 8.0
+    self.originX          = 0.0
+    self.originY          = 2.4
+    self.originZ          = -3.8
 
     #new
     
@@ -125,15 +140,27 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.song.unpause()
 
   def setCamera(self):
+    #x=0 middle
+    #x=1 rotate left
+    #x=-1 rotate right
+    #y=3 middle
+    #y=4 rotate back
+    #y=2 rotate front
+    #z=-3
+    print self.targetX, self.targetY, self.targetZ, self.originX, self.originY, self.originZ
     if self.pov == 1:
-      self.camera.target    = (1, 1, 1)
-      self.camera.origin    = (0, 5, -5)
+      #y between 2 and 3
+      self.camera.target    = (0.0, 1.4, 2.0)
+      self.camera.origin    = (0.0, 2.6, -3.6)
     elif self.pov == 2:
-      self.camera.target    = (0, 0, 4)
-      self.camera.origin    = (0, 2, -2)
+      #self.camera.target    = (0.0, 1.0, 8.0)
+      #self.camera.origin    = (0.0, 3.5, -4.0)
+      #oy 3.0-3.5
+      self.camera.target    = (self.targetX, self.targetY, self.targetZ)
+      self.camera.origin    = (self.originX, self.originY, self.originZ)
     else:
-      self.camera.target    = (0, 0, 4)
-      self.camera.origin    = (0, 3, -3)
+      self.camera.target    = (0.0, 0.0, 4.0)
+      self.camera.origin    = (0.0, 3.0, -3.0)
       
   #RF-mod (not needed?)
   def freeResources(self):
@@ -181,7 +208,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
   def endSong(self):
     self.engine.view.popLayer(self.menu)
-    self.freeResources()
+    #self.freeResources()
     self.goToResults()
 
   def quit(self):
@@ -613,6 +640,44 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.session.world.createScene("GameResultsScene", libraryName = self.libraryName, songName = self.songName, players = self.playerList)
 
   def keyPressed(self, key, unicode, control = None):
+    x = .2
+    if key == ord('a'):
+      self.originX += x
+      self.setCamera()
+    elif key == ord('z'):
+      self.originX -= x
+      self.setCamera()
+    elif key == ord('s'):
+      self.originY += x
+      self.setCamera()
+    elif key == ord('x'):
+      self.originY -= x
+      self.setCamera()
+    elif key == ord('d'):
+      self.originZ += x
+      self.setCamera()
+    elif key == ord('c'):
+      self.originZ -= x
+      self.setCamera()
+
+    if key == ord('f'):
+      self.targetX += x
+      self.setCamera()
+    elif key == ord('v'):
+      self.targetX -= x
+      self.setCamera()
+    elif key == ord('g'):
+      self.targetY += x
+      self.setCamera()
+    elif key == ord('b'):
+      self.targetY -= x
+      self.setCamera()
+    elif key == ord('h'):
+      self.targetZ += x
+      self.setCamera()
+    elif key == ord('n'):
+      self.targetZ -= x
+      self.setCamera()
     #RF style HOPO playing
     if self.hopoStyle ==  0:
       res = self.keyPressed2(key, unicode, control)

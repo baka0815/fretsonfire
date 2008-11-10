@@ -245,7 +245,9 @@ class SettingsMenu(Menu.Menu):
       ConfigChoice(engine.config, "video", "disable_stats", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_notesfx", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_fretsfx", autoApply = True),
+      ConfigChoice(engine.config, "theme", "disable_spinny", autoApply = True),
       ConfigChoice(engine.config, "game", "disable_libcount", autoApply = True),
+      ConfigChoice(engine.config, "game", "disable_librotation", autoApply = True),
     ]
     rfModPerfSettingsMenu = Menu.Menu(engine, rfModPerfSettings)
 

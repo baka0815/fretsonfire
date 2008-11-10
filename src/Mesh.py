@@ -54,6 +54,7 @@ class Mesh:
               glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  shader.specular.color.rgba)
 
   def render(self, geomName = None):
+    found = False
     if self.geoms:
       # setup lights
       for scene in self.doc.visualScenesLibrary.items:
@@ -72,6 +73,7 @@ class Mesh:
         for node in scene.nodes:
           if geomName is not None and node.name != geomName:
             continue
+          found = True
           for geom in node.iGeometries:
             if geom.object:
               for mat in geom.bindMaterials:
@@ -91,7 +93,7 @@ class Mesh:
       glDisable(GL_LIGHTING)
       for n in range(8):
         glDisable(GL_LIGHT0 + n)
-      return
+      return found
 
     for geom in self.doc.geometriesLibrary.items:
       self.geoms[geom.name] = glGenLists(1)

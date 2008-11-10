@@ -35,6 +35,7 @@ def getAvailableLanguages():
 def dummyTranslator(string):
   return string
 
+encoding = Config.load(Version.appName() + ".ini").get("game", "encoding")
 language = Config.load(Version.appName() + ".ini").get("game", "language")
 _ = dummyTranslator
 
@@ -43,7 +44,10 @@ if language:
     trFile = os.path.join(Version.dataPath(), "translations", "%s.mo" % language.lower().replace(" ", "_"))
     catalog = gettext.GNUTranslations(open(trFile, "rb"))
     def translate(m):
-      return catalog.gettext(m).decode("utf-8")
+      if encoding == None:
+        return catalog.gettext(m).decode("utf-8")
+      else:
+        return catalog.gettext(m).decode(encoding)
     _ = translate
   except Exception, x:
     Log.warn("Unable to select language '%s': %s" % (language, x))

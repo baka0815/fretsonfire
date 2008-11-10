@@ -3,9 +3,10 @@ RF-mod 4 for Frets On Fire 1.2.451
 Features:
 
 Game:
- Relocatable song library
+ Relocatable song library with fancy dialog to reset it
  New note mesh support for additional colors and effects (Raph666)
  Scrolling High score list
+ High score entries with guitar keys
  Song played counter
  Command line song start
  Memory cleanup (less memory leaks)
@@ -47,7 +48,9 @@ Toggles for:
 
 In order to install this branch you will need to:
 
-1) Extract the zip file
-2a) Move your song directory into the data directory
-2b) Set your base_library to where your songs are
-3) Double click the FretsOnFire.exe
+1) Extract the zip file into a folder
+2) Do NOT move your song directory!
+3) Double click the FretsOnFire.exe DO NOT MAKE A SHORTCUT
+4) When you select play it will ask to locate your song directory.
+5) Navigate to the 'songs' directory and select 'Accept Folder'
+6) Select play again and voila

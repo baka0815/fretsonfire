@@ -525,6 +525,7 @@ class Track:
   def __init__(self):
     self.events = []
     self.allEvents = []
+    self.marked = False
 
   def addEvent(self, time, event):
     for t in range(int(time / self.granularity), int((time + event.length) / self.granularity) + 1):
@@ -621,11 +622,6 @@ class Track:
         prevTicks    = currentTicks
         currentNotes = [event]
         currentTicks = ticks
-    #for time, event in self.allEvents:
-    #  if not isinstance(event, Note):
-    #    continue
-    #  if time > 000 and time < 7000:
-    #    print "Note2", event.number, event.tappable, time
 
   def markHopo(self):
     lastTick = 0
@@ -644,7 +640,10 @@ class Track:
     bpmNotes = []
     firstTime = 1
 
-#    for time, event in self.allEvents + [self.allEvents[-1]]:
+    #If already processed abort   
+    if self.marked == True:
+      return
+    
     for time, event in self.allEvents:
       if isinstance(event, Tempo):
         bpmNotes.append([time, event])
@@ -662,9 +661,6 @@ class Track:
       
       #skip first note
       if firstTime == 1:
-        #If already processed abort
-        if event.tappable != 0:
-          return
         chordNotes.append(event)
         event.tappable = -3
         lastEvent = event
@@ -717,13 +713,15 @@ class Track:
       lastTime = time
     else:
       #Add last note to HOPO list if applicable
-      if noteDelta != 0 and tickDelta > 1.5 and tickDelta < hopoDelta:
+      if noteDelta != 0 and tickDelta > 1.5 and tickDelta < hopoDelta and isinstance(event, Note):
         hopoNotes.append([time, event])
 
     firstTime = 1
     note = None
              
     for time, note in list(hopoNotes):
+      if not isinstance(note, Note):
+        continue
       if firstTime == 1:
         if note.tappable >= 0:
           note.tappable = 1
@@ -731,7 +729,7 @@ class Track:
         firstTime = 0
         continue
 
-      #current Note Invalid      
+      #current Note Invalid
       if note.tappable < 0:
         #If current note is invalid for HOPO, and previous note was start of a HOPO section, then previous note not HOPO
         if lastEvent.tappable == 1:
@@ -789,11 +787,7 @@ class Track:
         #If it is the middle of a HOPO, it's really the end of a HOPO
         elif note.tappable == 2:
           note.tappable = 3      
-    #for time, event in self.allEvents:
-    #  if not isinstance(event, Note):
-    #    continue
-    #  if time > 000 and time < 7000:
-    #    print "Note3", event.number, event.tappable, time
+    self.marked = True
     
 class Song(object):
   def __init__(self, engine, infoFileName, songTrackName, guitarTrackName, rhythmTrackName, noteFileName, scriptFileName = None, partlist = [parts[GUITAR_PART]]):
@@ -1343,6 +1337,8 @@ def getAvailableLibraries(engine, library = DEFAULT_LIBRARY):
   libraryRoots = []
 
   for songRoot in set(songRoots):
+    if (os.path.exists(songRoot) == False):
+      return libraries
     for libraryRoot in os.listdir(songRoot):
       libraryRoot = os.path.join(songRoot, libraryRoot)
       if not os.path.isdir(libraryRoot):
@@ -1366,9 +1362,13 @@ def getAvailableLibraries(engine, library = DEFAULT_LIBRARY):
 def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = False):
   order = engine.config.get("game", "sort_order")
   # Search for songs in both the read-write and read-only directories
+  if library == None:
+    return []
   songRoots = [engine.resource.fileName(library), engine.resource.fileName(library, writable = True)]
   names = []
   for songRoot in songRoots:
+    if (os.path.exists(songRoot) == False):
+      return []
     for name in os.listdir(songRoot):
       if not os.path.isfile(os.path.join(songRoot, name, "notes.mid")):
         continue

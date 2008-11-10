@@ -27,6 +27,7 @@ import Song
 import Config
 from Language import _
 
+import os
 # save chosen song into config file
 Config.define("game", "selected_library",  str, "")
 Config.define("game", "selected_song",     str, "")
@@ -70,7 +71,14 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
             Dialogs.chooseSong(self.engine, \
                                selectedLibrary = Config.get("game", "selected_library"),
                                selectedSong    = Config.get("game", "selected_song"))
-        
+
+          if self.libraryName == None:
+            newPath = Dialogs.chooseFile(self.engine, masks = ["*/songs"], prompt = _("Choose a new songs directory."), dirSelect = True)
+            if newPath != None:
+              Config.set("game", "base_library", os.path.dirname(newPath))
+              Config.set("game", "selected_library", "songs")
+              Config.set("game", "selected_song", "")
+            
           if not self.songName:
             self.session.world.finishGame()
             return
@@ -106,14 +114,16 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
                 break
               while True:
                 if self.engine.config.get("game", "players") > 1:               
-                  p = Dialogs.chooseItem(self.engine, info.parts+ ["Party Mode"] + ["No Player 2"], "%s \n %s" % (info.name, _("Player 2 Choose a part:")), selected = self.player2.part)
+                  p = Dialogs.chooseItem(self.engine, info.parts + ["Party Mode"] + ["No Player 2"], "%s \n %s" % (info.name, _("Player 2 Choose a part:")), selected = self.player2.part)
                   if p and p == "No Player 2":
                     players = 1
                     selected = True
+                    self.player2.part = p
                     break
                   elif p and p == "Party Mode":
                     players = -1
                     selected = True
+                    self.player2.part = p
                     break
                   elif p and p != "No Player 2" and p != "Party Mode":
                     players = 2

@@ -28,6 +28,7 @@ import Mod
 import Audio
 
 import pygame
+import os
 
 class ConfigChoice(Menu.Choice):
   def __init__(self, config, section, option, autoApply = False):
@@ -230,11 +231,13 @@ class SettingsMenu(Menu.Menu):
     rfModHOPOSettingsMenu = Menu.Menu(engine, rfModHOPOSettings)    
 
     rfModGameSettings = [
+      (_("Select Song Library >"), self.baseLibrarySelect), 
       ConfigChoice(engine.config, "game",  "alt_keys", autoApply = True),
       #ConfigChoice(engine.config, "game",  "strum_burst", autoApply = True),
       ConfigChoice(engine.config, "game",  "sort_order", autoApply = True),
       ConfigChoice(engine.config, "game",  "disable_vbpm", autoApply = True),
       ConfigChoice(engine.config, "game", "pov", autoApply = True),
+      ConfigChoice(engine.config, "game", "party_time", autoApply = True),
       ConfigChoice(engine.config, "audio", "miss_volume", autoApply = True),
     ]
     rfModGameSettingsMenu = Menu.Menu(engine, rfModGameSettings)
@@ -285,6 +288,13 @@ class SettingsMenu(Menu.Menu):
         option.apply()
     self.engine.restart()
 
+  def baseLibrarySelect(self):
+    newPath = Dialogs.chooseFile(self.engine, masks = ["*/songs"], prompt = _("Choose a new songs directory."), dirSelect = True)
+    if newPath != None:
+      Config.set("game", "base_library", os.path.dirname(newPath))
+      Config.set("game", "selected_library", "songs")
+      Config.set("game", "selected_song", "")
+    
 class GameSettingsMenu(Menu.Menu):
   def __init__(self, engine):
     settings = [

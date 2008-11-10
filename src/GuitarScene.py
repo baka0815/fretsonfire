@@ -1,4 +1,5 @@
 #####################################################################
+#####################################################################
 # -*- coding: iso-8859-1 -*-                                        #
 #                                                                   #
 # Frets on Fire                                                     #
@@ -142,8 +143,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     #self.fx2x = None
     #self.fx3x = None
     #self.fx4x = None
-    #self.flame1 = None
-    #self.flame2 = None
     self.menu = None
     
   def loadSettings(self):
@@ -154,14 +153,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.rhythmVolume     = self.engine.config.get("audio", "rhythmvol")
     self.screwUpVolume    = self.engine.config.get("audio", "screwupvol")
     #RF-mod
-    #self.disableFlame1    = self.engine.config.get("video", "disable_flame1")
-    #self.disableFlame2    = self.engine.config.get("video", "disable_flame2")
     self.disableStats     = self.engine.config.get("video", "disable_stats")
-    self.hopoType         = self.engine.config.get("game", "hopo_type")
+    self.hopoType         = self.engine.config.get("game", "tapping")
     self.hopoMark         = self.engine.config.get("game", "hopo_mark")
     self.hopoStyle        = self.engine.config.get("game", "hopo_style")
-    self.hopoMark = 0
-    self.hopoStyle = 0
     self.pov              = self.engine.config.get("game", "pov")
     for i,guitar in enumerate(self.guitars):
       guitar.leftyMode = self.engine.config.get("player%d" % (i), "leftymode")
@@ -180,7 +175,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
     # If tapping is disabled, remove the tapping indicators
     if not self.engine.config.get("game", "tapping"):
-      for time, event in self.song.track.getAllEvents():
+      for time, event in self.song.track[i].getAllEvents():
         if isinstance(event, Note):
           event.tappable = 0
 
@@ -232,7 +227,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.song.stop()
 
     for i, guitar in enumerate(self.guitars):
-      if self.hopoType == 1 or (self.hopoType == 2 and self.song.info.hopo == "on"):
+      if self.hopoType == 1 or self.song.info.hopo == "on":
         if self.hopoMark == 1:
           self.song.track[i].markTappable();
         else:  
@@ -598,7 +593,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
           self.sfxChannel.play(self.engine.data.screwUpSoundBass)
         else:
           self.sfxChannel.play(self.engine.data.screwUpSound)
-    print "indopick", self.guitars[num].hopoActive, self.guitars[num].hopoLast
       
   def toggleAutoPlay(self):
     self.autoPlay = not self.autoPlay
@@ -643,7 +637,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       # Check whether we can tap the currently required notes
       pos   = self.getSongPosition()
       notes = self.guitars[num].getRequiredNotes(self.song, pos)
-      print "tapcheckPress", self.playerList[num].streak, self.guitars[num].areNotesTappable(notes), self.guitars[num].controlsMatchNotes(self.controls, notes)
 
       if self.playerList[num].streak > 0 and \
          self.guitars[num].areNotesTappable(notes) and \
@@ -705,7 +698,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
           return True
 
       if pressed >= 0 and self.song:
-        print "dopick2", hopo 
         self.doPick2(pressed, hopo)
       
     if control == Player.CANCEL:
@@ -751,7 +743,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       # Check whether we can tap the currently required notes
       pos   = self.getSongPosition()
       notes = self.guitars[num].getRequiredNotes(self.song, pos)
-      print "tapcheckRelease", self.playerList[num].streak, self.guitars[num].areNotesTappable(notes), self.guitars[num].controlsMatchNotes(self.controls, notes)
 
       if self.playerList[num].streak > 0 and \
          self.guitars[num].areNotesTappable(notes) and \
@@ -872,7 +863,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         
         # show the streak counter and miss message
         if player.streak > 0 and self.song:
-          text = _("%d hit") % player.streak
+          if player.cheating == True:
+            text = _("%d cheats") % player.streak
+          else:
+            text = _("%d hit") % player.streak
           factor = 0.0
           if self.lastPickPos[i]:
               diff = self.getSongPosition() - self.lastPickPos[i]

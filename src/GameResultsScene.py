@@ -149,7 +149,8 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
           self.stars[i] = 6
         
         taunt = None
-        if player.score == 0:
+        
+        if player.score == 0 or player.cheating == True:
           taunt = "jurgen1.ogg"
         elif self.accuracy[i] >= 99.0:
           taunt = "myhero.ogg"
@@ -303,9 +304,10 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
       Theme.setBaseColor(1 - v)
       if self.playerList[0].cheating:
         text = _("%s Cheated!" % self.song.info.name)
-        self.stars[i] = 0
-        self.accuracy[i] = 0.0
-        
+        self.stars[0] = 0
+        self.accuracy[0] = 0.0
+        self.stars[1] = 0
+        self.accuracy[1] = 0.0        
       else:
         text = _("%s Finished!" % self.song.info.name)
       w, h = font.getStringSize(text)

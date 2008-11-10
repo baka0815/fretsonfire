@@ -382,9 +382,9 @@ class SongChooser(Layer, KeyListener):
           break
     # Load labels for libraries right away
     #RF-mod consider not
-    for i, item in enumerate(self.items):
-      if isinstance(item, Song.LibraryInfo):
-        self.loadItemLabel(i)
+    #for i, item in enumerate(self.items):
+    #  if isinstance(item, Song.LibraryInfo):
+    #    self.loadItemLabel(i)
     self.updateSelection()
     
   def shown(self):
@@ -592,9 +592,9 @@ class SongChooser(Layer, KeyListener):
       label.bind()
       glColor3f(1, 1, 1)
       glMatrixMode(GL_TEXTURE)
-      glScalef(-1, -1, 1)
+      glScalef(1, -1, 1)
       glMatrixMode(GL_MODELVIEW)
-      self.libraryLabel.render()
+      self.libraryLabel.render("Mesh_001")
       glMatrixMode(GL_TEXTURE)
       glLoadIdentity()
       glMatrixMode(GL_MODELVIEW)
@@ -753,7 +753,8 @@ class SongChooser(Layer, KeyListener):
             songCount = _("One song in this library")
           else:
             songCount = _("%d songs in this library") % item.songCount
-          wrapText(font, (x, pos[1] + 3 * font.getHeight() * 0.0016), songCount, visibility = f, scale = 0.0016)
+          if item.songCount > 0:
+            wrapText(font, (x, pos[1] + 3 * font.getHeight() * 0.0016), songCount, visibility = f, scale = 0.0016)
     finally:
       self.engine.view.resetProjection()
 

@@ -133,6 +133,17 @@ class KeyConfigChoice(Menu.Choice):
   def apply(self):
     pass
 
+class HopoConfigChoice(ConfigChoice):
+  def __init__(self, config, section, option, autoApply = False):
+    ConfigChoice.__init__(self, config, section, option, autoApply)
+
+  def change(self, value):
+    ConfigChoice.change(self, value)
+    if value == "FoF":
+      self.config.set(self.section, "hopo_mark", self.value)
+      self.config.set(self.section, "hopo_style", self.value)
+
+      
 
 class SettingsMenu(Menu.Menu):
   def __init__(self, engine):
@@ -225,8 +236,8 @@ class SettingsMenu(Menu.Menu):
 
     rfModHOPOSettings = [
       ConfigChoice(engine.config, "game",  "tapping", autoApply = True),
-      ConfigChoice(engine.config, "game",  "hopo_mark", autoApply = True),
-      ConfigChoice(engine.config, "game",  "hopo_style", autoApply = True),
+      HopoConfigChoice(engine.config, "game",  "hopo_mark", autoApply = True),
+      HopoConfigChoice(engine.config, "game",  "hopo_style", autoApply = True),
     ]
     rfModHOPOSettingsMenu = Menu.Menu(engine, rfModHOPOSettings)    
 

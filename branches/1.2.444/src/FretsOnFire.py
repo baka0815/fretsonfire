@@ -43,28 +43,37 @@ import getopt
 import sys
 import os
 import codecs
+import Resource
 
 usage = """%(prog)s [options]
 Options:
-  --verbose, -v      Verbose messages
-  --play=, -p [SongDir] play a song from the commandline
-  --diff=, -D [difficulty number] use this difficulty
-  --part=, -P [part number] use this part
+  --verbose, -v                     Verbose messages
+  --debug,   -d                     Write Debug file
+  --config=, -c [configfile]        Use this instead of fretsonfire.ini
+  --play=,   -p [SongDir]           Play a song from the commandline
+  --diff=,   -D [difficulty number] Use this difficulty
+  --part=,   -P [part number]       Use this part
 """ % {"prog": sys.argv[0] }
 
 if __name__ == "__main__":
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "vp:D:P:", ["verbose", "play=", "diff=", "part="])
+    opts, args = getopt.getopt(sys.argv[1:], "vdc:p:D:P:", ["verbose", "debug", "config=", "play=", "diff=", "part="])
   except getopt.GetoptError:
     print usage
     sys.exit(1)
     
   playing = None
+  configFile = None
+  debug = False
   difficulty = 0
   part = 0
   for opt, arg in opts:
     if opt in ["--verbose", "-v"]:
       Log.quiet = False
+    if opt in ["--debug", "-d"]:
+      debug = True
+    if opt in ["--config", "-c"]:
+      configFile = arg
     if opt in ["--play", "-p"]:
       playing = arg
     if opt in ["--diff", "-D"]:
@@ -73,7 +82,15 @@ if __name__ == "__main__":
       part = arg
       
   while True:
-    config = Config.load(Version.appName() + ".ini", setAsDefault = True)
+    if configFile != None:
+      if configFile.lower() == "reset":
+        fileName = os.path.join(Resource.getWritableResourcePath(), Version.appName() + ".ini")
+        os.remove(fileName)
+        config = Config.load(Version.appName() + ".ini", setAsDefault = True)
+      else:
+        config = Config.load(configFile, setAsDefault = True)
+    else:
+      config = Config.load(Version.appName() + ".ini", setAsDefault = True)
     engine = GameEngine(config)
     engine.cmdPlay = 0
     
@@ -84,6 +101,12 @@ if __name__ == "__main__":
       engine.cmdDiff = int(difficulty)
       engine.cmdPart = int(part)
 
+    if debug == True:
+      engine.setDebugModeEnabled(not engine.isDebugModeEnabled())
+      engine.debugLayer.debugOut(engine)
+      engine.quit()
+      break
+      
     encoding = Config.get("game", "encoding")
     if encoding != None:
       reload(sys)
@@ -103,7 +126,7 @@ if __name__ == "__main__":
         pass
     if engine.restartRequested:
       Log.notice("Restarting.")
-
+      engine.audio.close()
       try:
         # Determine whether were running from an exe or not
         if hasattr(sys, "frozen"):

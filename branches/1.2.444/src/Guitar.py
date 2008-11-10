@@ -96,13 +96,16 @@ class Guitar:
     self.barsColor = Theme.barsColor
     self.flameColors = Theme.flameColors
     self.flameSizes = Theme.flameSizes
-          
+    self.glowColor  = Theme.glowColor
+    
+    
     self.twoChordMax = self.engine.config.get("player%d" % (player), "two_chord_max")
     self.disableVBPM  = self.engine.config.get("game", "disable_vbpm")
     self.disableNoteSFX  = self.engine.config.get("video", "disable_notesfx")
     self.disableFretSFX  = self.engine.config.get("video", "disable_fretsfx")
     self.disableFlameSFX  = self.engine.config.get("video", "disable_flamesfx")
 
+    
   def selectPreviousString(self):
     self.selectedString = (self.selectedString - 1) % self.strings
 
@@ -116,10 +119,13 @@ class Guitar:
     self.earlyMargin       = 60000.0 / bpm / 3.5
     self.lateMargin        = 60000.0 / bpm / 3.5
     self.noteReleaseMargin = 60000.0 / bpm / 2
-    self.bpm               = bpm
+    self.currentBpm        = bpm
+    self.targetBpm         = bpm
     self.baseBeat          = 0.0
 
-  def setdynamicBPM(self, bpm):
+  def setDynamicBPM(self, bpm):
+    #if bpm > 110:
+    #  bpm = 110
     self.earlyMargin       = 60000.0 / bpm / 3.5
     self.lateMargin        = 60000.0 / bpm / 3.5
     self.noteReleaseMargin = 60000.0 / bpm / 2
@@ -335,7 +341,7 @@ class Guitar:
           self.baseBeat         += (time - self.lastBpmChange) / self.currentPeriod
           self.targetBpm         = event.bpm
           self.lastBpmChange     = time
-          self.setdynamicBPM(self.targetBpm)
+          self.setDynamicBPM(self.targetBpm)
         continue
       
       if not isinstance(event, Note):
@@ -487,10 +493,18 @@ class Guitar:
       if f and self.disableFretSFX != True:
         glBlendFunc(GL_ONE, GL_ONE)
 
-        s = 0.0
+        if self.glowColor[0] == -1:
+          s = 1.0
+        else:
+          s = 0.0
+          
         while s < 1:
           ms = s * (math.sin(self.time) * .25 + 1)
-          glColor3f(c[0] * (1 - ms), c[1] * (1 - ms), c[2] * (1 - ms))
+          if self.glowColor[0] == -2:
+            glColor3f(c[0] * (1 - ms), c[1] * (1 - ms), c[2] * (1 - ms))
+          else:
+            glColor3f(self.glowColor[0] * (1 - ms), self.glowColor[1] * (1 - ms), self.glowColor[2] * (1 - ms))
+            
           glPushMatrix()
           glTranslate(x, y, 0)
           glScalef(1 + .6 * ms * f, 1 + .6 * ms * f, 1 + .6 * ms * f)
@@ -858,7 +872,9 @@ class Guitar:
     if catchup == True:
       for time, event in notes:
         event.skipped = True
-    return notes
+
+    return sorted(notes, key=lambda x: x[1].number)        
+    #return notes
 
   def getRequiredNotes(self, song, pos):
     track   = song.track[self.player]
@@ -868,7 +884,7 @@ class Guitar:
     if notes:
       t     = min([time for time, event in notes])
       notes = [(time, event) for time, event in notes if time - t < 1e-3]
-    return notes
+    return sorted(notes, key=lambda x: x[1].number)
 
   def getRequiredNotes2(self, song, pos, hopo = False):
 
@@ -879,7 +895,8 @@ class Guitar:
     if notes:
       t     = min([time for time, event in notes])
       notes = [(time, event) for time, event in notes if time - t < 1e-3]
-    return notes
+      
+    return sorted(notes, key=lambda x: x[1].number)
     
   def getRequiredNotes3(self, song, pos, hopo = False):
 
@@ -890,7 +907,8 @@ class Guitar:
     #if notes:
     #  t     = min([time for time, event in notes])
     #  notes = [(time, event) for time, event in notes if time - t < 1e-3]
-    return notes
+
+    return sorted(notes, key=lambda x: x[1].number)
 
   def controlsMatchNotes(self, controls, notes):
     # no notes?
@@ -909,15 +927,21 @@ class Guitar:
     chordlist.sort(lambda a, b: cmp(a[0][0], b[0][0]))
 
     twochord = 0
-    for notes in chordlist:
+    for chord in chordlist:
       # matching keys?
-      requiredKeys = [note.number for time, note in notes]
+      requiredKeys = [note.number for time, note in chord]
       requiredKeys = self.uniqify(requiredKeys)
-
+      
       if len(requiredKeys) > 2 and self.twoChordMax == True:
-        skipped = len(requiredKeys) - 2
-        requiredKeys = [min(requiredKeys), max(requiredKeys)]
-        twochord = 1
+        twochord = 0
+        for n, k in enumerate(self.keys):
+          if controls.getState(k):
+            twochord += 1
+        if twochord == 2:
+          skipped = len(requiredKeys) - 2
+          requiredKeys = [min(requiredKeys), max(requiredKeys)]
+        else:
+          twochord = 0
 
       for n, k in enumerate(self.keys):
         if n in requiredKeys and not controls.getState(k):
@@ -926,7 +950,17 @@ class Guitar:
           # The lower frets can be held down
           if n > max(requiredKeys):
             return False
-    if twochord == 1:
+      if twochord != 2:
+        for time, note in chord:
+          note.played = True
+      else:
+        for time, note in chord:
+          note.skipped = True
+        chord[0][1].skipped = False
+        chord[-1][1].skipped = False
+        chord[0][1].played = True
+        chord[-1][1].played = True
+    if twochord == 2:
       self.twoChord += skipped
 
     return True
@@ -951,17 +985,23 @@ class Guitar:
     chordlist = chords.values()
     chordlist.sort(lambda a, b: cmp(a[0][0], b[0][0]))
 
-    twochord = 0    
-    for notes in chordlist:
+    twochord = 0
+    for chord in chordlist:
       # matching keys?
-      requiredKeys = [note.number for time, note in notes]
+      requiredKeys = [note.number for time, note in chord]
       requiredKeys = self.uniqify(requiredKeys)
 
       if len(requiredKeys) > 2 and self.twoChordMax == True:
-        skipped = len(requiredKeys) - 2
-        requiredKeys = [min(requiredKeys), max(requiredKeys)]
-        twochord = 1
-
+        twochord = 0
+        for n, k in enumerate(self.keys):
+          if controls.getState(k):
+            twochord += 1
+        if twochord == 2:
+          skipped = len(requiredKeys) - 2
+          requiredKeys = [min(requiredKeys), max(requiredKeys)]
+        else:
+          twochord = 0
+        
       for n, k in enumerate(self.keys):
         if n in requiredKeys and not controls.getState(k):
           return False
@@ -969,7 +1009,18 @@ class Guitar:
           # The lower frets can be held down
           if hopo == False and n >= min(requiredKeys):
             return False
-    if twochord == 1:
+      if twochord != 2:
+        for time, note in chord:
+          note.played = True
+      else:
+        for time, note in chord:
+          note.skipped = True
+        chord[0][1].skipped = False
+        chord[-1][1].skipped = False
+        chord[0][1].played = True
+        chord[-1][1].played = True
+        
+    if twochord == 2:
       self.twoChord += skipped
       
     return True
@@ -994,32 +1045,47 @@ class Guitar:
     chordlist = chords.values()
     chordlist.sort(lambda a, b: cmp(a[0][0], b[0][0]))
 
-    twochord = 0
     missList = []
+    twochord = 0
     for chord in chordlist:
       # matching keys?
       requiredKeys = [note.number for time, note in chord]
-
       requiredKeys = self.uniqify(requiredKeys)
 
       if len(requiredKeys) > 2 and self.twoChordMax == True:
-        skipped = len(requiredKeys) - 2
-        requiredKeys = [min(requiredKeys), max(requiredKeys)]
-        twochord = 1
+        twochord = 0
+        for n, k in enumerate(self.keys):
+          if controls.getState(k):
+            twochord += 1
+        if twochord == 2:
+          skipped = len(requiredKeys) - 2
+          requiredKeys = [min(requiredKeys), max(requiredKeys)]
+        else:
+          twochord = 0
+          
       if (self.controlsMatchNote3(controls, chord, requiredKeys, hopo)):
-        for time, note in chord:
-          note.played = True
+        if twochord != 2:
+          for time, note in chord:
+            note.played = True
+        else:
+          for time, note in chord:
+            note.skipped = True
+          chord[0][1].skipped = False
+          chord[-1][1].skipped = False
+          chord[0][1].played = True
+          chord[-1][1].played = True
         break
       if hopo == True:
         break
       missList.append(chord)
     else:
       missList = []
+    
     for chord in missList:
       for time, note in chord:
         note.skipped = True
         note.played = False
-    if twochord == 1:
+    if twochord == 2:
       self.twoChord += skipped
       
     return True
@@ -1082,29 +1148,11 @@ class Guitar:
     if self.controlsMatchNotes(controls, notes):
       self.pickStartPos = pos
       for time, note in notes:
+        if note.skipped == True:
+          continue
         self.pickStartPos = max(self.pickStartPos, time)
         note.played       = True
-      self.playedNotes = notes
-      return True
-    return False
-
-  def startPick(self, song, pos, controls, hopo = False):
-    if hopo == True:
-      res = startPick2(song, pos, controls, hopo)
-      return res
-    if not song:
-      return False
-    
-    self.playedNotes = []
-    
-    notes = self.getRequiredNotes(song, pos)
-
-    if self.controlsMatchNotes(controls, notes):
-      self.pickStartPos = pos
-      for time, note in notes:
-        self.pickStartPos = max(self.pickStartPos, time)
-        note.played       = True
-      self.playedNotes = notes
+        self.playedNotes.append([time, note])
       return True
     return False
 
@@ -1119,6 +1167,8 @@ class Guitar:
     if self.controlsMatchNotes2(controls, notes, hopo):
       self.pickStartPos = pos
       for time, note in notes:
+        if note.skipped == True:
+          continue
         self.pickStartPos = max(self.pickStartPos, time)
         if hopo:
           note.hopod        = True
@@ -1130,8 +1180,8 @@ class Guitar:
           self.hopoActive = -time
         else:
           self.hopoActive = 0
+        self.playedNotes.append([time, note])
       self.hopoLast     = note.number
-      self.playedNotes = notes
       return True
     return False
 
@@ -1160,7 +1210,7 @@ class Guitar:
       else:
         self.hopoActive = 0
       self.hopoLast     = note.number
-      self.playedNotes.append([time,note])
+      self.playedNotes.append([time, note])
     if len(self.playedNotes) != 0:
       return True
     return False
@@ -1212,7 +1262,11 @@ class Guitar:
 
     # update bpm
     diff = self.targetBpm - self.currentBpm
-    self.currentBpm = round(self.currentBpm + (diff * .03), 4)
-    
+    if (round((diff * .03), 4) != 0):
+      self.currentBpm = round(self.currentBpm + (diff * .03), 4)
+    else:
+      self.currentBpm = self.targetBpm
 
+    if self.currentBpm != self.targetBpm:
+      self.setDynamicBPM(self.currentBpm)    
     return True

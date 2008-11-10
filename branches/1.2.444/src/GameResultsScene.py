@@ -36,6 +36,7 @@ import random
 
 from OpenGL.GL import *
 import Config
+import Version
 
 class GameResultsScene:
   pass
@@ -92,12 +93,16 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
             name = Dialogs.getText(self.engine, _("%d points is a new high score! Player " + str(i+1) + " enter your name") % player.score, player.name)
             if name:
               player.name = name
-            self.highscoreIndex[i] = self.song.info.addHighscore(player.difficulty, player.score, self.stars[i], player.name, part = player.part)
+            notesTotal = len([1 for time, event in self.song.track[i].getAllEvents() if isinstance(event, Song.Note)])
+            modOptions1 = self.engine.config.getModOptions1(player.twoChord, 0)
+            modOptions2 = self.engine.config.getModOptions2()
+            scoreExt = [player.notesHit, notesTotal, player.longestStreak, Version.version(), modOptions1, modOptions2]
+            self.highscoreIndex[i] = self.song.info.addHighscore(player.difficulty, player.score, self.stars[i], player.name, part = player.part, scoreExt = scoreExt)
             self.song.info.save()
           
             if self.engine.config.get("game", "uploadscores"):
               self.uploadingScores = True
-              fn = lambda: self.song.info.uploadHighscores(self.engine.config.get("game", "uploadurl"), self.song.getHash())
+              fn = lambda: self.song.info.uploadHighscores(self.engine.config.get("game", "uploadurl"), self.song.getHash(), part = player.part)
               self.engine.resource.load(self, "uploadResult", fn)
 
       if len(self.playerList) > 1 and self.playerList[0].part == self.playerList[1].part and self.playerList[0].difficulty == self.playerList[1].difficulty and self.highscoreIndex[0] != None and self.highscoreIndex[1] != None and self.highscoreIndex[1] <= self.highscoreIndex[0]:
@@ -147,11 +152,11 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
     
       if notes:
         # 5 stars at 95%, 4 stars at 75%
-        f = float(player.notesHit - player.twoChord) / notes
+        f = float(player.notesHit) / notes
         self.stars[i]    = int(5.0   * (f + .05))
         self.accuracy[i] = 100.0 * f
 
-        if self.accuracy[i] == 100.0 and player.notesHit - player.twoChord == notes:
+        if self.accuracy[i] == 100.0 and player.notesHit == notes:
           self.stars[i] = 6
         
         taunt = None
@@ -261,13 +266,14 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
           Theme.setBaseColor(1 - v)
           font.render(text, (.5 - w / 2, .01 - v + h + self.offset))
         
-          x = .1
+          x = .01
           y = .16 + v
           
         if self.song:
           i = -1
           for i, scores in enumerate(self.song.info.getHighscores(self.scoreDifficulty, part = self.scorePart)):
-            score, stars, name = scores
+            score, stars, name, scores_ext = scores
+            notesHit, notesTotal, noteStreak, modVersion, modOptions1, modOptions2 = scores_ext
             if stars == 6:
               stars = 5
               perfect = 1
@@ -280,17 +286,23 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
               else:
                 Theme.setBaseColor(1 - v)
             font.render("%d." % (i + 1), (x, y + self.offset),    scale = scale)
+            if notesTotal != 0:
+              score = "%s %.1f%%" % (score, (float(notesHit) / notesTotal) * 100.0)
+            if noteStreak != 0:
+              score = "%s %d" % (score, noteStreak)
             font.render(unicode(score), (x + .05, y + self.offset),   scale = scale)
+            options = "%s,%s" % (modOptions1, modOptions2)
+            font.render(unicode(options), (x + .3, y + self.offset),   scale = scale)
             if perfect == 1:
               glColor3f(0, 1, 0)
-            font.render(unicode(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x + .25, y + self.offset), scale = scale * .9)
+            font.render(unicode(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x + .6, y + self.offset), scale = scale * .9)
             for j,player in enumerate(self.playerList):
               if (self.time % 10.0) < 5.0 and i == self.highscoreIndex[j] and self.scoreDifficulty == player.difficulty and self.scorePart == player.part:
                 Theme.setSelectedColor(1 - v)
                 break
               else:
                 Theme.setBaseColor(1 - v)
-            font.render(name, (x + .5, y + self.offset), scale = scale)
+            font.render(name, (x + .8, y + self.offset), scale = scale)
             y += h
             endScroll -= .07
             

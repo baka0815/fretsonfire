@@ -1,9 +1,13 @@
 TODO Items/Bugs
 ---------------
 
-debug flag to dump a file with file sizes and settings and such
+fix score going backwards when doing 2 note chord
 
-Somehow disable windows screensaver when game is running
+fix funny hopo in pride and joy (expert)
+
+make a second background to load if playing 2 player split screen
+
+Somehow disable windows screensaver when game is running (needs ctypes)
 
 Add a 'uploadas' option in song.ini (can be abused)
 
@@ -142,3 +146,6 @@ As made famous by using cover tag (DONE)
 Make a flameX_YX_color variable setting for 'off' instead of the toggle (DONE)
 fix 2nd player stettings saving (DONE)
 High score entry with guitar keys (DONE)
+flag to read different file than fretsonfire.ini (DONE)
+flag to read NO fretsonfire.ini (DONE)
+debug flag to dump a file with file sizes and settings and such (DONE)

@@ -107,16 +107,35 @@ class SongInfo(object):
     self.highScores = {}
     
     scores = self._get("scores", str, "")
+    scores_ext = self._get("scores_ext", str, "")
+    print scores_ext
     if scores:
       scores = Cerealizer.loads(binascii.unhexlify(scores))
+      if scores_ext:
+        scores_ext = Cerealizer.loads(binascii.unhexlify(scores_ext))
+        print scores_ext
       for difficulty in scores.keys():
         try:
           difficulty = difficulties[difficulty]
         except KeyError:
           continue
-        for score, stars, name, hash in scores[difficulty.id]:
+        for i, base_scores in enumerate(scores[difficulty.id]):
+          score, stars, name, hash = base_scores
+          if scores_ext != "":
+            print "woo"
+            #Someone may have mixed extended and non extended
+            try:
+              hash_ext, scoreExt = scores_ext[difficulty.id][i]
+              
+            except:
+              hash_ext = 0
+              scoreExt = [0, 0, 0 , "RF-mod", "Default", "Default"]
+            print score, stars, name, scoreExt
           if self.getScoreHash(difficulty, score, stars, name) == hash:
-            self.addHighscore(difficulty, score, stars, name, part = parts[GUITAR_PART])
+            if scores_ext != "" and hash == hash_ext:
+              self.addHighscore(difficulty, score, stars, name, part = parts[GUITAR_PART], scoreExt = scoreExt)
+            else:
+              self.addHighscore(difficulty, score, stars, name, part = parts[GUITAR_PART])
           else:
             Log.warn("Weak hack attempt detected. Better luck next time.")
 
@@ -191,14 +210,39 @@ class SongInfo(object):
       highScores = self.highScores
       
     for difficulty in highScores.keys():
-      s[difficulty.id] = [(score, stars, name, self.getScoreHash(difficulty, score, stars, name)) for score, stars, name in highScores[difficulty]]
+      s[difficulty.id] = [(score, stars, name, self.getScoreHash(difficulty, score, stars, name)) for score, stars, name, scores_ext in highScores[difficulty]]
+    return binascii.hexlify(Cerealizer.dumps(s))
+
+  def getObfuscatedScoresExt(self, part = parts[GUITAR_PART]):
+    s = {}
+    if part == parts[GUITAR_PART]:
+      highScores = self.highScores
+    elif part == parts[RHYTHM_PART]:
+      highScores = self.highScoresRhythm
+    elif part == parts[BASS_PART]:
+      highScores = self.highScoresBass
+    elif part == parts[LEAD_PART]:
+      highScores = self.highScoresLead
+    else:
+      highScores = self.highScores
+      
+    for difficulty in highScores.keys():
+      s[difficulty.id] = [(self.getScoreHash(difficulty, score, stars, name), scores_ext) for score, stars, name, scores_ext in highScores[difficulty]]
     return binascii.hexlify(Cerealizer.dumps(s))
 
   def save(self):
-    self._set("scores",        self.getObfuscatedScores(part = parts[GUITAR_PART]))
-    self._set("scores_rhythm", self.getObfuscatedScores(part = parts[RHYTHM_PART]))
-    self._set("scores_bass",   self.getObfuscatedScores(part = parts[BASS_PART]))
-    self._set("scores_lead",   self.getObfuscatedScores(part = parts[LEAD_PART]))
+    if self.highScores != {}:
+      self._set("scores",        self.getObfuscatedScores(part = parts[GUITAR_PART]))
+      self._set("scores_ext",    self.getObfuscatedScoresExt(part = parts[GUITAR_PART]))
+    if self.highScoresRhythm != {}:
+      self._set("scores_rhythm", self.getObfuscatedScores(part = parts[RHYTHM_PART]))
+      self._set("scores_rhythm_ext", self.getObfuscatedScoresExt(part = parts[RHYTHM_PART]))
+    if self.highScoresBass != {}:
+      self._set("scores_bass",   self.getObfuscatedScores(part = parts[BASS_PART]))
+      self._set("scores_bass_ext",   self.getObfuscatedScoresExt(part = parts[BASS_PART]))
+    if self.highScoresLead != {}:
+      self._set("scores_lead",   self.getObfuscatedScores(part = parts[LEAD_PART]))
+      self._set("scores_lead_ext",   self.getObfuscatedScoresExt(part = parts[LEAD_PART]))
     
     f = open(self.fileName, "w")
     self.info.write(f)
@@ -342,13 +386,15 @@ class SongInfo(object):
     except KeyError:
       return []
       
-  def uploadHighscores(self, url, songHash):
+  def uploadHighscores(self, url, songHash, part = parts[GUITAR_PART]):
     try:
       d = {
         "songName": self.songName,
         "songHash": songHash,
-        "scores":   self.getObfuscatedScores(),
-        "version":  Version.version()
+        "scores":   self.getObfuscatedScores(part = part),
+        "scores_ext": self.getObfuscatedScoresExt(part = part),
+        "version":  Version.version(),
+        "songPart": part
       }
       data = urllib.urlopen(url + "?" + urllib.urlencode(d)).read()
       Log.debug("Score upload result: %s" % data)
@@ -358,7 +404,7 @@ class SongInfo(object):
       return False
     return True
   
-  def addHighscore(self, difficulty, score, stars, name, part = parts[GUITAR_PART]):
+  def addHighscore(self, difficulty, score, stars, name, part = parts[GUITAR_PART], scoreExt = [0, 0, 0, "RF-mod", "Default", "Default"]):
     if part == parts[GUITAR_PART]:
       highScores = self.highScores
     elif part == parts[RHYTHM_PART]:
@@ -369,14 +415,16 @@ class SongInfo(object):
       highScores = self.highScoresLead
     else:
       highScores = self.highScores
-      
+
+    #notesHit, notesTotal, noteStreak, modVersion, modOptions1, modOptions2 = scoreExt 
     if not difficulty in highScores:
       highScores[difficulty] = []
-    highScores[difficulty].append((score, stars, name))
+    print score, stars, name, scoreExt
+    highScores[difficulty].append((score, stars, name, scoreExt))
     highScores[difficulty].sort(lambda a, b: {True: -1, False: 1}[a[0] > b[0]])
     highScores[difficulty] = highScores[difficulty][:5]
     for i, scores in enumerate(highScores[difficulty]):
-      _score, _stars, _name = scores
+      _score, _stars, _name, _scores_ext = scores
       if _score == score and _stars == stars and _name == name:
         return i
     return -1
@@ -631,7 +679,8 @@ class Track:
     tickDelta = 0
     noteDelta = 0
 
-    hopoDelta = 161
+    #dtb file says 170 ticks
+    hopoDelta = 170
     chordFudge = 10
     ticksPerBeat = 480
     hopoNotes = []
@@ -661,7 +710,6 @@ class Track:
       
       #skip first note
       if firstTime == 1:
-        chordNotes.append(event)
         event.tappable = -3
         lastEvent = event
         lastTime  = time
@@ -670,7 +718,7 @@ class Track:
         
       tickDelta = tick - lastTick        
       noteDelta = event.number - lastEvent.number
-        
+      
       #previous note and current note HOPOable      
       if tickDelta <= hopoDelta:
         #Add both notes to HOPO list even if duplicate.  Will come out in processing
@@ -703,7 +751,7 @@ class Track:
       #This is a chord
       elif tickDelta < chordFudge:
         #Add both notes to bad list even if duplicate.  Will come out in processing
-        if chordNotes[-1] != lastEvent:
+        if len(chordNotes) != 0 and chordNotes[-1] != lastEvent:
           chordNotes.append(lastEvent)
         chordNotes.append(event)
         lastEvent.tappable = -1
@@ -718,6 +766,14 @@ class Track:
 
     firstTime = 1
     note = None
+
+    for note in list(chordNotes):
+      #chord notes -1
+      note.tappable = -1   
+
+    for note in list(sameNotes):
+      #same note in string -2
+      note.tappable = -2
              
     for time, note in list(hopoNotes):
       if not isinstance(note, Note):
@@ -734,6 +790,9 @@ class Track:
         #If current note is invalid for HOPO, and previous note was start of a HOPO section, then previous note not HOPO
         if lastEvent.tappable == 1:
           lastEvent.tappable = 0
+        #If current note is beginning of a same note sequence, it's valid for END of HOPO only
+        #elif lastEvent.tappable == 2 and note.tappable == -2:
+        #  note.tappable = 3
         #If current note is invalid for HOPO, and previous note was a HOPO section, then previous note is end of HOPO
         elif lastEvent.tappable > 0:
           lastEvent.tappable = 3

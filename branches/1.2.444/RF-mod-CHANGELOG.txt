@@ -1,3 +1,25 @@
+4.13
+   Made cheater splash less in the way
+   Added glow_color theme variable (also can turn key shaped glow off)
+   Fixed guitarVolume to honor values set in settings
+   Fixed crash in esc after song ends
+   Fixed BPM reset
+   Fixed 2 note chord display
+   Improved 2 note chord detection
+   Fixed 2 note chord score penalization
+   Added resume song menu item
+   Added -c flag for specifying alternate ini file
+   Added -c reset argument for reseting default ini file
+   Added HOPO fix for held notes (Capo)
+   Added debug dump to debug.txt (neat)
+   Added theme and stage to debug.txt
+   Added Disk selection at top level (windows only)
+   Added some fixes for linux crashes in pygame.init
+   Fixed resolution type errors for linux
+   Fixed linux restart issue (zelurker)
+   Fixed playing no notes bug (zelurker)
+
+   
 4.12
    Started HOPO streak fix (awesome)
    Base_library selector (awesome)

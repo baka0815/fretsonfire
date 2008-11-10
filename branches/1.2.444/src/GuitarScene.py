@@ -95,6 +95,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.originX          = Theme.povOriginX
     self.originY          = Theme.povOriginY
     self.originZ          = Theme.povOriginZ
+    self.ending           = False
 
     #new
     
@@ -118,6 +119,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     settingsMenu.fadeScreen = True
 
     self.menu = Menu(self.engine, [
+      (_("Resume Song"),       self.resumeSong),
       (_("Restart Song"),      self.restartSong),
       (_("Change Song"),       self.changeSong),
       (_("End Song"),          self.endSong),
@@ -137,6 +139,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     if self.song:
       self.song.unpause()
 
+  def resumeSong(self):
+    self.engine.view.popLayer(self.menu)
+    self.resumeGame()
+    
   def setCamera(self):
     #x=0 middle
     #x=1 rotate left
@@ -233,7 +239,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       guitar.twoChord = 0
       guitar.hopoActive = False
       guitar.hopoLast = -1
-
+      
     if self.partyMode == True:
       self.guitars[0].keys = PLAYER1KEYS
       self.guitars[0].actions = PLAYER1ACTIONS
@@ -272,170 +278,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.lastEvent = round(self.lastEvent / 1000) * 1000
       self.notesCum = 0
       self.noteLastTime = 0
- 
-
-  def doHopo(self, num):
-    lastTick = 0
-    lastTime  = 0
-    lastEvent = Note
-    
-    tickDelta = 0
-    noteDelta = 0
-
-    hopoDelta = 161
-    chordFudge = 10
-    ticksPerBeat = 480
-    hopoNotes = []
-    chordNotes = []
-    sameNotes = []
-    bpmNotes = []
-    firstTime = 1
-
-    for time, event in self.song.track[num].getAllEvents():
-      if isinstance(event, Tempo):
-        bpmNotes.append([time, event])
-        continue
-      if not isinstance(event, Note):
-        continue
-      
-      while bpmNotes and time >= bpmNotes[0][0]:
-        #Adjust to new BPM
-        bpm = bpmNotes[0][1].bpm
-        bpmNotes.pop(0)
-
-      tick = (time * bpm * ticksPerBeat) / 60000.0
-      lastTick = (lastTime * bpm * ticksPerBeat) / 60000.0
-      
-      #skip first note
-      if firstTime == 1:
-        #If already processed abort
-        if event.hopo != 0:
-          return
-        chordNotes.append(event)
-        event.hopo = -3
-        lastEvent = event
-        lastTime  = time
-        firstTime = 0
-        continue
         
-      tickDelta = tick - lastTick        
-      noteDelta = event.number - lastEvent.number
-        
-      #previous note and current note HOPOable      
-      if tickDelta <= hopoDelta:
-        #Add both notes to HOPO list even if duplicate.  Will come out in processing
-        if (not hopoNotes) or not (hopoNotes[-1][0] == lastTime and hopoNotes[-1][1] == lastEvent):
-          #special case for first marker note.  Change it to a HOPO start
-          if not hopoNotes and lastEvent.hopo == -3:
-            lastEvent.hopo = 1
-          hopoNotes.append([lastTime, lastEvent])
-
-        hopoNotes.append([time, event])
-        
-      #HOPO Over        
-      if tickDelta >= hopoDelta:
-        if hopoNotes != []:
-          #If the last event is the last HOPO note, mark it as a HOPO end
-          if lastEvent.hopo != -1 and hopoNotes[-1][1] == lastEvent:
-            if lastEvent.hopo >= 0:
-              lastEvent.hopo = 3
-            else:
-              lastEvent.hopo = -1
-
-      #This is the same note as before
-      elif noteDelta == 0:
-        #Add both notes to bad list even if duplicate.  Will come out in processing
-        sameNotes.append(lastEvent)
-        sameNotes.append(event)
-        lastEvent.hopo = -2
-        event.hopo = -2
-            
-      #This is a chord
-      elif tickDelta < chordFudge:
-        #Add both notes to bad list even if duplicate.  Will come out in processing
-        if chordNotes[-1] != lastEvent:
-          chordNotes.append(lastEvent)
-        chordNotes.append(event)
-        lastEvent.hopo = -1
-        event.hopo = -1
-        
-      lastEvent = event
-      lastTime = time
-    else:
-      #Add last note to HOPO list if applicable
-      if noteDelta != 0 and tickDelta > 1.5 and tickDelta < hopoDelta:
-        hopoNotes.append([time, event])
-
-    firstTime = 1
-    note = None
-             
-    for time, note in list(hopoNotes):
-      if firstTime == 1:
-        if note.hopo >= 0:
-          note.hopo = 1
-        lastEvent = note
-        firstTime = 0
-        continue
-
-      #current Note Invalid      
-      if note.hopo < 0:
-        #If current note is invalid for HOPO, and previous note was start of a HOPO section, then previous note not HOPO
-        if lastEvent.hopo == 1:
-          lastEvent.hopo = 0
-        #If current note is invalid for HOPO, and previous note was a HOPO section, then previous note is end of HOPO
-        elif lastEvent.hopo > 0:
-          lastEvent.hopo = 3
-      #current note valid
-      elif note.hopo >= 0:
-        #String of same notes can be followed by HOPO
-        if note.hopo == 3:
-          #This is the end of a valid HOPO section
-          if lastEvent.hopo == 1 or lastEvent.hopo == 2:
-            lastEvent = note
-            lastTime = time
-            continue
-          if lastEvent.hopo == -2:
-            #If its the same note again it's invalid
-            if lastEvent.number == note.number:
-              note.hopo = -2
-            else:
-              lastEvent.hopo = 1
-          elif lastEvent.hopo == 0:
-            lastEvent.hopo = 1
-          #If last note was invalid or end of HOPO section, and current note is end, it is really not HOPO
-          elif lastEvent.hopo != 2 and lastEvent.hopo != 1:
-            note.hopo = 0
-          #If last event was invalid or end of HOPO section, current note is start of HOPO
-          else:
-            note.hopo = 1
-        elif note.hopo == 2:
-          if lastEvent.hopo == -2:
-            note.hopo = 1
-          elif lastEvent.hopo == -1:
-            note.hopo = 0
-        elif note.hopo == 1:
-          if lastEvent.hopo == 2:
-            note.hopo = 0
-        else:
-          if lastEvent.hopo == -2:
-            lastEvent.hopo = 1
-            
-          if lastEvent.hopo != 2 and lastEvent.hopo != 1:
-            note.hopo = 1
-          else:
-            note.hopo = 2
-      lastEvent = note
-      lastTime = time
-    else:
-      if note != None:
-        #Handle last note
-        #If it is the start of a HOPO, it's not really a HOPO
-        if note.hopo == 1:
-          note.hopo = 0
-        #If it is the middle of a HOPO, it's really the end of a HOPO
-        elif note.hopo == 2:
-          note.hopo = 3      
-       
   def run(self, ticks):
     SceneClient.run(self, ticks)
     pos = self.getSongPosition()
@@ -465,7 +308,12 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             if self.controls.getState(k):
               held += 1
           if changed and held:
-            self.doPick(i)
+            if self.hopoStyle ==  0:
+              self.doPick2(i)
+            elif self.hopoStyle == 2:
+              self.doPick3(i)
+            else:
+              self.doPick(i)
       
       self.song.update(ticks)
       if self.countdown > 0:
@@ -494,7 +342,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         self.endPick(i)
 
       # missed some notes?
-      if self.playerList[i].streak > 0 and guitar.getMissedNotes(self.song, pos):
+      if not guitar.playedNotes and guitar.getMissedNotes(self.song, pos):
         self.playerList[i].streak = 0
         self.guitars[i].setMultiplier(1)
         guitar.hopoLast = -1
@@ -508,7 +356,12 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         #RF-mod new HOPO stuff?
         notes = self.guitars[i].getRequiredNotes(self.song, pos)
         if self.guitars[i].controlsMatchNotes(self.controls, notes):
-          self.doPick(i)
+          if self.hopoStyle ==  0:
+            self.doPick2(i)
+          elif self.hopoStyle == 2:
+            self.doPick3(i)
+          else:
+            self.doPick(i)
 
   def endPick(self, num):
     score = self.getExtraScoreForCurrentlyPlayedNotes(num)
@@ -595,19 +448,13 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     #hopo fudge
     hopoFudge = abs(abs(self.guitars[num].hopoActive) - pos)
     activeList = [k for k in self.keysList[num] if self.controls.getState(k)]
-    #if len(activeList) != 0 and guitar.hopoActive and activeList[0] != self.keysList[num][guitar.hopoLast] and control in self.keysList[num]:
 
     if len(activeList) == 1 and self.guitars[num].keys[self.guitars[num].hopoLast] == activeList[0]:
       if self.guitars[num].hopoActive != False and hopoFudge > 0 and hopoFudge < self.guitars[num].lateMargin:
         return
-      #print "In fudge", self.guitars[num].hopoLast, activeList, self.guitars[num].keys[self.guitars[num].hopoLast], self.guitars[num].actions
-      #for k in self.guitars[num].actions:
-      #  if self.controls.getState(k):
-      #    print "fudge"
-      #    return
 
     if self.guitars[num].startPick2(self.song, pos, self.controls, hopo):
-      self.song.setInstrumentVolume(1.0, self.playerList[num].part)
+      self.song.setInstrumentVolume(self.guitarVolume, self.playerList[num].part)
       if self.guitars[num].playedNotes:
         self.playerList[num].streak += 1
       self.playerList[num].notesHit += len(self.guitars[num].playedNotes)
@@ -650,19 +497,13 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     #hopo fudge
     hopoFudge = abs(abs(self.guitars[num].hopoActive) - pos)
     activeList = [k for k in self.keysList[num] if self.controls.getState(k)]
-    #if len(activeList) != 0 and guitar.hopoActive and activeList[0] != self.keysList[num][guitar.hopoLast] and control in self.keysList[num]:
 
     if len(activeList) == 1 and self.guitars[num].keys[self.guitars[num].hopoLast] == activeList[0]:
       if self.guitars[num].hopoActive != False and hopoFudge > 0 and hopoFudge < self.guitars[num].lateMargin:
         return
-      #print "In fudge", self.guitars[num].hopoLast, activeList, self.guitars[num].keys[self.guitars[num].hopoLast], self.guitars[num].actions
-      #for k in self.guitars[num].actions:
-      #  if self.controls.getState(k):
-      #    print "fudge"
-      #    return
 
     if self.guitars[num].startPick3(self.song, pos, self.controls, hopo):
-      self.song.setInstrumentVolume(1.0, self.playerList[num].part)
+      self.song.setInstrumentVolume(self.guitarVolume, self.playerList[num].part)
       if self.guitars[num].playedNotes:
         self.playerList[num].streak += 1
       self.playerList[num].notesHit += len(self.guitars[num].playedNotes)
@@ -695,6 +536,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     return self.autoPlay
 
   def goToResults(self):
+    self.ending = True
     if self.song:
       self.song.stop()
       self.done  = True
@@ -739,6 +581,8 @@ class GuitarSceneClient(GuitarScene, SceneClient):
          self.guitars[num].controlsMatchNotes(self.controls, notes):
         self.doPick(num)
     elif control in Player.CANCELS:
+      if self.ending == True:
+        return True
       self.pauseGame()
       self.engine.view.pushLayer(self.menu)
       return True
@@ -798,6 +642,8 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         self.doPick2(pressed, hopo)
       
     if control in Player.CANCELS:
+      if self.ending == True:
+        return True
       self.pauseGame()
       self.engine.view.pushLayer(self.menu)
       return True
@@ -858,6 +704,8 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         self.doPick3(pressed, hopo)
       
     if control in Player.CANCELS:
+      if self.ending == True:
+        return True
       self.pauseGame()
       self.engine.view.pushLayer(self.menu)
       return True
@@ -968,8 +816,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         text = _("Cheater")
         w, h = bigFont.getStringSize(text, scale = scale)
         Theme.setSelectedColor()
-        bigFont.render(text,  (.5 - w / 2, .2), scale = scale)
-        
+        if (((pos % 60000) / 1000 % 6) > 3):
+          bigFont.render(text,  (1 - w, .2), scale = scale)
+        else:
+          bigFont.render(text,  (0, .2), scale = scale)
       # show countdown
       if self.countdown > 1:
         Theme.setBaseColor(min(1.0, 3.0 - abs(4.0 - self.countdown)))

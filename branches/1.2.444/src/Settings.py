@@ -94,6 +94,14 @@ class KeyConfigChoice(Menu.Choice):
     self.option  = option
     self.changed = False
     self.value   = None
+
+    #Load alternate keyset
+    useAltKeySet = self.engine.config.get("game", "alt_keys")                   
+    if not useAltKeySet == True:
+       self.option = self.option
+    else:
+      self.option = "a%s" % (self.option)
+      
     Menu.Choice.__init__(self, text = "", callback = self.change)
 
   def getText(self, selected):
@@ -137,24 +145,37 @@ class SettingsMenu(Menu.Menu):
       (_("Mod settings"), modSettings),
       ConfigChoice(engine.config, "game",  "language"),
       ConfigChoice(engine.config, "game",  "leftymode", autoApply = True),
+      ConfigChoice(engine.config, "game",  "tapping", autoApply = True),
       ConfigChoice(engine.config, "game",  "uploadscores", autoApply = True),
     ]
     gameSettingsMenu = Menu.Menu(engine, gameSettings + applyItem)
 
     keySettings = [
       (_("Test Keys"), lambda: Dialogs.testKeys(engine)),
-      KeyConfigChoice(engine, engine.config, "player", "key_action1"),
-      KeyConfigChoice(engine, engine.config, "player", "key_action2"),
-      KeyConfigChoice(engine, engine.config, "player", "key_1"),
-      KeyConfigChoice(engine, engine.config, "player", "key_2"),
-      KeyConfigChoice(engine, engine.config, "player", "key_3"),
-      KeyConfigChoice(engine, engine.config, "player", "key_4"),
-      KeyConfigChoice(engine, engine.config, "player", "key_5"),
-      KeyConfigChoice(engine, engine.config, "player", "key_left"),
-      KeyConfigChoice(engine, engine.config, "player", "key_right"),
-      KeyConfigChoice(engine, engine.config, "player", "key_up"),
-      KeyConfigChoice(engine, engine.config, "player", "key_down"),
-      KeyConfigChoice(engine, engine.config, "player", "key_cancel"),
+      KeyConfigChoice(engine, engine.config, "player0", "key_action1"),
+      KeyConfigChoice(engine, engine.config, "player0", "key_action2"),
+      KeyConfigChoice(engine, engine.config, "player0", "key_1"),
+      KeyConfigChoice(engine, engine.config, "player0", "key_2"),
+      KeyConfigChoice(engine, engine.config, "player0", "key_3"),
+      KeyConfigChoice(engine, engine.config, "player0", "key_4"),
+      KeyConfigChoice(engine, engine.config, "player0", "key_5"),
+      KeyConfigChoice(engine, engine.config, "player0", "key_left"),
+      KeyConfigChoice(engine, engine.config, "player0", "key_right"),
+      KeyConfigChoice(engine, engine.config, "player0", "key_up"),
+      KeyConfigChoice(engine, engine.config, "player0", "key_down"),
+      KeyConfigChoice(engine, engine.config, "player0", "key_cancel"),
+      KeyConfigChoice(engine, engine.config, "player1", "key_action1"),
+      KeyConfigChoice(engine, engine.config, "player1", "key_action2"),
+      KeyConfigChoice(engine, engine.config, "player1", "key_1"),
+      KeyConfigChoice(engine, engine.config, "player1", "key_2"),
+      KeyConfigChoice(engine, engine.config, "player1", "key_3"),
+      KeyConfigChoice(engine, engine.config, "player1", "key_4"),
+      KeyConfigChoice(engine, engine.config, "player1", "key_5"),
+      KeyConfigChoice(engine, engine.config, "player1", "key_left"),
+      KeyConfigChoice(engine, engine.config, "player1", "key_right"),
+      KeyConfigChoice(engine, engine.config, "player1", "key_up"),
+      KeyConfigChoice(engine, engine.config, "player1", "key_down"),
+      KeyConfigChoice(engine, engine.config, "player1", "key_cancel"),
     ]
     keySettingsMenu = Menu.Menu(engine, keySettings)
     
@@ -189,11 +210,54 @@ class SettingsMenu(Menu.Menu):
     ]
     audioSettingsMenu = Menu.Menu(engine, audioSettings + applyItem)
 
+    rfModPlayer0Settings = [
+      ConfigChoice(engine.config, "player0",  "two_chord_max", autoApply = True),
+      ConfigChoice(engine.config, "player0",  "leftymode", autoApply = True),
+    ]
+    rfModPlayer0SettingsMenu = Menu.Menu(engine, rfModPlayer0Settings)
+
+    rfModPlayer1Settings = [
+      ConfigChoice(engine.config, "player1",  "two_chord_max", autoApply = True),
+      ConfigChoice(engine.config, "player1",  "leftymode", autoApply = True),
+    ]
+    rfModPlayer1SettingsMenu = Menu.Menu(engine, rfModPlayer1Settings)    
+    
+    rfModGameSettings = [
+      ConfigChoice(engine.config, "game",  "alt_keys", autoApply = True),
+      ConfigChoice(engine.config, "game",  "hopo_type", autoApply = True),
+      #ConfigChoice(engine.config, "game",  "strum_burst", autoApply = True),
+      ConfigChoice(engine.config, "game",  "sort_order", autoApply = True),
+      ConfigChoice(engine.config, "game",  "disable_vbpm", autoApply = True),
+      ConfigChoice(engine.config, "audio", "miss_volume", autoApply = True),
+    ]
+    rfModGameSettingsMenu = Menu.Menu(engine, rfModGameSettings)
+    
+    rfModPerfSettings = [
+      ConfigChoice(engine.config, "engine",  "game_priority", autoApply = True),
+      ConfigChoice(engine.config, "audio", "disable_preview", autoApply = True),
+      ConfigChoice(engine.config, "video", "disable_stats", autoApply = True),
+      ConfigChoice(engine.config, "video", "disable_notesfx", autoApply = True),
+      ConfigChoice(engine.config, "video", "disable_fretsfx", autoApply = True),
+      ConfigChoice(engine.config, "video", "disable_flame1", autoApply = True),
+      ConfigChoice(engine.config, "video", "disable_flame2", autoApply = True),
+    ]
+    rfModPerfSettingsMenu = Menu.Menu(engine, rfModPerfSettings)
+
+    rfModSettings = [
+      ConfigChoice(engine.config, "game",  "players", autoApply = True),
+      (_("Game settings"), rfModGameSettingsMenu),
+      (_("Performance settings"), rfModPerfSettingsMenu),
+      (_("Player 1 settings"), rfModPlayer0SettingsMenu),
+      (_("Player 2 settings"), rfModPlayer1SettingsMenu),
+    ]
+    rfModSettingsMenu = Menu.Menu(engine, rfModSettings)
+
     settings = [
       (_("Game Settings"),     gameSettingsMenu),
       (_("Key Settings"),      keySettingsMenu),
       (_("Video Settings"),    videoSettingsMenu),
       (_("Audio Settings"),    audioSettingsMenu),
+      (_("RF-mod Settings"),   rfModSettingsMenu),
     ]
   
     self.settingsToApply = settings + \

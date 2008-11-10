@@ -24,6 +24,15 @@
 Main game executable.
 """
 
+# Register the latin-1 encoding
+import codecs
+import encodings.iso8859_1
+import encodings.utf_8
+codecs.register(lambda encoding: encodings.iso8859_1.getregentry())
+codecs.register(lambda encoding: encodings.utf_8.getregentry())
+assert codecs.lookup("iso-8859-1")
+assert codecs.lookup("utf-8")
+
 from GameEngine import GameEngine
 from MainMenu import MainMenu
 import Log
@@ -34,34 +43,37 @@ import getopt
 import sys
 import os
 
-# Register the latin-1 encoding
-import codecs
-import encodings.iso8859_1
-import encodings.utf_8
-codecs.register(lambda encoding: encodings.iso8859_1.getregentry())
-codecs.register(lambda encoding: encodings.utf_8.getregentry())
-assert codecs.lookup("iso-8859-1")
-assert codecs.lookup("utf-8")
-
 usage = """%(prog)s [options]
 Options:
   --verbose, -v      Verbose messages
+  --play=, -p [SongDir] play a song from the commandline
 """ % {"prog": sys.argv[0] }
 
 if __name__ == "__main__":
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "v", ["verbose"])
+    opts, args = getopt.getopt(sys.argv[1:], "vp:", ["verbose", "play="])
   except getopt.GetoptError:
     print usage
     sys.exit(1)
-
+    
+  playing = None
   for opt, arg in opts:
     if opt in ["--verbose", "-v"]:
       Log.quiet = False
+    if opt in ["--play", "-p"]:
+      playing = arg
+      
 
   while True:
     config = Config.load(Version.appName() + ".ini", setAsDefault = True)
     engine = GameEngine(config)
+    engine.cmdPlay = 0
+    
+    if playing != None:
+      Config.set("game", "selected_library", "songs")
+      Config.set("game", "selected_song", playing)
+      engine.cmdPlay = 1
+      
     engine.setStartupLayer(MainMenu(engine))
 
     try:

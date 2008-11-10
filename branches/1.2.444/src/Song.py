@@ -409,8 +409,8 @@ class LibraryInfo(object):
     # Set a default name
     if not self.name:
       self.name = os.path.basename(os.path.dirname(self.fileName))
-
-    return
+    if Config.get("game", "disable_libcount") == True:
+      return
     # Count the available songs
     libraryRoot = os.path.dirname(self.fileName)
     for name in os.listdir(libraryRoot):
@@ -599,11 +599,11 @@ class Track:
         prevTicks    = currentTicks
         currentNotes = [event]
         currentTicks = ticks
-    for time, event in self.allEvents:
-      if not isinstance(event, Note):
-        continue
-      if time > 000 and time < 7000:
-        print "Note2", event.number, event.tappable, time
+    #for time, event in self.allEvents:
+    #  if not isinstance(event, Note):
+    #    continue
+    #  if time > 000 and time < 7000:
+    #    print "Note2", event.number, event.tappable, time
 
   def markHopo(self):
     lastTick = 0
@@ -767,11 +767,11 @@ class Track:
         #If it is the middle of a HOPO, it's really the end of a HOPO
         elif note.tappable == 2:
           note.tappable = 3      
-    for time, event in self.allEvents:
-      if not isinstance(event, Note):
-        continue
-      if time > 000 and time < 7000:
-        print "Note3", event.number, event.tappable, time
+    #for time, event in self.allEvents:
+    #  if not isinstance(event, Note):
+    #    continue
+    #  if time > 000 and time < 7000:
+    #    print "Note3", event.number, event.tappable, time
     
 class Song(object):
   def __init__(self, engine, infoFileName, songTrackName, guitarTrackName, rhythmTrackName, noteFileName, scriptFileName = None, partlist = [parts[GUITAR_PART]]):
@@ -1314,7 +1314,6 @@ def getDefaultLibrary(engine):
   return LibraryInfo(DEFAULT_LIBRARY, engine.resource.fileName(DEFAULT_LIBRARY, "library.ini"))
 
 def getAvailableLibraries(engine, library = DEFAULT_LIBRARY):
-  print "get libs"
   # Search for libraries in both the read-write and read-only directories
   songRoots    = [engine.resource.fileName(library),
                   engine.resource.fileName(library, writable = True)]
@@ -1332,27 +1331,25 @@ def getAvailableLibraries(engine, library = DEFAULT_LIBRARY):
       libraries.append(LibraryInfo(libName, os.path.join(libraryRoot, "library.ini")))
       continue
       dirs = os.listdir(libraryRoot)
-      print "End list"
       for name in dirs:
         if os.path.isfile(os.path.join(libraryRoot, name, "song.ini")):
           if not libraryRoot in libraryRoots:
             libName = library + os.path.join(libraryRoot.replace(songRoot, ""))
-            print "new lib", libName, os.path.join(libraryRoot, "library.ini")
             libraries.append(LibraryInfo(libName, os.path.join(libraryRoot, "library.ini")))
             libraryRoots.append(libraryRoot)
 
   libraries.sort(lambda a, b: cmp(a.name.lower(), b.name.lower()))
-  print "done libs"
   return libraries
 
 def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = False):
-  print "get songs"
   order = engine.config.get("game", "sort_order")
   # Search for songs in both the read-write and read-only directories
   songRoots = [engine.resource.fileName(library), engine.resource.fileName(library, writable = True)]
   names = []
   for songRoot in songRoots:
     for name in os.listdir(songRoot):
+      if not os.path.isfile(os.path.join(songRoot, name, "notes.mid")):
+        continue
       if not os.path.isfile(os.path.join(songRoot, name, "song.ini")) or name.startswith("."):
         continue
       if not name in names:
@@ -1366,6 +1363,4 @@ def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = Fals
     songs.sort(lambda a, b: cmp(a.artist.lower(), b.artist.lower()))
   else:
     songs.sort(lambda a, b: cmp(a.name.lower(), b.name.lower()))
-
-  print "Done songs"
   return songs

@@ -56,11 +56,11 @@ class Data(object):
     self.loadSvgDrawing(self, "loadingImage", "loading.svg", textureSize = (256, 256))
 
     # load all the data in parallel
-    asciiOnly = not bool(Language.language)
+    asciiOnly = not bool(Language.language) or Language.language == "Custom"
     reversed  = _("__lefttoright__") == "__righttoleft__" and True or False
     scale     = Config.get("video", "fontscale")
     fontSize  = [22, 108]
-    
+
     if asciiOnly:
       font    = resource.fileName("default.ttf")
       bigFont = resource.fileName("title.ttf")

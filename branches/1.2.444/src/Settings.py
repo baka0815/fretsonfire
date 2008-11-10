@@ -144,8 +144,8 @@ class SettingsMenu(Menu.Menu):
     gameSettings = [
       (_("Mod settings"), modSettings),
       ConfigChoice(engine.config, "game",  "language"),
-      ConfigChoice(engine.config, "game",  "leftymode", autoApply = True),
-      ConfigChoice(engine.config, "game",  "tapping", autoApply = True),
+      #ConfigChoice(engine.config, "game",  "leftymode", autoApply = True),
+      #ConfigChoice(engine.config, "game",  "tapping", autoApply = True),
       ConfigChoice(engine.config, "game",  "uploadscores", autoApply = True),
     ]
     gameSettingsMenu = Menu.Menu(engine, gameSettings + applyItem)
@@ -221,10 +221,16 @@ class SettingsMenu(Menu.Menu):
       ConfigChoice(engine.config, "player1",  "leftymode", autoApply = True),
     ]
     rfModPlayer1SettingsMenu = Menu.Menu(engine, rfModPlayer1Settings)    
-    
+
+    rfModHOPOSettings = [
+      ConfigChoice(engine.config, "game",  "tapping", autoApply = True),
+      ConfigChoice(engine.config, "game",  "hopo_mark", autoApply = True),
+      ConfigChoice(engine.config, "game",  "hopo_style", autoApply = True),
+    ]
+    rfModHOPOSettingsMenu = Menu.Menu(engine, rfModHOPOSettings)    
+
     rfModGameSettings = [
       ConfigChoice(engine.config, "game",  "alt_keys", autoApply = True),
-      ConfigChoice(engine.config, "game",  "hopo_type", autoApply = True),
       #ConfigChoice(engine.config, "game",  "strum_burst", autoApply = True),
       ConfigChoice(engine.config, "game",  "sort_order", autoApply = True),
       ConfigChoice(engine.config, "game",  "disable_vbpm", autoApply = True),
@@ -239,14 +245,14 @@ class SettingsMenu(Menu.Menu):
       ConfigChoice(engine.config, "video", "disable_stats", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_notesfx", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_fretsfx", autoApply = True),
-      ConfigChoice(engine.config, "video", "disable_flame1", autoApply = True),
-      ConfigChoice(engine.config, "video", "disable_flame2", autoApply = True),
+      ConfigChoice(engine.config, "game", "disable_libcount", autoApply = True),
     ]
     rfModPerfSettingsMenu = Menu.Menu(engine, rfModPerfSettings)
 
     rfModSettings = [
       ConfigChoice(engine.config, "game",  "players", autoApply = True),
       (_("Game settings"), rfModGameSettingsMenu),
+      (_("HOPO settings"), rfModHOPOSettingsMenu),
       (_("Performance settings"), rfModPerfSettingsMenu),
       (_("Player 1 settings"), rfModPlayer0SettingsMenu),
       (_("Player 2 settings"), rfModPlayer1SettingsMenu),

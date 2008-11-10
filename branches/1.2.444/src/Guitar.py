@@ -293,6 +293,8 @@ class Guitar:
 
     for time, event in track.getEvents(pos - self.currentPeriod * 2, pos + self.currentPeriod * self.beatsPerBoard):
       if isinstance(event, Tempo):
+        if self.lastBpmChange > 0 and self.disableVBPM == True:
+            continue
         if (pos - time > self.currentPeriod or self.lastBpmChange < 0) and time > self.lastBpmChange:
           self.baseBeat         += (time - self.lastBpmChange) / self.currentPeriod
           self.targetBpm         = event.bpm

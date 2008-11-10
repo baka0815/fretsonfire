@@ -45,6 +45,7 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
 
   def run(self, ticks):
     SceneClient.run(self, ticks)
+    players = 1
 
     if not self.wizardStarted:
       self.wizardStarted = True
@@ -77,4 +78,4 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
         self.player.difficulty = info.difficulties[0]
         
       self.session.world.deleteScene(self)
-      self.session.world.createScene("GuitarScene", libraryName = self.libraryName, songName = self.songName)
+      self.session.world.createScene("GuitarScene", libraryName = self.libraryName, songName = self.songName, Players = players)

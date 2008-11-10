@@ -1,7 +1,11 @@
+4.03
+   Added POV settings
+   Fixed library sort order
+   Added song sort order option
+
 4.0
-   ported settings menus
-   ported base_library
-   ported config_get to turn ints into ints
+   Added base_library
+   Fixed config_get to turn ints into ints
    Switch to 1.2.451 base
 
 3.5

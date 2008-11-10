@@ -29,7 +29,7 @@ import colorsys
 from View import Layer
 from Input import KeyListener
 from Song import loadSong, createSong, Note, difficulties, DEFAULT_LIBRARY
-from Guitar import Guitar, KEYS
+from Guitar import Guitar, PLAYER1KEYS, PLAYER2KEYS
 from Camera import Camera
 from Menu import Menu, Choice
 from Language import _
@@ -177,17 +177,17 @@ class Editor(Layer, KeyListener):
     if not self.song:
       return
 
-    if control == Player.UP:
+    if control in Player.UPS:
       self.guitar.selectPreviousString()
-    elif control == Player.DOWN:
+    elif control in Player.DOWNS:
       self.guitar.selectNextString()
-    elif control == Player.LEFT:
+    elif control in Player.LEFTS:
       self.pos = self.snapPos - self.song.period / 4
-    elif control == Player.RIGHT:
+    elif control in Player.RIGHTS:
       self.pos = self.snapPos + self.song.period / 4
     elif control in KEYS:
       self.heldFrets.add(KEYS.index(control))
-    elif control in [Player.ACTION1, Player.ACTION2]:
+    elif control in Player.ACTION1S + Player.ACTION2S:
       self.newNotePos = self.snapPos
       # Add notes for the frets that are held down or for the selected string.
       if self.heldFrets:
@@ -200,7 +200,7 @@ class Editor(Layer, KeyListener):
     if not self.song:
       return
 
-    if control in [Player.ACTION1, Player.ACTION2] and self.newNotes and not self.heldFrets:
+    if control in Player.ACTION1S + Player.ACTION2S and self.newNotes and not self.heldFrets:
       self.newNotes = []
     elif control in KEYS:
       self.heldFrets.remove(KEYS.index(control))
@@ -213,24 +213,24 @@ class Editor(Layer, KeyListener):
 
   def keyPressed(self, key, unicode):
     c = self.engine.input.controls.getMapping(key)
-    if c == Player.CANCEL:
+    if c in Player.CANCELS:
       self.engine.view.pushLayer(self.menu)
     elif key == pygame.K_PAGEDOWN and self.song:
-      d = self.song.difficulty
+      d = self.song.difficulty[0]
       v = difficulties.values()
-      self.song.difficulty = v[(v.index(d) + 1) % len(v)]
+      self.song.difficulty[0] = v[(v.index(d) + 1) % len(v)]
     elif key == pygame.K_PAGEUP and self.song:
-      d = self.song.difficulty
+      d = self.song.difficulty[0]
       v = difficulties.values()
-      self.song.difficulty = v[(v.index(d) - 1) % len(v)]
+      self.song.difficulty[0] = v[(v.index(d) - 1) % len(v)]
     elif key == pygame.K_DELETE and self.song:
       # gather up all events that intersect the cursor and delete the ones on the selected string
       t1 = self.snapPos
       t2 = self.snapPos + self.song.period / 4
-      e  = [(time, event) for time, event in self.song.track.getEvents(t1, t2) if isinstance(event, Note)]
+      e  = [(time, event) for time, event in self.song.track[0].getEvents(t1, t2) if isinstance(event, Note)]
       for time, event in e:
         if event.number == self.guitar.selectedString:
-          self.song.track.removeEvent(time, event)
+          self.song.track[0].removeEvent(time, event)
           self.modified = True
     elif key == pygame.K_SPACE and self.song:
       if self.song.isPlaying():
@@ -257,16 +257,16 @@ class Editor(Layer, KeyListener):
     self.guitar.run(ticks, self.scrollPos, self.controls)
 
     if not self.song.isPlaying():
-      if self.controls.getState(Player.RIGHT) and not self.controls.getState(Player.LEFT):
+      if (self.controls.getState(Player.RIGHT) or self.controls.getState(Player.PLAYER_2_RIGHT)) and not (self.controls.getState(Player.LEFT) or self.controls.getState(Player.PLAYER_2_LEFT)):
         self.pos += self.song.period * self.scrollSpeed
         self.scrollSpeed += ticks / 4096.0
-      elif self.controls.getState(Player.LEFT) and not self.controls.getState(Player.RIGHT):
+      elif (self.controls.getState(Player.LEFT) or self.controls.getState(Player.PLAYER_2_LEFT)) and not (self.controls.getState(Player.RIGHT) or self.controls.getState(Player.PLAYER_2_RIGHT)):
         self.pos -= self.song.period * self.scrollSpeed
         self.scrollSpeed += ticks / 4096.0
       else:
         self.scrollSpeed = 0
     else:
-      self.pos = self.song.getPosition() - self.song.info.delay
+      self.pos = self.song.getPosition()
 
     self.pos = max(0, self.pos)
 
@@ -278,17 +278,17 @@ class Editor(Layer, KeyListener):
       if self.snapPos < self.newNotePos:
         self.newNotes = []
       for note in self.newNotes:
-        self.song.track.removeEvent(self.newNotePos, note)
+        self.song.track[0].removeEvent(self.newNotePos, note)
         note.length = max(self.song.period / 4, self.snapPos - self.newNotePos)
         # remove all notes under the this new note
-        oldNotes = [(time, event) for time, event in self.song.track.getEvents(self.newNotePos, self.newNotePos + note.length) if isinstance(event, Note)]
+        oldNotes = [(time, event) for time, event in self.song.track[0].getEvents(self.newNotePos, self.newNotePos + note.length) if isinstance(event, Note)]
         for time, event in oldNotes:
           if event.number == note.number:
-            self.song.track.removeEvent(time, event)
+            self.song.track[0].removeEvent(time, event)
             if time < self.newNotePos:
               event.length = self.newNotePos - time
-              self.song.track.addEvent(time, event)
-        self.song.track.addEvent(self.newNotePos, note)
+              self.song.track[0].addEvent(time, event)
+        self.song.track[0].addEvent(self.newNotePos, note)
 
     if self.song.isPlaying():
       self.scrollPos = self.pos
@@ -338,7 +338,7 @@ class Editor(Layer, KeyListener):
       t = "%d.%02d'%03d" % (self.pos / 60000, (self.pos % 60000) / 1000, self.pos % 1000)
       font.render(t, (.05, .05 - h / 2))
       font.render(status, (.05, .05 + h / 2))
-      font.render(unicode(self.song.difficulty), (.05, .05 + 3 * h / 2))
+      font.render(unicode(self.song.difficulty[0]), (.05, .05 + 3 * h / 2))
 
       Theme.setBaseColor()
       text = self.song.info.name + (self.modified and "*" or "")

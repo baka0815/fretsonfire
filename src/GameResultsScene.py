@@ -307,16 +307,17 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
       Theme.setBaseColor(1 - v)
       if self.playerList[0].cheating:
         text = _("%s Cheated!" % self.song.info.name)
-        self.stars[0] = 0
-        self.accuracy[0] = 0.0
-        self.stars[1] = 0
-        self.accuracy[1] = 0.0        
+  
       else:
         text = _("%s Finished!" % self.song.info.name)
       w, h = font.getStringSize(text)
       Dialogs.wrapText(font, (.05, .05 - v), text)
         
       for j,player in enumerate(self.playerList):
+        if self.playerList[j].cheating:
+          self.stars[j] = 0
+          self.accuracy[j] = 0.0
+    
         self.engine.view.setViewportHalf(len(self.playerList),j)
         text = "%d" % (player.score * self.anim(1000, 2000))
         w, h = bigFont.getStringSize(text)

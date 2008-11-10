@@ -29,6 +29,23 @@ encoding  = "iso-8859-1"
 config    = None
 prototype = {}
 
+class MyConfigParser(ConfigParser):
+  def write(self, fp):
+      if self._defaults:
+        fp.write("[%s]\n" % DEFAULTSECT)
+        for (key, value) in self._defaults.items():
+            fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
+        fp.write("\n")
+      sections = sorted(self._sections)
+      for section in sections:
+        fp.write("[%s]\n" % section)
+        sectList = self._sections[section].items()
+        sectList.sort()
+        for key, value in sectList:
+           if key != "__name__":
+             fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
+        fp.write("\n")
+        
 class Option:
   """A prototype configuration key."""
   def __init__(self, **args):
@@ -74,7 +91,7 @@ class Config:
     self.prototype = prototype
 
     # read configuration
-    self.config = ConfigParser()
+    self.config = MyConfigParser()
 
     if fileName:
       if not os.path.isfile(fileName):

@@ -254,7 +254,7 @@ class SettingsMenu(Menu.Menu):
     rfModSettings = [
       ConfigChoice(engine.config, "game",  "players", autoApply = True),
       (_("Game settings"), rfModGameSettingsMenu),
-      (_("HOPO settings"), rfModHOPOSettingsMenu),
+      (_("HO/PO settings"), rfModHOPOSettingsMenu),
       (_("Performance settings"), rfModPerfSettingsMenu),
       (_("Player 1 settings"), rfModPlayer0SettingsMenu),
       (_("Player 2 settings"), rfModPlayer1SettingsMenu),

@@ -647,8 +647,8 @@ class SongChooser(Layer, KeyListener):
     t = self.time / 100
     w, h, = self.engine.view.geometry[2:4]
     r = .5
-    
-    if self.spinnyDisabled != True:
+
+    if self.spinnyDisabled != True and Theme.spinnySongDisabled != True:
       self.background.transform.reset()
       self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
       self.background.transform.rotate(-t)
@@ -885,7 +885,7 @@ class FileChooser(BackgroundLayer, KeyListener):
     w, h, = self.engine.view.geometry[2:4]
     r = .5
 
-    if self.spinnyDisabled != True:      
+    if self.spinnyDisabled != True and Theme.spinnyEditorDisabled != True:      
       self.background.transform.reset()
       self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
       self.background.transform.rotate(-t)
@@ -955,7 +955,7 @@ class ItemChooser(BackgroundLayer, KeyListener):
     w, h, = self.engine.view.geometry[2:4]
     r = .5
     
-    if self.spinnyDisabled != True:
+    if self.spinnyDisabled != True and Theme.spinnyEditorDisabled != True:
       self.background.transform.reset()
       self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
       self.background.transform.rotate(-t)

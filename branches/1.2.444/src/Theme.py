@@ -81,6 +81,8 @@ DEFAULT_SIZE_FLAME2_4X   = 0.075
 DEFAULT_SIZE_FLAME3_4X   = 0.075
 DEFAULT_SIZE_FLAME4_4X   = 0.075
 
+DEFAULT_SPINNY           = False
+
 # read the color scheme from the config file
 Config.define("theme", "background_color",  str, DEFAULT_COLOR_BACKGROUND)
 Config.define("theme", "base_color",        str, DEFAULT_COLOR_BASE)
@@ -139,12 +141,20 @@ Config.define("theme", "flame2_4X_size",     float, DEFAULT_SIZE_FLAME2_4X)
 Config.define("theme", "flame3_4X_size",     float, DEFAULT_SIZE_FLAME3_4X)
 Config.define("theme", "flame4_4X_size",     float, DEFAULT_SIZE_FLAME4_4X)
 
+Config.define("theme", "disable_song_spinny",    bool, DEFAULT_SPINNY)
+Config.define("theme", "disable_editor_spinny",  bool, DEFAULT_SPINNY)
+Config.define("theme", "disable_results_spinny", bool, DEFAULT_SPINNY)
+Config.define("theme", "disable_menu_spinny",    bool, DEFAULT_SPINNY)
 def hexToColor(color):
   if color[0] == "#":
     color = color[1:]
     if len(color) == 3:
       return (int(color[0], 16) / 15.0, int(color[1], 16) / 15.0, int(color[2], 16) / 15.0)
     return (int(color[0:2], 16) / 255.0, int(color[2:4], 16) / 255.0, int(color[4:6], 16) / 255.0)
+  elif color.lower() == "off":
+    return (-1, -1, -1)
+  elif color.lower() == "fret":
+    return (-2, -2, -2)
   return (0, 0, 0)
     
 def colorToHex(color):
@@ -166,6 +176,10 @@ flameSizes      = None
 loadingPhrase   = None
 resultsPhrase   = None
 startingPhrase  = None
+spinnySongDisabled = None
+spinnyEditorDisabled = None
+spinnyResultsDisabled = None
+spinnyMenuDisabled = None
 
 def open(config):
   global backgroundColor, baseColor, selectedColor, fretColors
@@ -174,6 +188,7 @@ def open(config):
   global tracksColor, barsColor
   global flameColors, flameSizes
   global loadingPhrase, resultsPhrase
+  global spinnySongDisabled, spinnyEditorDisabled, spinnyResultsDisabled, spinnyMenuDisabled
 
   #special cases for theme.ini in mod directories
 
@@ -191,6 +206,11 @@ def open(config):
 
   loadingPhrase = config.get("theme", "loading_phrase")
   resultsPhrase = config.get("theme", "results_phrase")
+
+  spinnySongDisabled = config.get("theme", "disable_song_spinny")
+  spinnyEditorDisabled = config.get("theme", "disable_editor_spinny")
+  spinnyResultsDisabled = config.get("theme", "disable_results_spinny")
+  spinnyMenuDisabled = config.get("theme", "disable_menu_spinny")
   
   if fretColors == None:
     fretColors = [hexToColor(config.get("theme", "fret%d_color" % i)) for i in range(5)]
@@ -216,9 +236,7 @@ def open(config):
       fretColors[4] = hexToColor(temp)
 
   temp = config.get("theme", "hopo_color")
-  if temp.lower() == "fret":
-    hopoColor = temp.lower()
-  elif hopoColor == None or temp != DEFAULT_COLOR_HOPO:
+  if hopoColor == None or temp != DEFAULT_COLOR_HOPO:
     hopoColor = hexToColor(temp)
 
   temp = config.get("theme", "spot_color")
@@ -234,15 +252,11 @@ def open(config):
     key2Color = hexToColor(temp)    
 
   temp = config.get("theme", "tracks_color")
-  if temp.lower() == "off":
-    tracksColor = temp.lower()
-  elif tracksColor == None or temp != DEFAULT_COLOR_TRACKS:
+  if tracksColor == None or temp != DEFAULT_COLOR_TRACKS:
     tracksColor = hexToColor(temp)
 
   temp = config.get("theme", "bars_color")
-  if temp.lower() == "off":
-    barsColor = temp.lower()
-  elif barsColor == None or temp != DEFAULT_COLOR_BARS:
+  if barsColor == None or temp != DEFAULT_COLOR_BARS:
     barsColor = hexToColor(temp)
 
   if flameColors == None:

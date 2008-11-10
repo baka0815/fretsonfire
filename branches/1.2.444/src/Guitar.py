@@ -169,6 +169,8 @@ class Guitar:
     glDisable(GL_TEXTURE_2D)
     
   def renderTracks(self, visibility):
+    if self.tracksColor[0] == -1:
+      return
     w = self.boardWidth / self.strings
     v = 1.0 - visibility
 
@@ -207,7 +209,7 @@ class Guitar:
       
       
   def renderBars(self, visibility, song, pos):
-    if not song:
+    if not song or self.tracksColor[0] == -1:
       return
     
     w            = self.boardWidth
@@ -294,7 +296,7 @@ class Guitar:
     self.noteMesh.render("Mesh_001")
     glColor3f(self.spotColor[0], self.spotColor[1], self.spotColor[2])
     if isTappable:
-      if self.hopoColor == "fret":
+      if self.hopoColor[0] == -2:
         glColor4f(*color)
       else:
         glColor3f(self.hopoColor[0], self.hopoColor[1], self.hopoColor[2])
@@ -526,7 +528,7 @@ class Guitar:
     glDisable(GL_DEPTH_TEST)
 
   def renderFlames(self, visibility, song, pos, controls):
-    if not song:
+    if not song or self.flameColors[0][0][0] == -1:
       return
 
     beatsPerUnit = self.beatsPerBoard / self.boardLength
@@ -555,6 +557,8 @@ class Guitar:
           
           flameSize = self.flameSizes[self.scoreMultiplier - 1][n]        
           flameColor = self.flameColors[self.scoreMultiplier - 1][n]
+          if flameColor[0] == -2:
+            flameColor = self.fretColors[n]
 
           flameColorMod0 = 1.1973333333333333333333333333333
           flameColorMod1 = 1.9710526315789473684210526315789
@@ -582,8 +586,8 @@ class Guitar:
 
           ff += .3
 
-          flameSize = self.flameSizes[self.scoreMultiplier - 1][n]
-          flameColor = self.flameColors[self.scoreMultiplier - 1][n]
+          #flameSize = self.flameSizes[self.scoreMultiplier - 1][n]
+          #flameColor = self.flameColors[self.scoreMultiplier - 1][n]
 
           flameColorMod0 = 1.1973333333333333333333333333333
           flameColorMod1 = 1.7842105263157894736842105263158
@@ -627,8 +631,11 @@ class Guitar:
           ff = 1 + 0.25       
           y = v + ff / 6
           glBlendFunc(GL_ONE, GL_ONE)
+          
           flameSize = self.flameSizes[self.scoreMultiplier - 1][event.number]
           flameColor = self.flameColors[self.scoreMultiplier - 1][event.number]
+          if flameColor[0] == -2:
+            flameColor = self.fretColors[event.number]
           
           ff += 1.5
 
@@ -821,10 +828,8 @@ class Guitar:
       glScale(-1, 1, 1)
 
     self.renderNeck(visibility, song, pos)
-    if self.tracksColor != "off":
-      self.renderTracks(visibility)
-    if self.barsColor != "off":
-      self.renderBars(visibility, song, pos)
+    self.renderTracks(visibility)
+    self.renderBars(visibility, song, pos)
     self.renderNotes(visibility, song, pos)
     self.renderFrets(visibility, song, controls)
     self.renderFlames(visibility, song, pos, controls)

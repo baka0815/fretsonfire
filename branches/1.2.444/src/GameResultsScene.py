@@ -61,7 +61,7 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
     self.scoreDifficulty = None
     self.playerList      = players
 
-    self.spinnyDisabled   = self.engine.config.get("theme", "disable_spinny")    
+    self.spinnyDisabled   = self.engine.config.get("game", "disable_spinny")    
 
     items = [
       (_("Replay"),            self.replay),

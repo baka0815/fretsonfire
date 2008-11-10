@@ -1,10 +1,9 @@
 TODO Items/Bugs
 ---------------
-Make a flameX_YX_color variable setting for 'off' instead of the toggle
+
+Somehow disable windows screensaver when game is running
 
 Add a 'uploadas' option in song.ini (can be abused)
-
-Add a 'record a performance' option with playback
 
 less distracting multiplier toggle
 
@@ -26,8 +25,6 @@ HOPO tolerance config
 
 add rating, genre tags
 
-try out preview.ogg for folders
-
 post process midi to strip out stuff we don't need (better performance?)
 
 remove extraneous song.getPostion()s
@@ -36,11 +33,9 @@ Only change volumes when state changes
 
 cache difficulties and parts in .ini to speed things up
 
-Add 'virtual' folder support so you can have 1 copy of the song, and have it in multiple places (by genre, difficulty, alphabetically, artist, etc)
-
 Find more efficient way to do running %age (in progress but not accurate)
 
-Configurable lateMargin (may alter gameplay and scores)
+Configurable *Margin (may alter gameplay and scores)
 
 Simplified songlist (text) with toggle
 
@@ -65,6 +60,8 @@ before preview is fully loaded, if you select memory isnt freed
 Unknown if I can do them
 ------------------------
 Investigate more detailed summary screen
+Add a 'record a performance' option with playback
+Add 'virtual' folder support so you can have 1 copy of the song, and have it in multiple places (by genre, difficulty, alphabetically, artist, etc)
 
 
 
@@ -144,3 +141,5 @@ Multiple (ini file) ending lines other than 'Chilling' (DONE)
 Multiple (ini file) starting lines other than 'tuning guitar' (DONE)
 Configurable (ini file) difficulty names (DONE)
 As made famous by using cover tag (DONE)
+Make a flameX_YX_color variable setting for 'off' instead of the toggle (DONE)
+fix 2nd player stettings saving (DONE)

@@ -345,7 +345,7 @@ class SongChooser(Layer, KeyListener):
     self.previewDisabled  = self.engine.config.get("audio", "disable_preview")
     self.sortOrder        = self.engine.config.get("game", "sort_order")
     self.rotationDisabled = self.engine.config.get("game", "disable_librotation")
-    self.spinnyDisabled   = self.engine.config.get("theme", "disable_spinny")
+    self.spinnyDisabled   = self.engine.config.get("game", "disable_spinny")
     
     # Use the default library if this one doesn't exist
     if not self.library or not os.path.isdir(self.engine.resource.fileName(self.library)):
@@ -810,7 +810,7 @@ class FileChooser(BackgroundLayer, KeyListener):
     self.selectedFile   = None
     self.time           = 0.0
     self.menu           = None
-    self.spinnyDisabled = self.engine.config.get("theme", "disable_spinny")
+    self.spinnyDisabled = self.engine.config.get("game", "disable_spinny")
 
     self.engine.loadSvgDrawing(self, "background", "editor.svg")
 
@@ -913,7 +913,7 @@ class ItemChooser(BackgroundLayer, KeyListener):
     self.selectedItem   = None
     self.time           = 0.0
     self.menu = Menu(self.engine, choices = [(c, self._callbackForItem(c)) for c in items], onClose = self.close, onCancel = self.cancel)
-    self.spinnyDisabled = self.engine.config.get("theme", "disable_spinny")
+    self.spinnyDisabled = self.engine.config.get("game", "disable_spinny")
     
     if selected and selected in items:
       self.menu.selectItem(items.index(selected))

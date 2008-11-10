@@ -46,7 +46,7 @@ class MainMenu(BackgroundLayer):
     self.nextLayer           = None
     self.visibility          = 0.0
 
-    self.spinnyDisabled = self.engine.config.get("theme", "disable_spinny")    
+    self.spinnyDisabled = self.engine.config.get("game", "disable_spinny")    
     
     self.engine.loadSvgDrawing(self, "background", "keyboard.svg")
     self.engine.loadSvgDrawing(self, "guy",        "pose.svg")
@@ -186,6 +186,10 @@ class MainMenu(BackgroundLayer):
 
   def run(self, ticks):
     self.time += ticks / 50.0
+    if self.engine.cmdPlay == 1:
+      self.newSinglePlayerGame()
+    elif self.engine.cmdPlay == 2:
+      self.quit()
     
   def render(self, visibility, topMost):
     self.visibility = visibility

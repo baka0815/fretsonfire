@@ -58,6 +58,12 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
     if not self.wizardStarted:
       self.wizardStarted = True
 
+
+      if self.engine.cmdPlay == 1:
+        self.songName = Config.get("game", "selected_song")
+        self.libraryName = Config.get("game", "selected_library")
+        self.engine.cmdPlay = 2
+        
       if not self.songName:
         while True:
           self.libraryName, self.songName = \
@@ -79,7 +85,7 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
           escaped = False
           while True:
             if len(info.parts) > 1:
-              p = Dialogs.chooseItem(self.engine, info.parts,_("Player 1 Choose a part:"), selected = self.player.part)
+              p = Dialogs.chooseItem(self.engine, info.parts, "%s \n %s" % (info.name, _("Player 1 Choose a part:")), selected = self.player.part)
             else:
               p = info.parts[0]
             if p:
@@ -89,7 +95,7 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
             while True:
               if len(info.difficulties) > 1:
                 d = Dialogs.chooseItem(self.engine, info.difficulties,
-                                     _("Player 1 Choose a difficulty:"), selected = self.player.difficulty)
+                                     "%s \n %s" % (info.name, _("Player 1 Choose a difficulty:")), selected = self.player.difficulty)
               else:
                 d = info.difficulties[0]
               if d:
@@ -100,7 +106,7 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
                 break
               while True:
                 if self.engine.config.get("game", "players") > 1:               
-                  p = Dialogs.chooseItem(self.engine, info.parts+ ["Party Mode"] + ["No Player 2"],_("Player 2 Choose a part:"), selected = self.player.part)
+                  p = Dialogs.chooseItem(self.engine, info.parts+ ["Party Mode"] + ["No Player 2"], "%s \n %s" % (info.name, _("Player 2 Choose a part:")), selected = self.player2.part)
                   if p and p == "No Player 2":
                     players = 1
                     selected = True
@@ -121,7 +127,7 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
                     break
                   while True:                    
                     if len(info.difficulties) > 1:
-                      d = Dialogs.chooseItem(self.engine, info.difficulties,_("Player 2 Choose a difficulty:"), selected = self.player.difficulty)
+                      d = Dialogs.chooseItem(self.engine, info.difficulties, "%s \n %s" % (info.name, _("Player 2 Choose a difficulty:")), selected = self.player2.difficulty)
                     else:
                       d = info.difficulties[0]
                     if d:
@@ -146,6 +152,12 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
       else:
         info = Song.loadSongInfo(self.engine, self.songName, library = self.libraryName)
 
+      if self.engine.cmdPlay == 2:
+        if len(info.difficulties) >= self.engine.cmdDiff:
+          self.player.difficulty = info.difficulties[self.engine.cmdDiff]
+        if len(info.parts) >= self.engine.cmdPart:
+          self.player.part = info.parts[self.engine.cmdPart]
+          
       # Make sure the difficulty we chose is available
       if not self.player.difficulty in info.difficulties:
         self.player.difficulty = info.difficulties[0]

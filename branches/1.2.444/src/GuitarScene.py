@@ -89,40 +89,13 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.camera.target    = (0.0, 1.0, 8.0)
     self.camera.origin    = (0.0, 2.0, -3.4)
 
-    self.targetX          = 0.0
-    self.targetY          = 1.0
-    self.targetZ          = 8.0
-    self.originX          = 0.0
-    self.originY          = 2.0
-    self.originZ          = -3.4
-    
-    self.targetX          = 0.0
-    self.targetY          = 1.0
-    self.targetZ          = 8.0
-    self.originX          = 0.0
-    self.originY          = 2.4
-    self.originZ          = -3.8
+    self.targetX          = Theme.povTargetX
+    self.targetY          = Theme.povTargetY
+    self.targetZ          = Theme.povTargetZ
+    self.originX          = Theme.povOriginX
+    self.originY          = Theme.povOriginY
+    self.originZ          = Theme.povOriginZ
 
-    tempval               = self.engine.config.get("theme", "targetx")
-    if tempval != "None":
-      self.targetX        = float(tempval)
-    tempval               = self.engine.config.get("theme", "targety")
-    if tempval != "None":
-      self.targetY        = float(tempval)
-    tempval               = self.engine.config.get("theme", "targetz")
-    if tempval != "None":
-      self.targetZ        = float(tempval)      
-
-    tempval               = self.engine.config.get("theme", "originx")
-    if tempval != "None":
-      self.originX        = float(tempval)
-    tempval               = self.engine.config.get("theme", "originy")
-    if tempval != "None":
-      self.originY        = float(tempval)
-    tempval               = self.engine.config.get("theme", "originz")
-    if tempval != "None":
-      self.originZ        = float(tempval)
-      
     #new
     
     self.loadSettings()
@@ -605,6 +578,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     pos = self.getSongPosition()
     #clear out any missed notes before this pick since they are already missed by virtue of the pick
     missedNotes = self.guitars[num].getMissedNotes(self.song, pos, catchup = True)
+
     if len(missedNotes) > 0:
       self.playerList[num].streak = 0
       self.guitars[num].setMultiplier(1)
@@ -615,10 +589,17 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
     #hopo fudge
     hopoFudge = abs(abs(self.guitars[num].hopoActive) - pos)
-    if self.guitars[num].hopoActive != False and hopoFudge > 0 and hopoFudge < self.guitars[num].lateMargin:
-      for k in self.guitars[num].actions:
-        if self.controls.getState(k):
-          return
+    activeList = [k for k in self.keysList[num] if self.controls.getState(k)]
+    #if len(activeList) != 0 and guitar.hopoActive and activeList[0] != self.keysList[num][guitar.hopoLast] and control in self.keysList[num]:
+
+    if len(activeList) == 1 and self.guitars[num].keys[self.guitars[num].hopoLast] == activeList[0]:
+      if self.guitars[num].hopoActive != False and hopoFudge > 0 and hopoFudge < self.guitars[num].lateMargin:
+        return
+      #print "In fudge", self.guitars[num].hopoLast, activeList, self.guitars[num].keys[self.guitars[num].hopoLast], self.guitars[num].actions
+      #for k in self.guitars[num].actions:
+      #  if self.controls.getState(k):
+      #    print "fudge"
+      #    return
 
     if self.guitars[num].startPick2(self.song, pos, self.controls, hopo):
       self.song.setInstrumentVolume(1.0, self.playerList[num].part)
@@ -672,7 +653,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       control = self.controls.keyPressed(key)
 
     num = self.getPlayerNum(control)
-      
+
     if control in (self.guitars[num].actions):
       for k in self.keysList[num]:
         if self.controls.getState(k):
@@ -730,6 +711,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
       numpressed = [len([1 for k in guitar.keys if self.controls.getState(k)]) for guitar in self.guitars]
 
+      activeList = [k for k in self.keysList[pressed] if self.controls.getState(k)]
       if control in (self.guitars[0].keys) and self.song and numpressed[0] >= 1:
         if self.guitars[0].hopoActive > 0:
           hopo = True

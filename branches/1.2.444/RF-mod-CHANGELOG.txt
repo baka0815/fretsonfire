@@ -1,3 +1,14 @@
+4.11
+   Fixed jumpy neck
+   Fixed cmd line start, also added difficulty and part options
+   Fixed missing editor keys
+   Fixed player2 part/difficulty memory
+   Reworked [theme] to be theme.ini specific and read only (not in fretsonfire.ini anymore)
+   Massive reorganization of Theme.py code
+   Fixed HOPO fudge bug
+   Fixed HOPO after last note bug
+   Added song title to part/difficulty selection
+
 4.10
    changed 'fret' and 'off' handling in theme.py
    added individual variables for spinnys available in theme.ini (for gh theme)

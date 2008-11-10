@@ -37,6 +37,7 @@ import Audio
 import Settings
 import datetime
 import sys
+import Theme
 
 class MainMenu(BackgroundLayer):
   def __init__(self, engine):
@@ -57,9 +58,9 @@ class MainMenu(BackgroundLayer):
     expire = datetime.date(2007, 8, 15) 
     today = datetime.date.today()
     diff = today-expire
-    if diff.days > 30:
-      print "Beta Expired"
-      sys.exit(2)
+    #if diff.days > 30:
+    #  print "Beta Expired"
+    #  sys.exit(2)
       
     newMultiplayerMenu = [
       (_("Host Multiplayer Game"), self.hostMultiplayerGame),
@@ -196,7 +197,7 @@ class MainMenu(BackgroundLayer):
     r = .5
     self.background.transform.reset()
     
-    if self.spinnyDisabled != True:
+    if self.spinnyDisabled != True and Theme.spinnyMenuDisabled != True:
       self.background.transform.translate((1 - v) * 2 * w + w / 2 + math.cos(t / 2) * w / 2 * r, h / 2 + math.sin(t) * h / 2 * r)
       self.background.transform.rotate(-t)
       self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)

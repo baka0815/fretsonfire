@@ -1,3 +1,7 @@
+4.10
+   changed 'fret' and 'off' handling in theme.py
+   added individual variables for spinnys available in theme.ini (for gh theme)
+   General cleanup for release
 4.09
    Updated credits
    Added gameresults.svg (raph)

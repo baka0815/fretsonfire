@@ -200,14 +200,14 @@ class Config:
       twoChordUsed = 0
     #Value 0 off / 1 on
     disableVBPMUsed = int(self.get("game", "disable_vbpm"))
-    #Value 0 off / 1 on
+    #Value 0 on / 1 on
     if self.get("game", "tapping") == False:
-      hopoEnabled = 0
+      hopoDisableUsed = 0
     else:
-      hopoEnabled = 1
-    #Value 0 RFmod / 1 FoF
+      hopoDisableUsed = 1
+    #Value 0 FoF / 1 RFmod
     hopoMarks = int(self.get("game", "hopo_mark"))
-    #Value 0 RFmod / 1 FoF / 2 RFmod2
+    #Value 0 FoF / 1 RFmod / 2 RFmod2
     hopoStyle = int(self.get("game", "hopo_style"))
     #Value 0 FoF / 1 GH / 2 Custom
     pov = int(self.get("game", "pov"))
@@ -219,8 +219,8 @@ class Config:
     #Value 0 bpm / 1 difficulty
     #boardSpeed = int(self.get("game", "board_speed"))
     boardSpeed = 0
-    encode = "%d%d%d%d%d%d%d%d%d" % (twoChordUsed, disableVBPMUsed, hopoEnabled, hopoMarks, hopoStyle, pov, margin, hopo8thUsed, boardSpeed)
-    print twoChordUsed, disableVBPMUsed, hopoEnabled, hopoMarks, hopoStyle, margin, pov, hopo8thUsed, boardSpeed
+    encode = "%d%d%d%d%d%d%d%d%d" % (twoChordUsed, disableVBPMUsed, hopoDisableUsed, hopoMarks, hopoStyle, pov, margin, hopo8thUsed, boardSpeed)
+    print twoChordUsed, disableVBPMUsed, hopoDisableUsed, hopoMarks, hopoStyle, margin, pov, hopo8thUsed, boardSpeed
     return encode
   def getModOptions2(self):
     #

@@ -181,7 +181,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.screwUpVolume    = self.engine.config.get("audio", "screwupvol")
     #RF-mod
     self.disableStats     = self.engine.config.get("video", "disable_stats")
-    self.hopoType         = self.engine.config.get("game", "tapping")
+    self.hopoDisabled         = self.engine.config.get("game", "tapping")
     self.hopoMark         = self.engine.config.get("game", "hopo_mark")
     self.hopoStyle        = self.engine.config.get("game", "hopo_style")
     self.pov              = self.engine.config.get("game", "pov")
@@ -259,8 +259,8 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.song.stop()
 
     for i, guitar in enumerate(self.guitars):
-      if self.hopoType == 1 or self.song.info.hopo == "on":
-        if self.hopoMark == 1:
+      if self.hopoDisabled == 0 or self.song.info.hopo == "on":
+        if self.hopoMark == 0:
           self.song.track[i].markTappable();
         else:  
           self.song.track[i].markHopo()
@@ -308,7 +308,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             if self.controls.getState(k):
               held += 1
           if changed and held:
-            if self.hopoStyle ==  0:
+            if self.hopoStyle ==  1:
               self.doPick2(i)
             elif self.hopoStyle == 2:
               self.doPick3(i)
@@ -356,7 +356,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         #RF-mod new HOPO stuff?
         notes = self.guitars[i].getRequiredNotes(self.song, pos)
         if self.guitars[i].controlsMatchNotes(self.controls, notes):
-          if self.hopoStyle ==  0:
+          if self.hopoStyle ==  1:
             self.doPick2(i)
           elif self.hopoStyle == 2:
             self.doPick3(i)
@@ -548,7 +548,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
   def keyPressed(self, key, unicode, control = None):
     #RF style HOPO playing
-    if self.hopoStyle ==  0:
+    if self.hopoStyle ==  1:
       res = self.keyPressed2(key, unicode, control)
       return res
     elif self.hopoStyle == 2:
@@ -737,7 +737,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
   def keyReleased(self, key):
     #RF style HOPO playing
-    if self.hopoStyle ==  0:
+    if self.hopoStyle ==  1:
       res = self.keyReleased2(key)
       return res
     if self.hopoStyle ==  2:

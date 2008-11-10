@@ -75,6 +75,7 @@ Config.define("game",   "strum_burst",         int,   0,      text = _("Strum Se
 Config.define("game",   "hopo_type",           int,   0,      text = _("HO/PO"), options = {0: _("Off"), 1: _("On"), 2: _("Song")})
 Config.define("game",   "disable_vbpm",        bool,  False,  text = _("Disable Variable BPM"),  options = {False: _("No"), True: _("Yes")})
 Config.define("game",   "sort_order",          int,   0,      text = _("Sort Order"), options = {0: _("Title"), 1: _("Artist"), 2: _("Tag")})
+Config.define("game",   "pov",                 int,   0,      text = _("Point Of View"), options = {0: _("FoF"), 1: _("GH"), 2: _("Custom")})
 Config.define("game",   "players",             int,   1,      text = _("Number of players"),  options = {1: _("1"), 2: _("2")})
 Config.define("video",  "disable_stats",       bool,  False,  text = _("Disable Stats"),    options = {False: _("No"), True: _("Yes")})
 Config.define("video",  "disable_notesfx",     bool,  False,  text = _("Disable Note SFX"),    options = {False: _("No"), True: _("Yes")})

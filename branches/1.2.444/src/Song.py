@@ -613,9 +613,9 @@ class Song(object):
     self.bpm          = None
     self.period       = 0
     self.parts        = partlist
-    self.delay         = self.engine.config.get("audio", "delay")
-    self.delay         += self.info.delay
-    self.missVolume    = self.engine.config.get("audio", "miss_volume")
+    self.delay        = self.engine.config.get("audio", "delay")
+    self.delay        += self.info.delay
+    self.missVolume   = self.engine.config.get("audio", "miss_volume")
 
     #RF-mod skip if folder (not needed anymore?)
     #if self.info.folder == True:
@@ -1168,11 +1168,14 @@ def getAvailableLibraries(engine, library = DEFAULT_LIBRARY):
             print "new lib", libName, os.path.join(libraryRoot, "library.ini")
             libraries.append(LibraryInfo(libName, os.path.join(libraryRoot, "library.ini")))
             libraryRoots.append(libraryRoot)
+
+  libraries.sort(lambda a, b: cmp(a.name.lower(), b.name.lower()))
   print "done libs"
   return libraries
 
 def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = False):
   print "get songs"
+  order = engine.config.get("game", "sort_order")
   # Search for songs in both the read-write and read-only directories
   songRoots = [engine.resource.fileName(library), engine.resource.fileName(library, writable = True)]
   names = []
@@ -1187,6 +1190,10 @@ def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = Fals
   if not includeTutorials:
     songs = [song for song in songs if not song.tutorial]
   songs = [song for song in songs if not song.artist == '=FOLDER=']
-  songs.sort(lambda a, b: cmp(a.name, b.name))
+  if order == 1:
+    songs.sort(lambda a, b: cmp(a.artist.lower(), b.artist.lower()))
+  else:
+    songs.sort(lambda a, b: cmp(a.name.lower(), b.name.lower()))
+
   print "Done songs"
   return songs

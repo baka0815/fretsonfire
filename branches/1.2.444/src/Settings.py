@@ -228,6 +228,7 @@ class SettingsMenu(Menu.Menu):
       #ConfigChoice(engine.config, "game",  "strum_burst", autoApply = True),
       ConfigChoice(engine.config, "game",  "sort_order", autoApply = True),
       ConfigChoice(engine.config, "game",  "disable_vbpm", autoApply = True),
+      ConfigChoice(engine.config, "game", "pov", autoApply = True),
       ConfigChoice(engine.config, "audio", "miss_volume", autoApply = True),
     ]
     rfModGameSettingsMenu = Menu.Menu(engine, rfModGameSettings)

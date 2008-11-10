@@ -179,7 +179,7 @@ class SongInfo(object):
       return self.highScores[difficulty]
     except KeyError:
       return []
-
+      
   def uploadHighscores(self, url, songHash):
     try:
       d = {
@@ -190,14 +190,11 @@ class SongInfo(object):
       }
       data = urllib.urlopen(url + "?" + urllib.urlencode(d)).read()
       Log.debug("Score upload result: %s" % data)
-      if ";" in data:
-        fields = data.split(";")
-      else:
-        fields = [data, "0"]
-      return (fields[0] == "True", int(fields[1]))
+      return data == "True"
     except Exception, e:
       Log.error(e)
-      return (False, 0)
+      return False
+    return True
   
   def addHighscore(self, difficulty, score, stars, name):
     if not difficulty in self.highScores:
@@ -297,25 +294,16 @@ class Note(Event):
     self.played   = False
     self.special  = special
     self.tappable = tappable
-    
-  def __repr__(self):
-    return "<#%d>" % self.number
 
 class Tempo(Event):
   def __init__(self, bpm):
     Event.__init__(self, 0)
     self.bpm = bpm
     
-  def __repr__(self):
-    return "<%d bpm>" % self.bpm
-
 class TextEvent(Event):
   def __init__(self, text, length):
     Event.__init__(self, length)
     self.text = text
-
-  def __repr__(self):
-    return "<%s>" % self.text
 
 class PictureEvent(Event):
   def __init__(self, fileName, length):
@@ -351,11 +339,12 @@ class Track:
     if t1 > t2:
       t1, t2 = t2, t1
 
-    events = set()
+    events = []
     for t in range(max(t1, 0), min(len(self.events), t2)):
       for diff, event in self.events[t]:
         time = (self.granularity * t) + diff
-        events.add((time, event))
+        if not (time, event) in events:
+          events.append((time, event))
     return events
 
   def getAllEvents(self):
@@ -372,7 +361,7 @@ class Track:
     #  1. Not the first note of the track
     #  2. Previous note not the same as this one
     #  3. Previous note not a chord
-    #  4. Previous note ends at most 161 ticks before this one
+    #  4. Previous note ends at most 161 ticks before this one starts
     bpm             = None
     ticksPerBeat    = 480
     tickThreshold   = 161
@@ -384,11 +373,8 @@ class Track:
 
     def beatsToTicks(time):
       return (time * bpm * ticksPerBeat) / 60000.0
-
-    if not self.allEvents:
-      return
-
-    for time, event in self.allEvents + [self.allEvents[-1]]:
+    
+    for time, event in self.allEvents:
       if isinstance(event, Tempo):
         bpm = event.bpm
       elif isinstance(event, Note):
@@ -400,21 +386,6 @@ class Track:
         if ticks < currentTicks + epsilon:
           currentNotes.append(event)
           continue
-        
-        """
-        for i in range(5):
-          if i in [n.number for n in prevNotes]:
-            print " # ",
-          else:
-            print " . ",
-        print " | ",
-        for i in range(5):
-          if i in [n.number for n in currentNotes]:
-            print " # ",
-          else:
-            print " . ",
-        print
-        """
 
         # Previous note not a chord?
         if len(prevNotes) == 1:
@@ -429,12 +400,14 @@ class Track:
               # If all the notes are different, mark the current notes tappable
               for note in currentNotes:
                 note.tappable = True
-
+                
         # Set the current notes as the previous notes
         prevNotes    = currentNotes
         prevTicks    = currentTicks
         currentNotes = [event]
         currentTicks = ticks
+          
+
 
 class Song(object):
   def __init__(self, engine, infoFileName, songTrackName, guitarTrackName, rhythmTrackName, noteFileName, scriptFileName = None):
@@ -860,14 +833,11 @@ def getAvailableLibraries(engine, library = DEFAULT_LIBRARY):
       if not os.path.isdir(libraryRoot):
         continue
       for name in os.listdir(libraryRoot):
-        # If the directory has at least one song under it or a file called "library.ini", add it
-        if os.path.isfile(os.path.join(libraryRoot, name, "song.ini")) or \
-           name == "library.ini":
+        if os.path.isfile(os.path.join(libraryRoot, name, "song.ini")):
           if not libraryRoot in libraryRoots:
             libName = library + os.path.join(libraryRoot.replace(songRoot, ""))
             libraries.append(LibraryInfo(libName, os.path.join(libraryRoot, "library.ini")))
             libraryRoots.append(libraryRoot)
-            break
   return libraries
 
 def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = False):

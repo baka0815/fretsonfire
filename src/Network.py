@@ -23,8 +23,7 @@
 import asyncore
 import socket
 import struct
-import time
-import StringIO
+import  time
 
 import Log
 
@@ -70,7 +69,7 @@ class Connection(asyncore.dispatcher):
     self._buffer = []
     self._sentSizeField = False
     self._receivedSizeField = 0
-    self._packet = StringIO.StringIO()
+    self._packet = ""        # TODO: optimize with stringbuffer?
 
     if not sock:
       self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -118,16 +117,16 @@ class Connection(asyncore.dispatcher):
       data = self.recv(self._receivedSizeField)
       if data:
         self._receivedSizeField -= len(data)
-        self._packet.write(data)
+        self._packet += data
         if not self._receivedSizeField:
           # The first packet contains the ID
           if self.id is None:
-            self.id = struct.unpack("H", self._packet.getvalue())[0]
+            self.id = struct.unpack("H", self._packet)[0]
             self.handleRegistration()
           else:
-            self.handlePacket(self._packet.getvalue())
-          self._packet.truncate()
-          self._packet.seek(0)
+            p, self._packet = self._packet, ""
+            self.handlePacket(p)
+          self._packet = ""
     except socket.error, e:
       Log.error("Socket error while receiving: %s" % str(e))
 

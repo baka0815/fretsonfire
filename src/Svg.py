@@ -24,24 +24,21 @@ import re
 import os
 from xml import sax
 from OpenGL.GL import *
-from numpy import reshape, dot, transpose, identity, zeros, float32
+from Numeric import reshape, matrixmultiply, transpose, identity, zeros, Float
 from math import sin, cos
 
 import Log
 import Config
 from Texture import Texture, TextureException
 
-# Amanith support is now deprecated
-#try:
-#  import amanith
-#  import SvgColors
-#  haveAmanith    = True
-#except ImportError:
-#  Log.warn("PyAmanith not found, SVG support disabled.")
-#  import DummyAmanith as amanith
-#  haveAmanith    = False
-import DummyAmanith as amanith
-haveAmanith = True
+try:
+  import amanith
+  import SvgColors
+  haveAmanith    = True
+except ImportError:
+  Log.warn("PyAmanith not found, SVG support disabled.")
+  import DummyAmanith as amanith
+  haveAmanith    = False
 
 # Add support for 'foo in attributes' syntax
 if not hasattr(sax.xmlreader.AttributesImpl, '__contains__'):
@@ -67,7 +64,7 @@ class SvgGradient:
     self.transform = transform
 
   def applyTransform(self, transform):
-    m = dot(transform.matrix, self.transform.matrix)
+    m = matrixmultiply(transform.matrix, self.transform.matrix)
     self.gradientDesc.SetMatrix(transform.getGMatrix(m))
 
 class SvgContext:
@@ -102,17 +99,15 @@ class SvgContext:
     self.geometry = geometry
 
   def setRenderingQuality(self, quality):
-    # Ignored
-    pass
-    #if quality == LOW_QUALITY:
-    #  q = amanith.G_LOW_RENDERING_QUALITY
-    #elif quality == NORMAL_QUALITY:
-    #  q = amanith.G_NORMAL_RENDERING_QUALITY
-    #elif quality == HIGH_QUALITY:
-    #  q = amanith.G_HIGH_RENDERING_QUALITY
-    #else:
-    #  raise RaiseValueError("Bad rendering quality.")
-    #self.drawBoard.SetRenderingQuality(q)
+    if quality == LOW_QUALITY:
+      q = amanith.G_LOW_RENDERING_QUALITY
+    elif quality == NORMAL_QUALITY:
+      q = amanith.G_NORMAL_RENDERING_QUALITY
+    elif quality == HIGH_QUALITY:
+      q = amanith.G_HIGH_RENDERING_QUALITY
+    else:
+      raise RaiseValueError("Bad rendering quality.")
+    self.drawBoard.SetRenderingQuality(q)
 
   def getRenderingQuality(self):
     q = self.drawBoard.RenderingQuality()
@@ -261,13 +256,13 @@ class SvgTransform:
         e = [float(c) for c in m.groups()]
         e = [e[0], e[2], e[4], e[1], e[3], e[5], 0, 0, 1]
         m = reshape(e, (3, 3))
-        self.matrix = dot(self.matrix, m)
+        self.matrix = matrixmultiply(self.matrix, m)
 
   def transform(self, transform):
-    self.matrix = dot(self.matrix, transform.matrix)
+    self.matrix = matrixmultiply(self.matrix, transform.matrix)
 
   def reset(self):
-    self.matrix = identity(3, float32)
+    self.matrix = identity(3, typecode = Float)
 
   def translate(self, dx, dy):
     m = zeros((3, 3))
@@ -276,20 +271,20 @@ class SvgTransform:
     self.matrix += m
 
   def rotate(self, angle):
-    m = identity(3, float32)
+    m = identity(3, typecode = Float)
     s = sin(angle)
     c = cos(angle)
     m[0, 0] =  c
     m[0, 1] = -s
     m[1, 0] =  s
     m[1, 1] =  c
-    self.matrix = dot(self.matrix, m)
+    self.matrix = matrixmultiply(self.matrix, m)
 
   def scale(self, sx, sy):
-    m = identity(3, float32)
+    m = identity(3, typecode = Float)
     m[0, 0] = sx
     m[1, 1] = sy
-    self.matrix = dot(self.matrix, m)
+    self.matrix = matrixmultiply(self.matrix, m)
 
   def applyGL(self):
     # Interpret the 2D matrix as 3D
@@ -301,11 +296,10 @@ class SvgTransform:
     glMultMatrixf(m)
 
   def getGMatrix(self, m):
-    f = float
     self._gmatrix.Set( \
-      f(m[0, 0]), f(m[0, 1]), f(m[0, 2]), \
-      f(m[1, 0]), f(m[1, 1]), f(m[1, 2]), \
-      f(m[2, 0]), f(m[2, 1]), f(m[2, 2]))
+      m[0, 0], m[0, 1], m[0, 2], \
+      m[1, 0], m[1, 1], m[1, 2], \
+      m[2, 0], m[2, 1], m[2, 2])
     return self._gmatrix
 
   def apply(self, drawBoard):
@@ -542,30 +536,18 @@ class SvgDrawing:
     if type(svgData) == file:
       self.svgData = svgData.read()
     elif type(svgData) == str:
+      # Check whether we have a cached bitmap version
       bitmapFile = svgData.replace(".svg", ".png")
-      # Load PNG files directly
-      if svgData.endswith(".png"):
-        self.texture = Texture(svgData)
-      # Check whether we have a prerendered bitmap version of the SVG file
-      elif svgData.endswith(".svg") and os.path.exists(bitmapFile):
+      if svgData.endswith(".svg") and os.path.exists(bitmapFile):
         Log.debug("Loading cached bitmap '%s' instead of '%s'." % (bitmapFile, svgData))
         self.texture = Texture(bitmapFile)
       else:
         if not haveAmanith:
-          e = "PyAmanith support is deprecated and you are trying to load an SVG file."
+          e = "PyAmanith is not installed and you are trying to load an SVG file."
           Log.error(e)
           raise RuntimeError(e)
         Log.debug("Loading SVG file '%s'." % (svgData))
         self.svgData = open(svgData).read()
-
-    # Make sure we have a valid texture
-    if not self.texture:
-      if type(svgData) == str:
-        e = "Unable to load texture for %s." % svgData
-      else:
-        e = "Unable to load texture for SVG file."
-      Log.error(e)
-      raise RuntimeError(e)
 
   def _cacheDrawing(self, drawBoard):
     self.cache.beginCaching()
@@ -578,30 +560,26 @@ class SvgDrawing:
     if self.texture:
       return
 
-    e = "SVG drawing does not have a valid texture image."
-    Log.error(e)
-    raise RuntimeError(e)
-
-    #try:
-    #  self.texture = Texture()
-    #  self.texture.bind()
-    #  self.texture.prepareRenderTarget(width, height)
-    #  self.texture.setAsRenderTarget()
-    #  quality = self.context.getRenderingQuality()
-    #  self.context.setRenderingQuality(HIGH_QUALITY)
-    #  geometry = self.context.geometry
-    #  self.context.setProjection((0, 0, width, height))
-    #  glViewport(0, 0, width, height)
-    #  self.context.clear()
-    #  transform = SvgTransform()
-    #  transform.translate(width / 2, height / 2)
-    #  self._render(transform)
-    #  self.texture.resetDefaultRenderTarget()
-    #  self.context.setProjection(geometry)
-    #  glViewport(*geometry)
-    #  self.context.setRenderingQuality(quality)
-    #except TextureException, e:
-    #  Log.warn("Unable to convert SVG drawing to texture: %s" % str(e))
+    try:
+      self.texture = Texture()
+      self.texture.bind()
+      self.texture.prepareRenderTarget(width, height)
+      self.texture.setAsRenderTarget()
+      quality = self.context.getRenderingQuality()
+      self.context.setRenderingQuality(HIGH_QUALITY)
+      geometry = self.context.geometry
+      self.context.setProjection((0, 0, width, height))
+      glViewport(0, 0, width, height)
+      self.context.clear()
+      transform = SvgTransform()
+      transform.translate(width / 2, height / 2)
+      self._render(transform)
+      self.texture.resetDefaultRenderTarget()
+      self.context.setProjection(geometry)
+      glViewport(*geometry)
+      self.context.setRenderingQuality(quality)
+    except TextureException, e:
+      Log.warn("Unable to convert SVG drawing to texture: %s" % str(e))
 
   def _getEffectiveTransform(self):
     transform = SvgTransform(self.transform)

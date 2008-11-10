@@ -11,13 +11,6 @@ translations = {
   "he":  "hebrew",
   "es":  "spanish",
   "it":  "italian",
-  "gl":  "galician",
-  "cz":  "czech",
-  "fi":  "finnish",
-  "hu":  "hungarian",
-  "nl":  "dutch",
-  "cs":  "czech",
-  "tur": "turkish",
 }
 
 files = ["fretsonfire", "tutorial"]

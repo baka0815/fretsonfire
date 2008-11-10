@@ -2,7 +2,7 @@
 ;Written by Joonas Kerttula
 
 !ifndef VERSION
-  !define VERSION '1.2.512-win32'
+  !define VERSION '1.2.432-win32'
 !endif
 
 ;--------------------------------
@@ -100,10 +100,10 @@ Section "Frets on Fire core files (required)" SecCore
   SetOutPath "$INSTDIR"
   RMDir /r "$SMPROGRAMS\Frets on Fire"
 
-  File ..\*.*
-
-  SetOutPath "$INSTDIR\data"
-  File /r ..\data\PyOpenGL-3.0.0a5-py2.5.egg
+  File ..\*.dll
+  File ..\readme.txt
+  File ..\copying.txt
+  File ..\FretsOnFire.exe
 
   SetOutPath "$INSTDIR\data"
   
@@ -135,10 +135,10 @@ Section "Desktop Shortcut" SecShortcuts
   SetOutPath $INSTDIR
 !ifndef NO_STARTMENUSHORTCUTS
   CreateDirectory "$SMPROGRAMS\Frets on Fire"
-  CreateShortCut "$SMPROGRAMS\Frets on Fire\Frets on Fire.lnk" "$INSTDIR\FretsOnFire.exe" "" "$INSTDIR\icon.ico" 0
+  CreateShortCut "$SMPROGRAMS\Frets on Fire\Frets on Fire.lnk" "$INSTDIR\FretsOnFire.exe"
   CreateShortCut "$SMPROGRAMS\Frets on Fire\Readme.lnk" "$INSTDIR\readme.txt"
   CreateShortCut "$SMPROGRAMS\Frets on Fire\Uninstall Frets on Fire.lnk" "$INSTDIR\Uninstall.exe"
-  WriteINIStr "$SMPROGRAMS\Frets on Fire\Frets on Fire Webpage.url" "InternetShortcut" "URL" "http://fretsonfire.sourceforge.net"
+  WriteINIStr "$SMPROGRAMS\Frets on Fire\Frets on Fire Webpage.url" "InternetShortcut" "URL" "http://louhi.kempele.fi/~skyostil/uv/fretsonfire/"
 
 !endif
 
@@ -253,7 +253,7 @@ Section "Hebrew" SecTransHebrew
   File ..\data\translations\hebrew.mo
 
 SectionEnd
-
+/*
 Section "Italian" SecTransItalian
 
   SetOverwrite on
@@ -267,7 +267,7 @@ Section "Italian" SecTransItalian
   File ..\data\translations\italian.mo
 
 SectionEnd
-
+*/
 Section "German" SecTransGerman
 
   SetOverwrite on
@@ -352,76 +352,6 @@ Section "Brazilian Portuguese" SecTransBrazilianPortuguese
 
 SectionEnd
 
-Section "Dutch" SecTransDutch
-  
-  SetOverwrite on
-  SetDetailsPrint textonly
-  DetailPrint "Installing translation | Dutch..."
-  SetDetailsPrint listonly
-
-  SectionIn 1
-  SetOutPath $INSTDIR\data\translations
-
-  File ..\data\translations\dutch.mo
-
-SectionEnd
-
-Section "Finnish" SecTransFinnish
-  
-  SetOverwrite on
-  SetDetailsPrint textonly
-  DetailPrint "Installing translation | Finnish..."
-  SetDetailsPrint listonly
-
-  SectionIn 1
-  SetOutPath $INSTDIR\data\translations
-
-  File ..\data\translations\finnish.mo
-
-SectionEnd
-
-Section "Turkish" SecTransTurkish
-  
-  SetOverwrite on
-  SetDetailsPrint textonly
-  DetailPrint "Installing translation | Turkish..."
-  SetDetailsPrint listonly
-
-  SectionIn 1
-  SetOutPath $INSTDIR\data\translations
-
-  File ..\data\translations\turkish.mo
-
-SectionEnd
-
-Section "Galician" SecTransGalician
-  
-  SetOverwrite on
-  SetDetailsPrint textonly
-  DetailPrint "Installing translation | Galician..."
-  SetDetailsPrint listonly
-
-  SectionIn 1
-  SetOutPath $INSTDIR\data\translations
-
-  File ..\data\translations\galician.mo
-
-SectionEnd
-
-Section "Hungarian" SecTransHungarian
-  
-  SetOverwrite on
-  SetDetailsPrint textonly
-  DetailPrint "Installing translation | Hungarian..."
-  SetDetailsPrint listonly
-
-  SectionIn 1
-  SetOutPath $INSTDIR\data\translations
-
-  File ..\data\translations\hungarian.mo
-
-SectionEnd
-
 SectionGroupEnd
 
 Section -post
@@ -438,7 +368,7 @@ Section -post
   WriteRegExpandStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Frets on Fire" "UninstallString" '"$INSTDIR\Uninstall.exe"'
   WriteRegExpandStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Frets on Fire" "InstallLocation" "$INSTDIR"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Frets on Fire" "DisplayName" "Frets On Fire"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Frets on Fire" "DisplayIcon" "$INSTDIR\icon.ico,0"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Frets on Fire" "DisplayIcon" "$INSTDIR\FretsOnFire.exe,0"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Frets on Fire" "DisplayVersion" "${VERSION}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Frets on Fire" "URLInfoAbout" "http://louhi.kempele.fi/~skyostil/uv/fretsonfire/"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Frets on Fire" "NoModify" "1"
@@ -490,16 +420,11 @@ SectionEnd
     !insertmacro MUI_DESCRIPTION_TEXT ${SecTransFrench} "Install translation: french"
     !insertmacro MUI_DESCRIPTION_TEXT ${SecTransGerman} "Install translation: german"
     !insertmacro MUI_DESCRIPTION_TEXT ${SecTransHebrew} "Install translation: hebrew"
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecTransItalian} "Install translation: italian"
+    ;!insertmacro MUI_DESCRIPTION_TEXT ${SecTransItalian} "Install translation: italian"
     !insertmacro MUI_DESCRIPTION_TEXT ${SecTransPolish} "Install translation: polish"
     !insertmacro MUI_DESCRIPTION_TEXT ${SecTransRussian} "Install translation: russian"
     !insertmacro MUI_DESCRIPTION_TEXT ${SecTransSpanish} "Install translation: spanish"
     !insertmacro MUI_DESCRIPTION_TEXT ${SecTransSwedish} "Install translation: swedish"
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecTransFinnish} "Install translation: finnish"
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecTransDutch} "Install translation: dutch"
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecTransGalician} "Install translation: galician"
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecTransHungarian} "Install translation: hungarian"
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecTransTurkish} "Install translation: turkish"
     !insertmacro MUI_DESCRIPTION_TEXT ${SecMods} "Install mods"
     !insertmacro MUI_DESCRIPTION_TEXT ${SecModsLightGraphics} "Install mod: Light Graphics"
     !insertmacro MUI_DESCRIPTION_TEXT ${SecModsChilly} "Install mod: Chilly"
@@ -537,7 +462,7 @@ Section "Uninstall"
   Delete "$DESKTOP\Frets on Fire.lnk"
   Delete $INSTDIR\FretsOnFire.exe
   Delete $INSTDIR\msvcr71.dll
-  Delete $INSTDIR\python25.dll
+  Delete $INSTDIR\python24.dll
   Delete $INSTDIR\msvcp71.dll
   Delete $INSTDIR\readme.txt
   Delete $INSTDIR\copying.txt

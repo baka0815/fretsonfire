@@ -49,14 +49,13 @@ import Mod
 Config.define("engine", "tickrate",     float, 1.0)
 Config.define("engine", "highpriority", bool,  True)
 Config.define("game",   "uploadscores", bool,  False, text = _("Upload Highscores"),    options = {False: _("No"), True: _("Yes")})
-Config.define("game",   "uploadurl",    str,   "http://fretsonfire.sourceforge.net/play")
+Config.define("game",   "uploadurl",    str,   "http://kempele.fi/~skyostil/python/fretsonfire/upload")
 Config.define("game",   "leftymode",    bool,  False, text = _("Lefty mode"),           options = {False: _("No"), True: _("Yes")})
-Config.define("game",   "tapping",      bool,  True,  text = _("Tappable notes"),       options = {False: _("No"), True: _("Yes")})
-Config.define("video",  "fullscreen",   bool,  False, text = _("Fullscreen Mode"),      options = {False: _("No"), True: _("Yes")})
+Config.define("video",  "fullscreen",   bool,  True,  text = _("Fullscreen Mode"),      options = {False: _("No"), True: _("Yes")})
 Config.define("video",  "multisamples", int,   4,     text = _("Antialiasing Quality"), options = {0: _("None"), 2: _("2x"), 4: _("4x"), 6: _("6x"), 8: _("8x")})
 Config.define("video",  "resolution",   str,   "640x480")
 Config.define("video",  "fps",          int,   80,    text = _("Frames per Second"), options = dict([(n, n) for n in range(1, 120)]))
-#Config.define("opengl", "svgquality",   int,   NORMAL_QUALITY,  text = _("SVG Quality"), options = {LOW_QUALITY: _("Low"), NORMAL_QUALITY: _("Normal"), HIGH_QUALITY: _("High")})
+Config.define("opengl", "svgquality",   int,   NORMAL_QUALITY,  text = _("SVG Quality"), options = {LOW_QUALITY: _("Low"), NORMAL_QUALITY: _("Normal"), HIGH_QUALITY: _("High")})
 Config.define("audio",  "frequency",    int,   44100, text = _("Sample Frequency"), options = [8000, 11025, 22050, 32000, 44100, 48000])
 Config.define("audio",  "bits",         int,   16,    text = _("Sample Bits"), options = [16, 8])
 Config.define("audio",  "stereo",       bool,  True)
@@ -165,7 +164,7 @@ class GameEngine(Engine):
     geometry = (0, 0, w, h)
     self.svg = SvgContext(geometry)
     self.svg.setRenderingQuality(self.config.get("opengl", "svgquality"))
-    glViewport(int(viewport[0]), int(viewport[1]), int(viewport[2]), int(viewport[3]))
+    glViewport(*viewport)
 
     self.input     = Input()
     self.view      = View(self, geometry)
@@ -180,12 +179,7 @@ class GameEngine(Engine):
     Mod.init(self)
     theme = Config.load(self.resource.fileName("theme.ini"))
     Theme.open(theme)
-
-    # Make sure we are using the new upload URL
-    if self.config.get("game", "uploadurl").startswith("http://kempele.fi"):
-      self.config.set("game", "uploadurl", "http://fretsonfire.sourceforge.net/play")
-
-    self.addTask(self.audio, synchronized = False)
+    
     self.addTask(self.input, synchronized = False)
     self.addTask(self.view)
     self.addTask(self.resource, synchronized = False)
@@ -197,7 +191,7 @@ class GameEngine(Engine):
     self.debugLayer         = None
     self.startupLayer       = None
     self.loadingScreenShown = False
-
+    
     Log.debug("Ready.")
 
   def setStartupLayer(self, startupLayer):
@@ -245,10 +239,6 @@ class GameEngine(Engine):
     else:
       self.quit()
     
-  def quit(self):
-    self.audio.close()
-    Engine.quit(self)
-
   def resizeScreen(self, width, height):
     """
     Resize the game screen.

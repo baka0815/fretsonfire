@@ -37,12 +37,11 @@ import Audio
 import Settings
 
 class MainMenu(BackgroundLayer):
-  def __init__(self, engine, songName = None):
+  def __init__(self, engine):
     self.engine              = engine
     self.time                = 0.0
     self.nextLayer           = None
     self.visibility          = 0.0
-    self.songName            = songName
     
     self.engine.loadSvgDrawing(self, "background", "keyboard.svg")
     self.engine.loadSvgDrawing(self, "guy",        "pose.svg")
@@ -55,6 +54,79 @@ class MainMenu(BackgroundLayer):
       (_("Host Multiplayer Game"), self.hostMultiplayerGame),
       (_("Join Multiplayer Game"), self.joinMultiplayerGame),
     ]
+
+    """
+    applyItem = [(_("Apply New Settings"), self.applySettings)]
+
+    self.modSettings = [
+      ConfigChoice(self.engine.config, "mods",  "mod_" + m) for m in Mod.getAvailableMods(self.engine)
+    ] + applyItem
+    
+    self.gameSettings = [
+      (_("Mod settings"), self.modSettings),
+      ConfigChoice(self.engine.config, "game",  "language"),
+      ConfigChoice(self.engine.config, "game",  "leftymode", autoApply = True),
+      ConfigChoice(self.engine.config, "game",  "uploadscores", autoApply = True),
+    ]
+    gameSettingsMenu = Menu(self.engine, self.gameSettings + applyItem)
+
+    keySettings = [
+      (_("Test Keys"), lambda: Dialogs.testKeys(self.engine)),
+      KeyConfigChoice(self.engine, self.engine.config, "player", "key_action1"),
+      KeyConfigChoice(self.engine, self.engine.config, "player", "key_action2"),
+      KeyConfigChoice(self.engine, self.engine.config, "player", "key_1"),
+      KeyConfigChoice(self.engine, self.engine.config, "player", "key_2"),
+      KeyConfigChoice(self.engine, self.engine.config, "player", "key_3"),
+      KeyConfigChoice(self.engine, self.engine.config, "player", "key_4"),
+      KeyConfigChoice(self.engine, self.engine.config, "player", "key_5"),
+      KeyConfigChoice(self.engine, self.engine.config, "player", "key_left"),
+      KeyConfigChoice(self.engine, self.engine.config, "player", "key_right"),
+      KeyConfigChoice(self.engine, self.engine.config, "player", "key_up"),
+      KeyConfigChoice(self.engine, self.engine.config, "player", "key_down"),
+      KeyConfigChoice(self.engine, self.engine.config, "player", "key_cancel"),
+    ]
+    keySettingsMenu = Menu(self.engine, keySettings)
+    
+    modes = self.engine.video.getVideoModes()
+    modes.reverse()
+    Config.define("video",  "resolution", str,   "640x480", text = _("Video Resolution"), options = ["%dx%d" % (m[0], m[1]) for m in modes])
+    self.videoSettings = [
+      ConfigChoice(self.engine.config, "video",  "resolution"),
+      ConfigChoice(self.engine.config, "video",  "fullscreen"),
+      ConfigChoice(self.engine.config, "video",  "fps"),
+      ConfigChoice(self.engine.config, "video",  "multisamples"),
+      #ConfigChoice(self.engine.config, "opengl", "svgshaders"),    # shaders broken at the moment
+      ConfigChoice(self.engine.config, "opengl", "svgquality"),
+      ConfigChoice(self.engine.config, "video", "fontscale"),
+    ]
+    videoSettingsMenu = Menu(self.engine, self.videoSettings + applyItem)
+
+    self.volumeSettings = [
+      ConfigChoice(self.engine.config, "audio",  "guitarvol"),
+      ConfigChoice(self.engine.config, "audio",  "songvol"),
+      ConfigChoice(self.engine.config, "audio",  "rhythmvol"),
+      ConfigChoice(self.engine.config, "audio",  "screwupvol"),
+    ]
+    volumeSettingsMenu = Menu(self.engine, self.volumeSettings + applyItem)
+
+    self.audioSettings = [
+      (_("Volume Settings"), volumeSettingsMenu),
+      ConfigChoice(self.engine.config, "audio",  "delay"),
+      ConfigChoice(self.engine.config, "audio",  "frequency"),
+      ConfigChoice(self.engine.config, "audio",  "bits"),
+      ConfigChoice(self.engine.config, "audio",  "buffersize"),
+    ]
+    audioSettingsMenu = Menu(self.engine, self.audioSettings + applyItem)
+
+    self.settings = [
+      (_("Game Settings"),     gameSettingsMenu),
+      (_("Key Settings"),      keySettingsMenu),
+      (_("Video Settings"),    videoSettingsMenu),
+      (_("Audio Settings"),    audioSettingsMenu),
+    ]
+    settingsMenu = Menu(self.engine, self.settings)
+    
+    """
 
     editorMenu = Menu(self.engine, [
       (_("Edit Existing Song"),            self.startEditor),
@@ -77,9 +149,6 @@ class MainMenu(BackgroundLayer):
   def shown(self):
     self.engine.view.pushLayer(self.menu)
     self.engine.stopServer()
-
-    if self.songName:
-      self.newSinglePlayerGame(self.songName)
     
   def hidden(self):
     self.engine.view.popLayer(self.menu)
@@ -126,17 +195,17 @@ class MainMenu(BackgroundLayer):
     self.engine.resource.load(self, "session", lambda: self.engine.connect("127.0.0.1"), synch = True)
 
     if Dialogs.showLoadingScreen(self.engine, lambda: self.session and self.session.isConnected):
-      self.launchLayer(lambda: Lobby(self.engine, self.session, singlePlayer = True, songName = "tutorial"))
+      self.launchLayer(lambda: Lobby(self.engine, self.session, singlePlayer = True, tutorial = True))
   showTutorial = catchErrors(showTutorial)
 
-  def newSinglePlayerGame(self, songName = None):
+  def newSinglePlayerGame(self):
     if self.engine.isServerRunning():
       return
     self.engine.startServer()
     self.engine.resource.load(self, "session", lambda: self.engine.connect("127.0.0.1"), synch = True)
 
     if Dialogs.showLoadingScreen(self.engine, lambda: self.session and self.session.isConnected):
-      self.launchLayer(lambda: Lobby(self.engine, self.session, singlePlayer = True, songName = songName))
+      self.launchLayer(lambda: Lobby(self.engine, self.session, singlePlayer = True))
   newSinglePlayerGame = catchErrors(newSinglePlayerGame)
 
   def hostMultiplayerGame(self):

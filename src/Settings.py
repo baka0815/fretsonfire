@@ -137,7 +137,6 @@ class SettingsMenu(Menu.Menu):
       (_("Mod settings"), modSettings),
       ConfigChoice(engine.config, "game",  "language"),
       ConfigChoice(engine.config, "game",  "leftymode", autoApply = True),
-      ConfigChoice(engine.config, "game",  "tapping", autoApply = True),
       ConfigChoice(engine.config, "game",  "uploadscores", autoApply = True),
     ]
     gameSettingsMenu = Menu.Menu(engine, gameSettings + applyItem)
@@ -168,7 +167,7 @@ class SettingsMenu(Menu.Menu):
       ConfigChoice(engine.config, "video",  "fps"),
       ConfigChoice(engine.config, "video",  "multisamples"),
       #ConfigChoice(engine.config, "opengl", "svgshaders"),    # shaders broken at the moment
-      #ConfigChoice(engine.config, "opengl", "svgquality"),
+      ConfigChoice(engine.config, "opengl", "svgquality"),
       ConfigChoice(engine.config, "video", "fontscale"),
     ]
     videoSettingsMenu = Menu.Menu(engine, videoSettings + applyItem)

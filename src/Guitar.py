@@ -27,7 +27,6 @@ import Theme
 
 from OpenGL.GL import *
 import math
-import numpy
 
 KEYS = [Player.KEY1, Player.KEY2, Player.KEY3, Player.KEY4, Player.KEY5]
 
@@ -53,16 +52,11 @@ class Guitar:
     self.lastBpmChange  = -1.0
     self.baseBeat       = 0.0
     self.setBPM(self.currentBpm)
-    self.vertexCache    = numpy.empty((8 * 4096, 3), numpy.float32)
-    self.colorCache     = numpy.empty((8 * 4096, 4), numpy.float32)
 
     engine.resource.load(self,  "noteMesh", lambda: Mesh(engine.resource.fileName("note.dae")))
     engine.resource.load(self,  "keyMesh",  lambda: Mesh(engine.resource.fileName("key.dae")))
-    engine.loadSvgDrawing(self, "glowDrawing", "glow.png")
-    engine.loadSvgDrawing(self, "neckDrawing", "neck.png")
-    engine.loadSvgDrawing(self, "stringDrawing", "string.png")
-    engine.loadSvgDrawing(self, "barDrawing", "bar.png")
-    engine.loadSvgDrawing(self, "noteDrawing", "note.png")
+    engine.loadSvgDrawing(self, "glowDrawing", "glow.svg",  textureSize = (128, 128))
+    engine.loadSvgDrawing(self, "neckDrawing", "neck.svg",  textureSize = (256, 256))
 
   def selectPreviousString(self):
     self.selectedString = (self.selectedString - 1) % self.strings
@@ -95,8 +89,6 @@ class Guitar:
 
     glEnable(GL_TEXTURE_2D)
     self.neckDrawing.texture.bind()
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
     
     glBegin(GL_TRIANGLE_STRIP)
     glColor4f(1, 1, 1, 0)
@@ -144,25 +136,24 @@ class Guitar:
       glVertex3f(x + s, 0, z2)
       glEnd()
 
-    sw = 0.035
-    glEnable(GL_TEXTURE_2D)
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    Theme.setBaseColor(1 - v)
-    self.stringDrawing.texture.bind()
+    sw = 0.025
     for n in range(self.strings - 1, -1, -1):
       glBegin(GL_TRIANGLE_STRIP)
-      glTexCoord2f(0.0, 0.0)
+      Theme.setBaseColor(0)
       glVertex3f((n - self.strings / 2) * w - sw, -v, -2)
-      glTexCoord2f(1.0, 0.0)
       glVertex3f((n - self.strings / 2) * w + sw, -v, -2)
-      glTexCoord2f(0.0, 1.0)
+      Theme.setBaseColor((1.0 - v) * .75)
+      glVertex3f((n - self.strings / 2) * w - sw, -v, -1)
+      glVertex3f((n - self.strings / 2) * w + sw, -v, -1)
+      Theme.setBaseColor((1.0 - v) * .75)
+      glVertex3f((n - self.strings / 2) * w - sw, -v, self.boardLength * .7)
+      glVertex3f((n - self.strings / 2) * w + sw, -v, self.boardLength * .7)
+      Theme.setBaseColor(0)
       glVertex3f((n - self.strings / 2) * w - sw, -v, self.boardLength)
-      glTexCoord2f(1.0, 1.0)
       glVertex3f((n - self.strings / 2) * w + sw, -v, self.boardLength)
       glEnd()
       v *= 2
-    glDisable(GL_TEXTURE_2D)
+      
       
   def renderBars(self, visibility, song, pos):
     if not song:
@@ -170,7 +161,7 @@ class Guitar:
     
     w            = self.boardWidth
     v            = 1.0 - visibility
-    sw           = 0.04
+    sw           = 0.02
     beatsPerUnit = self.beatsPerBoard / self.boardLength
     pos         -= self.lastBpmChange
     offset       = pos / self.currentPeriod * beatsPerUnit
@@ -179,9 +170,7 @@ class Guitar:
 
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    glEnable(GL_TEXTURE_2D)
-    self.barDrawing.texture.bind()
-     
+    
     glPushMatrix()
     while beat < currentBeat + self.beatsPerBoard:
       z = (beat - currentBeat) / beatsPerUnit
@@ -201,13 +190,9 @@ class Guitar:
         Theme.setBaseColor(visibility * c * .5)
 
       glBegin(GL_TRIANGLE_STRIP)
-      glTexCoord2f(0.0, 0.0)
       glVertex3f(-(w / 2), -v, z + sw)
-      glTexCoord2f(0.0, 1.0)
       glVertex3f(-(w / 2), -v, z - sw)
-      glTexCoord2f(1.0, 0.0)
       glVertex3f(w / 2,    -v, z + sw)
-      glTexCoord2f(1.0, 1.0)
       glVertex3f(w / 2,    -v, z - sw)
       glEnd()
       
@@ -219,41 +204,28 @@ class Guitar:
 
     Theme.setSelectedColor(visibility * .5)
     glBegin(GL_TRIANGLE_STRIP)
-    glTexCoord2f(0.0, 0.0)
     glVertex3f(-w / 2, 0,  sw)
-    glTexCoord2f(0.0, 1.0)
     glVertex3f(-w / 2, 0, -sw)
-    glTexCoord2f(1.0, 0.0)
     glVertex3f(w / 2,  0,  sw)
-    glTexCoord2f(1.0, 1.0)
     glVertex3f(w / 2,  0, -sw)
     glEnd()
-
-    glDisable(GL_TEXTURE_2D)
 
   def renderNote(self, length, color, flat = False, tailOnly = False, isTappable = False):
     if not self.noteMesh:
       return
 
     glColor4f(*color)
-    glEnable(GL_TEXTURE_2D)
-    self.noteDrawing.texture.bind()
 
     if flat:
       glScalef(1, .1, 1)
 
     size = (.1, length + 0.00001)
     glBegin(GL_TRIANGLE_STRIP)
-    glTexCoord2f(0.0, 0.0)
     glVertex3f(-size[0], 0, 0)
-    glTexCoord2f(1.0, 0.0)
     glVertex3f( size[0], 0, 0)
-    glTexCoord2f(0.0, 1.0)
     glVertex3f(-size[0], 0, size[1])
-    glTexCoord2f(1.0, 1.0)
     glVertex3f( size[0], 0, size[1])
     glEnd()
-    glDisable(GL_TEXTURE_2D)
 
     if tailOnly:
       return
@@ -261,9 +233,9 @@ class Guitar:
     glPushMatrix()
     glEnable(GL_DEPTH_TEST)
     glDepthMask(1)
-    if color[3] > .9:
-      glDisable(GL_BLEND)
     glShadeModel(GL_SMOOTH)
+    #glRotatef(90, 0, 1, 0)
+    #glRotatef(-90, 1, 0, 0)
     self.noteMesh.render("Mesh_001")
     if isTappable:
       self.noteMesh.render("Mesh_003")
@@ -273,7 +245,6 @@ class Guitar:
     self.noteMesh.render("Mesh_002")
     glDepthMask(0)
     glPopMatrix()
-    glEnable(GL_BLEND)
 
   def renderNotes(self, visibility, song, pos):
     if not song:
@@ -334,78 +305,51 @@ class Guitar:
       self.renderNote(length, color = color, flat = flat, tailOnly = tailOnly, isTappable = isTappable)
       glPopMatrix()
 
+
     # Draw a waveform shape over the currently playing notes
-    vertices = self.vertexCache
-    colors   = self.colorCache
-
     glBlendFunc(GL_SRC_ALPHA, GL_ONE)
-    glEnableClientState(GL_VERTEX_ARRAY)
-    glEnableClientState(GL_COLOR_ARRAY)
-    glVertexPointer(3, GL_FLOAT, 0, vertices)
-    glColorPointer(4, GL_FLOAT, 0, colors)
-
     for time, event in self.playedNotes:
+      step  = self.currentPeriod / 16
       t     = time + event.length
-      dt    = t - pos
-      proj  = 1.0 / self.currentPeriod / beatsPerUnit
-
-      # Increase these values to improve performance
-      step1 = dt * proj * 25
-      step2 = 10.0
-
-      if dt < 1e-3:
-        continue
-
-      dStep = (step2 - step1) / dt
       x     = (self.strings / 2 - event.number) * w
       c     = self.fretColors[event.number]
       s     = t
-      step  = step1
-
-      vertexCount    = 0
+      proj  = 1.0 / self.currentPeriod / beatsPerUnit
+      zStep = step * proj
 
       def waveForm(t):
         u = ((t - time) * -.1 + pos - time) / 64.0 + .0001
         return (math.sin(event.number + self.time * -.01 + t * .03) + math.cos(event.number + self.time * .01 + t * .02)) * .1 + .1 + math.sin(u) / (5 * u)
 
-      i     = 0
-      a1    = 0.0
-      zStep = step * proj
-
-      while t > time and t - step > pos and i < len(vertices) / 8:
+      glBegin(GL_TRIANGLE_STRIP)
+      f1 = 0
+      while t > time:
         z  = (t - pos) * proj
-        a2 = waveForm(t - step)
-
-        colors[i    ]   = \
-        colors[i + 1]   = (c[0], c[1], c[2], .5)
-        colors[i + 2]   = \
-        colors[i + 3]   = (1, 1, 1, .75)
-        colors[i + 4]   = \
-        colors[i + 5]   = \
-        colors[i + 6]   = \
-        colors[i + 7]   = (c[0], c[1], c[2], .5)
-        vertices[i    ] = (x - a1, 0, z)
-        vertices[i + 1] = (x - a2, 0, z - zStep)
-        vertices[i + 2] = (x, 0, z)
-        vertices[i + 3] = (x, 0, z - zStep)
-        vertices[i + 4] = (x + a1, 0, z)
-        vertices[i + 5] = (x + a2, 0, z - zStep)
-        vertices[i + 6] = (x + a2, 0, z - zStep)
-        vertices[i + 7] = (x - a2, 0, z - zStep)
-
-        i    += 8
-        t    -= step
-        a1    = a2
-        step  = step1 + dStep * (s - t)
-        zStep = step * proj
-
-      glDrawArrays(GL_TRIANGLE_STRIP, 0, i)
-    glDisableClientState(GL_VERTEX_ARRAY)
-    glDisableClientState(GL_COLOR_ARRAY)
+        if z < 0:
+          break
+        f2 = min((s - t) / (6 * step), 1.0)
+        a1 = waveForm(t) * f1
+        a2 = waveForm(t - step) * f2
+        glColor4f(c[0], c[1], c[2], .5)
+        glVertex3f(x - a1, 0, z)
+        glVertex3f(x - a2, 0, z - zStep)
+        glColor4f(1, 1, 1, .75)
+        glVertex3f(x, 0, z)
+        glVertex3f(x, 0, z - zStep)
+        glColor4f(c[0], c[1], c[2], .5)
+        glVertex3f(x + a1, 0, z)
+        glVertex3f(x + a2, 0, z - zStep)
+        glVertex3f(x + a2, 0, z - zStep)
+        glVertex3f(x - a2, 0, z - zStep)
+        t -= step
+        f1 = f2
+      glEnd()
+      
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
   def renderFrets(self, visibility, song, controls):
     w = self.boardWidth / self.strings
+    size = (.22, .22)
     v = 1.0 - visibility
     
     glEnable(GL_DEPTH_TEST)
@@ -443,43 +387,42 @@ class Guitar:
       f = self.fretActivity[n]
 
       if f:
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+        glBlendFunc(GL_ONE, GL_ONE)
+
         s = 0.0
-        self.glowDrawing.texture.bind()
-
-        glEnable(GL_TEXTURE_2D)
-        glDisable(GL_DEPTH_TEST)
-        glPushMatrix()
-        glTranslate(x, y, 0)
-        glRotate(f + self.time * .1, 0, 1, 0)
-        size = (.22 * (f + 1.5), .22 * (f + 1.5))
-
-        if self.playedNotes:
-          t = math.cos(math.pi + (self.time - self.playedNotes[0][0]) * 0.01)
-        else:
-          t = math.cos(self.time * 0.01)
-
-        while s < .5:
-          ms = (1 - s) * f * t * .25 + .75
-          glColor3f(c[0] * ms, c[1] * ms, c[2] * ms)
-          glBegin(GL_TRIANGLE_STRIP)
-          glTexCoord2f(0.0, 0.0)
-          glVertex3f(-size[0] * f, 0, -size[1] * f)
-          glTexCoord2f(1.0, 0.0)
-          glVertex3f( size[0] * f, 0, -size[1] * f)
-          glTexCoord2f(0.0, 1.0)
-          glVertex3f(-size[0] * f, 0,  size[1] * f)
-          glTexCoord2f(1.0, 1.0)
-          glVertex3f( size[0] * f, 0,  size[1] * f)
-          glEnd()
-          glTranslatef(0, ms * .2, 0)
-          glScalef(.8, 1, .8)
-          glRotate(ms * 20, 0, 1, 0)
+        while s < 1:
+          ms = s * (math.sin(self.time) * .25 + 1)
+          glColor3f(c[0] * (1 - ms), c[1] * (1 - ms), c[2] * (1 - ms))
+          glPushMatrix()
+          glTranslate(x, y, 0)
+          glScalef(1 + .6 * ms * f, 1 + .6 * ms * f, 1 + .6 * ms * f)
+          glRotatef( 90, 0, 1, 0)
+          glRotatef(-90, 1, 0, 0)
+          glRotatef(-90, 0, 0, 1)
+          self.keyMesh.render()
+          glPopMatrix()
           s += 0.2
 
-        glPopMatrix()
-        glEnable(GL_DEPTH_TEST)
+        glColor3f(c[0], c[1], c[2])
+        glEnable(GL_TEXTURE_2D)
+        self.glowDrawing.texture.bind()
+        f += 2
 
+        glPushMatrix()
+        glTranslate(x, y, 0)
+        glRotate(f * 90 + self.time, 0, 1, 0)
+        glBegin(GL_TRIANGLE_STRIP)
+        glTexCoord2f(0.0, 0.0)
+        glVertex3f(-size[0] * f, 0, -size[1] * f)
+        glTexCoord2f(1.0, 0.0)
+        glVertex3f( size[0] * f, 0, -size[1] * f)
+        glTexCoord2f(0.0, 1.0)
+        glVertex3f(-size[0] * f, 0,  size[1] * f)
+        glTexCoord2f(1.0, 1.0)
+        glVertex3f( size[0] * f, 0,  size[1] * f)
+        glEnd()
+        glPopMatrix()
+        
         glDisable(GL_TEXTURE_2D)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
@@ -491,7 +434,7 @@ class Guitar:
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     glEnable(GL_COLOR_MATERIAL)
     if self.leftyMode:
-      glScalef(-1, 1, 1)
+      glScale(-1, 1, 1)
 
     self.renderNeck(visibility, song, pos)
     self.renderTracks(visibility)
@@ -499,7 +442,7 @@ class Guitar:
     self.renderNotes(visibility, song, pos)
     self.renderFrets(visibility, song, controls)
     if self.leftyMode:
-      glScalef(-1, 1, 1)
+      glScale(-1, 1, 1)
 
   def getMissedNotes(self, song, pos):
     if not song:
@@ -519,17 +462,18 @@ class Guitar:
     notes = [(time, event) for time, event in track.getEvents(pos - self.lateMargin, pos + self.earlyMargin) if isinstance(event, Note)]
     notes = [(time, event) for time, event in notes if not event.played]
     notes = [(time, event) for time, event in notes if (time >= (pos - self.lateMargin)) and (time <= (pos + self.earlyMargin))]
-    if notes:
-      t     = min([time for time, event in notes])
-      notes = [(time, event) for time, event in notes if time - t < 1e-3]
     return notes
-
-  def controlsMatchNotes(self, controls, notes):
-    result = True
+  
+  def startPick(self, song, pos, controls):
+    if not song:
+      return
     
+    self.playedNotes = []
+    notes = self.getRequiredNotes(song, pos)
+
     # no notes?
     if not notes:
-      result = False
+      return False
 
     # check each valid chord
     chords = {}
@@ -544,59 +488,18 @@ class Guitar:
 
       for n, k in enumerate(KEYS):
         if n in requiredKeys and not controls.getState(k):
-          result = False
           break
         if not n in requiredKeys and controls.getState(k):
           # The lower frets can be held down
-          if n > max(requiredKeys):
-            result = False
+          if n >= min(requiredKeys):
             break
-    return result
-
-  def areNotesTappable(self, notes):
-    if not notes:
-      return
-    for time, note in notes:
-      if not note.tappable:
-        return False
-    return True
-  
-  def startPick(self, song, pos, controls):
-    if not song:
-      return False
-    
-    self.playedNotes = []
-    notes = self.getRequiredNotes(song, pos)
-    match = self.controlsMatchNotes(controls, notes)
-
-    """
-    if match:
-      print "\033[0m",
-    else:
-      print "\033[31m",
-    print "MATCH?",
-    n = [note.number for time, note in notes]
-    for i, k in enumerate(KEYS):
-      if i in n:
-        if controls.getState(k):
-          print " [#] ",
-        else:
-          print "  #  ",
       else:
-        if controls.getState(k):
-          print " [.] ",
-        else:
-          print "  .  ",
-    print
-    """
-
-    if match:
-      self.pickStartPos = pos
-      for time, note in notes:
-        self.pickStartPos = max(self.pickStartPos, time)
-        note.played       = True
-      self.playedNotes = notes
-      return True
+        self.pickStartPos = pos
+        for time, note in notes:
+          self.pickStartPos = max(self.pickStartPos, time)
+          note.played       = True
+        self.playedNotes = notes
+        return True
     return False
 
   def endPick(self, pos):

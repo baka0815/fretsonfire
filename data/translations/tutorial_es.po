@@ -1,23 +1,19 @@
-# translation of tutorial_es.po to Español
 # Frets On Fire
 # Copyright (C) 2006 Unreal Voodoo
 #
-# Miriam Ruiz <little_miry@yahoo.es>, 2007.
 msgid ""
 msgstr ""
-"Project-Id-Version: tutorial_es\n"
+"Project-Id-Version: FretsOnFire\n"
 "POT-Creation-Date: 2006-10-27 23:23+EEST\n"
-"PO-Revision-Date: 2007-05-24 14:36+0000\n"
-"Last-Translator: Miriam Ruiz <little_miry@yahoo.es>\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Sami Kyostila <skyostil@NOSPAM.kempele.fi>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"Language-Team: Español\n"
-"X-Generator: KBabel 1.11.4\n"
 
 msgid "Ah yes, I know. I'm amazing."
-msgstr "Ah si, Ya lo se. Soy increible."
+msgstr "Ah si, Ya lo se. Soy el mejor."
 
 msgid "Ah, that was cool."
 msgstr "Ah, esto mola mucho."
@@ -32,131 +28,131 @@ msgid "Guntherswarchzhaffenstrassen."
 msgstr "Guntherswarchzhaffenstrassen."
 
 msgid "Und today I will show you"
-msgstr "Y hoy os voy a enseñar"
+msgstr "Te voy a demostrar hoy"
 
 msgid "how to play this game."
-msgstr "como se juega a este juego."
+msgstr "como jugar a este juego."
 
 msgid "Check this sh*t!"
-msgstr "¡Mirad esto!"
+msgstr "Comprobar esto!"
 
 msgid "And now, pick up your keyboard"
 msgstr "Y ahora, coje tu teclado"
 
 msgid "like this."
-msgstr "así."
+msgstr "asi."
 
 msgid "When I shred,"
-msgstr "Como soy tan bueno,"
+msgstr "Yo soy muy bueno,"
 
 msgid "I use the whole keyboard."
-msgstr "yo uso todo el teclado."
+msgstr "Y uso todo el teclado para tocar."
 
 msgid "But since you SUCK,"
-msgstr "pero como tú no lo eres,"
+msgstr "Pero tu eres una MIERDA,"
 
 msgid "You will only need"
-msgstr "sólo necesitarás"
+msgstr "Tu solo necesitas"
 
 msgid "These five frets,"
-msgstr "estos cinco trastes,"
+msgstr "cinco trastes,"
 
 msgid "Und zie Pick button."
-msgstr "y el botón de selección."
+msgstr "este es el boton de seleccion."
 
 msgid "However, zie most important"
-msgstr "Sin embargo, el más importante"
+msgstr "Sin embargo, el mas importante"
 
 msgid "is the Escape button."
-msgstr "es el bóton de ESCAPE."
+msgstr "es el boton de ESCAPE."
 
 msgid "You will need it,"
-msgstr "Lo necesitarás,"
+msgstr "Lo necesitaras,"
 
 msgid "when you finally realize"
-msgstr "cuando te des cuenta"
+msgstr "por que no acabaras las canciones"
 
 msgid "that you SUCK."
-msgstr "de lo mal que lo haces."
+msgstr "Por que eres una MIERDA."
 
 msgid "Bigtime."
 msgstr "Finalmente."
 
 msgid "To me, that is already obvious."
-msgstr "Para mí, eso ya es obvio."
+msgstr "Para mi, eso ya es obvio."
 
 msgid "Ok, there comes your first note."
-msgstr "Bien, ahí viene tu primera nota."
+msgstr "Muy bien, alli viene tu primera nota."
 
 msgid "You can already hold down the 1st fret"
-msgstr "Puedes presionar ya el primer traste"
+msgstr "Puedes mantener ya el primer traste"
 
 msgid "BUT DON'T PICK IT YET!"
-msgstr "¡PERO NO PULSES EL ACCIONADOR!"
+msgstr "PERO NO PULSES EL ACCIONADOR!"
 
 msgid "You missed it."
-msgstr "Has fallado."
+msgstr "Fallaste..."
 
 msgid "Ok, let's try it again."
-msgstr "OK, inténtalo de nuevo."
+msgstr "Vale, intentalo de nuevo."
 
 msgid "Ok, wait for it."
 msgstr "Vale, espera a la nota."
 
 msgid "Wait for it."
-msgstr "Espérala."
+msgstr "Esperala."
 
 msgid "No!"
-msgstr "¡No!"
+msgstr "No!"
 
 msgid "*Sigh*"
 msgstr "*Suspiro*"
 
 msgid "Now, hold down two frets."
-msgstr "Ahora, presiona dos trastes."
+msgstr "Ahora, manten dos trastes."
 
 msgid "Ah, you missed it!"
-msgstr "¡Has fallado!"
+msgstr "Fallaste!"
 
 msgid "And now, try this super easy lick."
-msgstr "Y ahora intenta esto tan sencillo"
+msgstr "Y ahora, vuelve a intentarlo es muy facil!"
 
 msgid "Und up to my tempo."
-msgstr "e intenta seguirme."
+msgstr "Intenta seguirme."
 
 msgid "Don't try this,"
 msgstr "No intentes esto,"
 
 msgid "or you'll just hurt yourself."
-msgstr "o podrías hacerte daño."
+msgstr "o podrias hacerte mucho daño."
 
 msgid "Ok, that was about"
-msgstr "Bien, eso han sido al menos"
+msgstr "Aqui habian alrededor de"
 
 msgid "four billion notes per second."
 msgstr "cuatro billones de notas por segundo."
 
 msgid "If I play that any faster,"
-msgstr "Si juego más deprisa,"
+msgstr "Si juego mas rapidamente,"
 
 msgid "your minds would just blow up."
-msgstr "vuestras mentes podrían explotar."
+msgstr "tu cabeza podria volverse loca."
 
 msgid "Ok, that is it for now."
-msgstr "OK, esto es todo de momento."
+msgstr "Vale, esto es todo por ahora."
 
 msgid "You can now go and sell"
-msgstr "Ya podeis ir a vender"
+msgstr "Corre y y ponte a vender"
 
 msgid "your keyboards on Ebay."
-msgstr "vuestros teclados por Ebay."
+msgstr "tus teclados por Ebay."
 
 msgid "Because you SUCK."
-msgstr "Porque no vais a estar a la altura."
+msgstr "Por que eres una MIERDA."
 
 msgid "And remember one thing."
-msgstr "Y recordad una cosa más."
+msgstr "Y recuerda una cosa mas."
 
 msgid "I am your new god, little girls."
-msgstr "Yo soy vuestro nuevo dios."
+msgstr "Yo soy tu nuevo dios, nenaza."
 

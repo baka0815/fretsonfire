@@ -301,10 +301,9 @@ class Stage(object):
     self.beatPeriod         = 0.0
 
   def triggerPick(self, pos, notes):
-    if notes:
-      self.lastPickPos      = pos
-      self.playedNotes      = self.playedNotes[-3:] + [sum(notes) / float(len(notes))]
-      self.averageNotes[-1] = sum(self.playedNotes) / float(len(self.playedNotes))
+    self.lastPickPos      = pos
+    self.playedNotes      = self.playedNotes[-3:] + [sum(notes) / float(len(notes))]
+    self.averageNotes[-1] = sum(self.playedNotes) / float(len(self.playedNotes))
 
   def triggerMiss(self, pos):
     self.lastMissPos = pos

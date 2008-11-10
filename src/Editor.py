@@ -28,7 +28,7 @@ import colorsys
 
 from View import Layer
 from Input import KeyListener
-from Song import loadSong, createSong, Note, difficulties, DEFAULT_LIBRARY
+from Song import loadSong, createSong, Note, difficulties
 from Guitar import Guitar, KEYS
 from Camera import Camera
 from Menu import Menu, Choice
@@ -43,7 +43,7 @@ from struct import unpack
 
 class Editor(Layer, KeyListener):
   """Song editor layer."""
-  def __init__(self, engine, songName = None, libraryName = DEFAULT_LIBRARY):
+  def __init__(self, engine, songName = None, libraryName = None):
     self.engine      = engine
     self.time        = 0.0
     self.guitar      = Guitar(self.engine, editorMode = True)
@@ -590,12 +590,6 @@ class GHImporter(Layer):
     # Split the file into different tracks
     self.stageInfoText = _("Stage 1/8: Splitting VGS file")
 
-    # For debugging
-    #os.system("cp /tmp/foo.ogg " + outputSongOggFile)
-    #os.system("cp /tmp/foo.ogg " + outputGuitarOggFile)
-    #os.system("cp /tmp/foo.ogg " + outputRhythmOggFile)
-    #return
-
     f         = vgsFile
     blockSize = 16
 
@@ -685,25 +679,18 @@ class GHImporter(Layer):
       # Read the song map
       self.statusText = _("Reading the song list.")
       songMap = {}
-      vgsMap  = {}
-      library = DEFAULT_LIBRARY
+      vgsMap =  {}
       for line in open(self.engine.resource.fileName("ghmidimap.txt")):
-        fields = map(lambda s: s.strip(), line.strip().split(";"))
-        if fields[0] == "$library":
-          library = os.path.join(DEFAULT_LIBRARY, fields[1])
-        else:
-          songName, fullName, artist = fields
-          songMap[songName] = (library, fullName, artist)
+        songName, fullName, artist = map(lambda s: s.strip(), line.strip().split(";"))
+        songMap[songName] = (fullName, artist)
 
       self.statusText = _("Reading the archive index.")
       archive = ArkFile(headerPath, archivePath)
+      songPath = self.engine.resource.fileName("songs", writable = True)
       songs    = []
 
       # Filter out the songs that aren't in this archive
       for songName, data in songMap.items():
-        library, fullName, artist = data
-        songPath = self.engine.resource.fileName(library, songName, writable = True)
-
         vgsMap[songName] = "songs/%s/%s.vgs" % (songName, songName)
         if not vgsMap[songName] in archive.files:
           vgsMap[songName] = "songs/%s/%s_sp.vgs" % (songName, songName)
@@ -712,15 +699,13 @@ class GHImporter(Layer):
             del songMap[songName]
             continue
 
-        if os.path.exists(songPath):
+        if os.path.exists(os.path.join(songPath, songName)):
           Log.warn("Song '%s' already exists." % songName)
           del songMap[songName]
           continue
 
       for songName, data in songMap.items():
-        library, fullName, artist = data
-        songPath = self.engine.resource.fileName(library, songName, writable = True)
-        print songPath
+        fullName, artist = data
 
         Log.notice("Extracting song '%s'" % songName)
         self.statusText = _("Extracting %s by %s. %d of %d songs imported. Yeah, this is going to take forever.") % (fullName, artist, len(songs), len(songMap))
@@ -754,13 +739,13 @@ class GHImporter(Layer):
         if not os.path.isfile(rhythmOggFile):
           rhythmOggFile = None
 
-        song = createSong(self.engine, songName, guitarOggFile, songOggFile, rhythmOggFile, library = library)
+        song = createSong(self.engine, songName, guitarOggFile, songOggFile, rhythmOggFile)
         song.info.name   = fullName.strip()
         song.info.artist = artist.strip()
         song.save()
 
         # Grab the MIDI file
-        archive.extractFile(archiveMidiFile, os.path.join(songPath, "notes.mid"))
+        archive.extractFile(archiveMidiFile, os.path.join(songPath, songName, "notes.mid"))
 
         # Done with this song
         songs.append(songName)
@@ -804,7 +789,7 @@ class GHImporter(Layer):
 
     path = ""
     while True:
-      path = Dialogs.getText(self.engine, prompt = _("Enter the path to the mounted Guitar Hero (tm) I/II/Encore DVD"), text = path)
+      path = Dialogs.getText(self.engine, prompt = _("Enter the path to the mounted Guitar Hero (tm) DVD"), text = path)
 
       if not path:
         self.engine.view.popLayer(self)

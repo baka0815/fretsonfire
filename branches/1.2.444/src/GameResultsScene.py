@@ -96,7 +96,7 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
             notesTotal = len([1 for time, event in self.song.track[i].getAllEvents() if isinstance(event, Song.Note)])
             modOptions1 = self.engine.config.getModOptions1(player.twoChord, 0)
             modOptions2 = self.engine.config.getModOptions2()
-            scoreExt = [player.notesHit, notesTotal, player.longestStreak, Version.version(), modOptions1, modOptions2]
+            scoreExt = (player.notesHit, notesTotal, player.longestStreak, Version.version(), modOptions1, modOptions2)
             self.highscoreIndex[i] = self.song.info.addHighscore(player.difficulty, player.score, self.stars[i], player.name, part = player.part, scoreExt = scoreExt)
             self.song.info.save()
           

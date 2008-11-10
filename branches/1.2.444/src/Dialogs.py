@@ -112,10 +112,10 @@ class GetText(Layer, KeyListener):
   def keyPressed(self, key, unicode):
     self.time = 0
     c = self.engine.input.controls.getMapping(key)
-    if (c in [Player.KEY1] or key == pygame.K_RETURN) and not self.accepted:
+    if (c in Player.KEY1S or key == pygame.K_RETURN) and not self.accepted:
       self.engine.view.popLayer(self)
       self.accepted = True
-    elif c in [Player.CANCEL, Player.KEY2] and not self.accepted:
+    elif c in Player.CANCELS + Player.KEY2S and not self.accepted:
       self.text = None
       self.engine.view.popLayer(self)
       self.accepted = True
@@ -171,7 +171,7 @@ class GetKey(Layer, KeyListener):
     
   def keyPressed(self, key, unicode):
     c = self.engine.input.controls.getMapping(key)
-    if c in [Player.CANCEL, Player.KEY2] and not self.accepted:
+    if c in Player.CANCELS + Player.KEY2S and not self.accepted:
       self.key = None
       self.engine.view.popLayer(self)
       self.accepted = True
@@ -220,7 +220,7 @@ class LoadingScreen(Layer, KeyListener):
 
   def keyPressed(self, key, unicode):
     c = self.engine.input.controls.getMapping(key)
-    if self.allowCancel and c == Player.CANCEL:
+    if self.allowCancel and c in Player.CANCELS:
       self.engine.view.popLayer(self)
     return True
     
@@ -279,7 +279,7 @@ class MessageScreen(Layer, KeyListener):
 
   def keyPressed(self, key, unicode):
     c = self.engine.input.controls.getMapping(key)
-    if c in [Player.KEY1, Player.KEY2, Player.CANCEL] or key == pygame.K_RETURN:
+    if c in Player.KEY1S + Player.KEY2S + Player.CANCELS or key == pygame.K_RETURN:
       self.engine.view.popLayer(self)
     return True
     
@@ -339,6 +339,10 @@ class SongChooser(Layer, KeyListener):
     self.library        = selectedLibrary
     self.searchText     = ""
 
+    #RF-mod
+    self.previewDisabled  = self.engine.config.get("audio", "disable_preview")
+    self.sortOrder        = self.engine.config.get("game", "sort_order")
+
     # Use the default library if this one doesn't exist
     if not self.library or not os.path.isdir(self.engine.resource.fileName(self.library)):
       self.library = Song.DEFAULT_LIBRARY
@@ -377,6 +381,7 @@ class SongChooser(Layer, KeyListener):
           self.selectedIndex =  i
           break
     # Load labels for libraries right away
+    #RF-mod consider not
     for i, item in enumerate(self.items):
       if isinstance(item, Song.LibraryInfo):
         self.loadItemLabel(i)
@@ -424,7 +429,7 @@ class SongChooser(Layer, KeyListener):
       return
 
     c = self.engine.input.controls.getMapping(key)
-    if c in [Player.KEY1] or key == pygame.K_RETURN:
+    if c in Player.KEY1S or key == pygame.K_RETURN:
       if self.matchesSearch(self.selectedItem):
         if isinstance(self.selectedItem, Song.LibraryInfo):
           self.library     = self.selectedItem.libraryName
@@ -435,10 +440,13 @@ class SongChooser(Layer, KeyListener):
           self.accepted = True
         if not self.song:
           self.engine.data.acceptSound.play()
-    elif c in [Player.CANCEL, Player.KEY2]:
+    elif c in Player.CANCELS + Player.KEY2S:
       if self.library != Song.DEFAULT_LIBRARY:
         self.initialItem = self.library
         self.library     = os.path.dirname(self.library)
+        if self.song:
+          self.song.fadeout(1000)
+        self.selectedItem = None
         self.loadCollection()
       else:
         self.selectedItem = None
@@ -446,7 +454,7 @@ class SongChooser(Layer, KeyListener):
         self.accepted = True
       if not self.song:
         self.engine.data.cancelSound.play()
-    elif c in [Player.UP, Player.ACTION1]:
+    elif c in Player.UPS + Player.ACTION1S:
       if self.matchesSearch(self.items[self.selectedIndex]):
         while 1:
           self.selectedIndex = (self.selectedIndex - 1) % len(self.items)
@@ -455,7 +463,7 @@ class SongChooser(Layer, KeyListener):
       self.updateSelection()
       if not self.song:
         self.engine.data.selectSound.play()
-    elif c in [Player.DOWN, Player.ACTION2]:
+    elif c in Player.DOWNS + Player.ACTION2S:
       if self.matchesSearch(self.items[self.selectedIndex]):
         while 1:
           self.selectedIndex = (self.selectedIndex + 1) % len(self.items)
@@ -527,7 +535,7 @@ class SongChooser(Layer, KeyListener):
 
     if self.songCountdown > 0:
       self.songCountdown -= ticks
-      if self.songCountdown <= 0:
+      if self.songCountdown <= 0 and self.previewDisabled != True:
         self.playSelectedSong()
 
     d = self.cameraOffset - self.selectedOffset
@@ -702,7 +710,16 @@ class SongChooser(Layer, KeyListener):
 
         if isinstance(item, Song.SongInfo):
           Theme.setBaseColor(1 - v)
-          wrapText(font, (x, pos[1] + font.getHeight() * 0.0016), item.artist, visibility = f, scale = 0.0016)
+          pos = wrapText(font, (x, pos[1] + font.getHeight() * 0.0016), item.artist, visibility = f, scale = 0.0016)
+
+          if item.count:
+            Theme.setSelectedColor(1 - v)
+            count = int(item.count)
+            if count == 1: 
+              text = "Played %d time" % (count)
+            else:
+              text = "Played %d times" % (count)
+            pos = wrapText(font, (x, pos[1] + font.getHeight() * 0.0016), text, visibility = f, scale = 0.001)
 
           Theme.setSelectedColor(1 - v)
           scale = 0.0011
@@ -712,6 +729,7 @@ class SongChooser(Layer, KeyListener):
           if len(item.difficulties) > 3:
             y = .42 + f / 2.0
             
+          #new
           for d in item.difficulties:
             scores = item.getHighscores(d)
             if scores:
@@ -720,7 +738,11 @@ class SongChooser(Layer, KeyListener):
               score, stars, name = "---", 0, "---"
             Theme.setBaseColor(1 - v)
             font.render(unicode(d),     (x, y),           scale = scale)
-            font.render(unicode(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x, y + h), scale = scale * .9)
+            if stars == 6:
+              glColor3f(0, 1, 0)  
+              font.render(unicode(Data.STAR2 * (stars -1)), (x, y + h), scale = scale * .9)
+            else:
+              font.render(unicode(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x, y + h), scale = scale * .9)
             Theme.setSelectedColor(1 - v)
             font.render(unicode(score), (x + .15, y),     scale = scale)
             font.render(name,       (x + .15, y + h),     scale = scale)
@@ -933,11 +955,11 @@ class BpmEstimator(Layer, KeyListener):
         diffs = [self.beats[i + 1] - self.beats[i] for i in range(len(self.beats) - 1)]
         self.bpm = 60000.0 / (sum(diffs) / float(len(diffs)))
         self.beats = self.beats[-12:]
-    elif c in [Player.CANCEL, Player.KEY2]:
+    elif c in Player.CANCELS + Player.KEY2S:
       self.engine.view.popLayer(self)
       self.accepted = True
       self.bpm      = None
-    elif c in [Player.KEY1] or key == pygame.K_RETURN:
+    elif c in Player.KEY1S or key == pygame.K_RETURN:
       self.engine.view.popLayer(self)
       self.accepted = True
       
@@ -989,7 +1011,7 @@ class KeyTester(Layer, KeyListener):
 
     self.controls.keyPressed(key)
     c = self.engine.input.controls.getMapping(key)
-    if c in [Player.CANCEL]:
+    if c in Player.CANCELS:
       self.engine.view.popLayer(self)
       self.accepted = True
     return True
@@ -1015,19 +1037,31 @@ class KeyTester(Layer, KeyListener):
       Theme.setBaseColor(1 - v)
       wrapText(font, (.1, .2 - v), self.prompt)
 
-      for n, c in enumerate(Guitar.KEYS):
+      for n, c in enumerate(Guitar.PLAYER1KEYS):
         if self.controls.getState(c):
-          glColor3f(*self.fretColors[n])
+          glColor3f(*self.fretColors[n%5])
         else:
           glColor3f(.4, .4, .4)
         font.render("#%d" % (n + 1), (.5 - .15 * (2 - n), .4 + v))
 
-      if self.controls.getState(Player.ACTION1) or \
-         self.controls.getState(Player.ACTION2):
+      for n, c in enumerate(Guitar.PLAYER2KEYS):
+        if self.controls.getState(c):
+          glColor3f(*self.fretColors[n%5])
+        else:
+          glColor3f(.4, .4, .4)
+        font.render("#%d" % (n + 1), (.5 - .15 * (2 - n), 0.15+.4 + v))          
+
+      if self.controls.getState(Player.ACTION1) or self.controls.getState(Player.ACTION2):
         Theme.setSelectedColor(1 - v)
       else:
         glColor3f(.4, .4, .4)
       font.render(_("Pick!"), (.45, .5 + v))
+
+      if self.controls.getState(Player.PLAYER_2_ACTION1) or self.controls.getState(Player.PLAYER_2_ACTION2):
+        Theme.setSelectedColor(1 - v)
+      else:
+        glColor3f(.4, .4, .4)
+      font.render(_("Pick!"), (.45, 0.6 + v))           
         
     finally:
       self.engine.view.resetProjection()

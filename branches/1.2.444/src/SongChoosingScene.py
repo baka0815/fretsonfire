@@ -43,6 +43,14 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
     self.libraryName   = libraryName
     self.songName      = songName
 
+  def freeResources(self):
+    self.songs = None
+    self.cassette = None
+    self.folder = None
+    self.label = None
+    self.song = None
+    self.background = None
+    
   def run(self, ticks):
     SceneClient.run(self, ticks)
     players = 1
@@ -65,17 +73,89 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
           Config.set("game", "selected_song",    self.songName)
           
           info = Song.loadSongInfo(self.engine, self.songName, library = self.libraryName)
-          d = Dialogs.chooseItem(self.engine, info.difficulties,
-                                 _("Choose a difficulty:"), selected = self.player.difficulty)
-          if d:
-            self.player.difficulty = d
-            break
+
+          selected = False
+          escape = False
+          escaped = False
+          while True:
+            if len(info.parts) > 1:
+              p = Dialogs.chooseItem(self.engine, info.parts,_("Player 1 Choose a part:"), selected = self.player.part)
+            else:
+              p = info.parts[0]
+            if p:
+              self.player.part = p
+            else:
+              break;
+            while True:
+              if len(info.difficulties) > 1:
+                d = Dialogs.chooseItem(self.engine, info.difficulties,
+                                     _("Player 1 Choose a difficulty:"), selected = self.player.difficulty)
+              else:
+                d = info.difficulties[0]
+              if d:
+                self.player.difficulty = d
+              else:
+                if len(info.parts) <= 1:
+                  escape = True
+                break
+              while True:
+                if self.engine.config.get("game", "players") > 1:               
+                  p = Dialogs.chooseItem(self.engine, info.parts+ ["Party Mode"] + ["No Player 2"],_("Player 2 Choose a part:"), selected = self.player.part)
+                  if p and p == "No Player 2":
+                    players = 1
+                    selected = True
+                    break
+                  elif p and p == "Party Mode":
+                    players = -1
+                    selected = True
+                    break
+                  elif p and p != "No Player 2" and p != "Party Mode":
+                    players = 2
+                    self.player2.part = p
+
+                  else:
+                    if len(info.difficulties) <= 1:
+                      escaped = True
+                    if len(info.parts) <= 1:
+                      escape = True
+                    break
+                  while True:                    
+                    if len(info.difficulties) > 1:
+                      d = Dialogs.chooseItem(self.engine, info.difficulties,_("Player 2 Choose a difficulty:"), selected = self.player.difficulty)
+                    else:
+                      d = info.difficulties[0]
+                    if d:
+                      self.player2.difficulty = d
+                    else:
+                      break
+                    selected = True
+                    break
+                else:
+                  selected = True
+                  break
+                if selected:
+                  break
+              if selected or escaped:
+                break
+            if selected or escape:
+              break
+
+          if (not selected) or escape:
+            continue
+          break
       else:
         info = Song.loadSongInfo(self.engine, self.songName, library = self.libraryName)
 
       # Make sure the difficulty we chose is available
       if not self.player.difficulty in info.difficulties:
         self.player.difficulty = info.difficulties[0]
+      if not self.player.part in info.parts:
+        self.player.part = info.parts[0]
+
+      if not self.player.difficulty in info.difficulties:
+        self.player.difficulty = info.difficulties[0]
+      if not self.player.part in info.parts:
+        self.player.part = info.parts[0]   
         
       self.session.world.deleteScene(self)
       self.session.world.createScene("GuitarScene", libraryName = self.libraryName, songName = self.songName, Players = players)

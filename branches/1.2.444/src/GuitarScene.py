@@ -155,8 +155,9 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.song.setRhythmVolume(self.rhythmVolume)
     
   def songLoaded(self, song):
-    #New to FoF why is this here?
-    #song.difficulty = self.player.difficulty
+
+    for i,player in enumerate(self.playerList):
+      song.difficulty[i] = player.difficulty
     #self.delay += song.info.delay
 
     # If tapping is disabled, remove the tapping indicators
@@ -215,7 +216,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         self.doHopo(i)
     
     if self.disableStats != True:
-      lastEventList = [len(self.song.track[0].getAllEvents()) for i in range(len(self.guitars))]
+      lastEventList = [len(self.song.track[i].getAllEvents()) for i in range(len(self.guitars))]
       pos = []
       for i,lastEvent in enumerate(lastEventList):
         if lastEvent > 0:
@@ -588,32 +589,34 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         self.playerList[i].twoChord = guitar.twoChord
       self.session.world.createScene("GameResultsScene", libraryName = self.libraryName, songName = self.songName, players = self.playerList)
 
-  def keyPressed(self, key, unicode):
-    control = self.controls.keyPressed(key)
+  def keyPressed(self, key, unicode, control = None):
+    if not control:
+      control = self.controls.keyPressed(key)
 
-    if control in (self.guitars[0].actions):
-      for k in self.keysList[0]:
+    num = self.getPlayerNum(control)
+      
+    if control in (self.guitars[num].actions):
+      for k in self.keysList[num]:
         if self.controls.getState(k):
-          self.keyBurstTimeout[0] = None
+          self.keyBurstTimeout[num] = None
           break
       else:
-        self.keyBurstTimeout[0] = self.engine.timer.time + self.keyBurstPeriod
+        self.keyBurstTimeout[num] = self.engine.timer.time + self.keyBurstPeriod
         return True
 
-    num = 0
-    
-    if control in (self.guitars[0].actions) and self.song:
+    if control in (self.guitars[num].actions) and self.song:
       self.doPick(num)
-    elif control in self.keysList[0] and self.song:
+    elif control in self.keysList[num] and self.song:
       # Check whether we can tap the currently required notes
       pos   = self.getSongPosition()
       notes = self.guitars[num].getRequiredNotes(self.song, pos)
+      print "tapcheckPress", self.playerList[num].streak, self.guitars[num].areNotesTappable(notes), self.guitars[num].controlsMatchNotes(self.controls, notes)
 
-      if self.player.streak > 0 and \
+      if self.playerList[num].streak > 0 and \
          self.guitars[num].areNotesTappable(notes) and \
          self.guitars[num].controlsMatchNotes(self.controls, notes):
         self.doPick(num)
-    elif control == Player.CANCEL:
+    elif control in Player.CANCELS:
       self.pauseGame()
       self.engine.view.pushLayer(self.menu)
       return True
@@ -702,11 +705,16 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     return 0
 
   def keyReleased(self, key):
-    if self.controls.keyReleased(key) in self.keysList[0] and self.song:
+    control = self.controls.keyReleased(key)
+
+    num = self.getPlayerNum(control) 
+
+    if control in self.keysList[num] and self.song:
       # Check whether we can tap the currently required notes
-      num = 0
       pos   = self.getSongPosition()
       notes = self.guitars[num].getRequiredNotes(self.song, pos)
+      print "tapcheckRelease", self.playerList[num].streak, self.guitars[num].areNotesTappable(notes), self.guitars[num].controlsMatchNotes(self.controls, notes)
+
       if self.playerList[num].streak > 0 and \
          self.guitars[num].areNotesTappable(notes) and \
          self.guitars[num].controlsMatchNotes(self.controls, notes):
@@ -729,6 +737,14 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       activeList = [k for k in self.keysList[i] if self.controls.getState(k) and k != control]
       if len(activeList) != 0 and guitar.hopoActive and activeList[0] != self.keysList[i][guitar.hopoLast] and control in self.keysList[i]:
         self.keyPressed(None, 0, activeList[0])
+
+  def getPlayerNum(self, control):
+    if control in (self.guitars[0].keys + self.guitars[0].actions):
+      return(0) 
+    elif len(self.playerList) > 1 and control in (self.guitars[1].keys + self.guitars[1].actions):
+      return(1)
+    else:
+      return(-1)
         
   def render(self, visibility, topMost):
     SceneClient.render(self, visibility, topMost)
@@ -774,10 +790,13 @@ class GuitarSceneClient(GuitarScene, SceneClient):
           
           Theme.setSelectedColor()
           t = "%d:%02d" % (pos / 60000, (pos % 60000) / 1000)
-          font.render(t,  (.1, y))
+          w, h = font.getStringSize(t)
+          font.render(t,  (.5 - w / 2, y))
+          #Not ready for 2player yet
           if self.notesCum:
             f = int(100 * (float(self.playerList[0].notesHit) / self.notesCum))
-            font.render("%d%%" % f, (.1, y + h))
+
+            font.render("%d%%" % f, (.5 - w / 2, y + h))
 
         #Party mode
         if self.partyMode == True:
@@ -800,17 +819,22 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             t = "Switch"
             glColor3f(0, 1, 0)
           w, h = font.getStringSize(t)
-          font.render(t,  (.5 - w / 2, y))
+          font.render(t,  (.5 - w / 2, y + h))
 
       for i,player in enumerate(self.playerList):
         self.engine.view.setViewportHalf(len(self.playerList),i)
         Theme.setSelectedColor()
-        font.render("%d" % (player.score + self.getExtraScoreForCurrentlyPlayedNotes(i)),  (.61, y))
-        font.render("%dx" % player.getScoreMultiplier(), (.61, y + h))
+        if len(self.playerList) > 1 and i == 0:
+          font.render("%d" % (player.score + self.getExtraScoreForCurrentlyPlayedNotes(i)),  (.03, y))
+          font.render("%dx" % player.getScoreMultiplier(), (.03, y + h))
+        else:
+          font.render("%d" % (player.score + self.getExtraScoreForCurrentlyPlayedNotes(i)),  (.61, y))
+          font.render("%dx" % player.getScoreMultiplier(), (.61, y + h))
+          
         
         # show the streak counter and miss message
-        if self.player.streak > 0 and self.song:
-          text = _("%d hit") % self.player.streak
+        if player.streak > 0 and self.song:
+          text = _("%d hit") % player.streak
           factor = 0.0
           if self.lastPickPos[i]:
               diff = self.getSongPosition() - self.lastPickPos[i]
@@ -818,7 +842,12 @@ class GuitarSceneClient(GuitarScene, SceneClient):
                 factor = .25 * (1.0 - (diff / (self.song.period * 2))) ** 2
           factor = (1.0 + factor) * 0.002
           tw, th = font.getStringSize(text, scale = factor)
-          font.render(text, (.16 - tw / 2, y + h / 2 - th / 2), scale = factor)
+          if len(self.playerList) > 1 and i == 0:
+            font.render(text, (.72 - tw / 2, y + h / 2 - th / 2), scale = factor)
+          elif len(self.playerList) > 1 and i == 1:
+            font.render(text, (.26 - tw / 2, y + h / 2 - th / 2), scale = factor)
+          else:
+            font.render(text, (.16 - tw / 2, y + h / 2 - th / 2), scale = factor)
         elif self.lastPickPos[i] is not None and self.countdown <= 0:
           diff = self.getSongPosition() - self.lastPickPos[i]
           alpha = 1.0 - diff * 0.005
@@ -827,29 +856,37 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             glPushMatrix()
             glTranslate(.1, y + 0.000005 * diff ** 2, 0)
             glRotatef(math.sin(self.lastPickPos[i]) * 25, 0, 0, 1)
-            font.render(_("Missed!"), (0, 0))
+            if len(self.playerList) > 1 and i == 0:
+              font.render(_("Missed!"), (.55, 0))
+            elif len(self.playerList) > 1 and i == 1:
+              font.render(_("Missed!"), (.08, 0))
+            else:
+              font.render(_("Missed!"), (0, 0))
             glPopMatrix()
 
         # show the streak balls
-        if self.player.streak >= 30:
+        if player.streak >= 30:
           glColor3f(.5, .5, 1)
-        elif self.player.streak >= 20:
+        elif player.streak >= 20:
           glColor3f(1, 1, .5)
-        elif self.player.streak >= 10:
+        elif player.streak >= 10:
           glColor3f(1, .5, .5)
         else:
           glColor3f(.5, 1, .5)
         
-        s = min(39, self.player.streak) % 10 + 1
-        font.render(Data.BALL2 * s + Data.BALL1 * (10 - s),   (.67, y + h * 1.3), scale = 0.0011)
-
+        s = min(39, player.streak) % 10 + 1
+        if len(self.playerList) > 1 and i == 0:
+          font.render(Data.BALL2 * s + Data.BALL1 * (10 - s),   (.1, y + h * 1.3), scale = 0.0011)
+        else:
+          font.render(Data.BALL2 * s + Data.BALL1 * (10 - s),   (.67, y + h * 1.3), scale = 0.0011)
+          
         # show multiplier changes
         if self.song and self.lastMultTime[i] is not None:
           diff = self.getSongPosition() - self.lastMultTime[i]
           if diff > 0 and diff < self.song.period * 2:
-            m = self.player.getScoreMultiplier()
+            m = player.getScoreMultiplier()
             c = (1, 1, 1)
-            if self.player.streak >= 40:
+            if player.streak >= 40:
               texture = None
             elif m == 1:
               texture = None

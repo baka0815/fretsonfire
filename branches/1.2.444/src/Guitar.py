@@ -509,9 +509,18 @@ class Guitar:
         chords[time] = []
       chords[time].append((time, note))
 
-    for notes in chords.values():
+    #Make sure the notes are in the right time order
+    chordlist = chords.values()
+    chordlist.sort(lambda a, b: cmp(a[0][0], b[0][0]))
+
+    twochord = 0    
+    for notes in chordlist:
       # matching keys?
       requiredKeys = [note.number for time, note in notes]
+
+      if len(requiredKeys) > 2 and self.twoChordMax == True:
+        requiredKeys = [min(requiredKeys), max(requiredKeys)]
+        twochord = 1
 
       for n, k in enumerate(self.keys):
         if n in requiredKeys and not controls.getState(k):
@@ -520,6 +529,9 @@ class Guitar:
           # The lower frets can be held down
           if n > max(requiredKeys):
             return False
+    if twochord == 1:
+      self.twoChord += 1
+
     return True
 
   def areNotesTappable(self, notes):

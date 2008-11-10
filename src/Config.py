@@ -34,7 +34,7 @@ class MyConfigParser(ConfigParser):
       if self._defaults:
         fp.write("[%s]\n" % DEFAULTSECT)
         for (key, value) in self._defaults.items():
-            fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
+          fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
         fp.write("\n")
       sections = sorted(self._sections)
       for section in sections:
@@ -44,8 +44,28 @@ class MyConfigParser(ConfigParser):
         sectList = self._sections[section].items()
         sectList.sort()
         for key, value in sectList:
-           if key != "__name__":
-             fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
+          if key != "__name__":
+            fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
+        fp.write("\n")
+        
+  def writeTheme(self, fp):
+      if self._defaults:
+        fp.write("[%s]\n" % DEFAULTSECT)
+        for (key, value) in self._defaults.items():
+          fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
+        fp.write("\n")
+      sections = sorted(self._sections)
+      for section in sections:
+        if section != "theme":
+          continue
+        fp.write("[%s]\n" % section)
+        sectList = self._sections[section].items()
+        print self._sections[section]
+        sectList.sort()
+        for key, value in sectList:
+          #print key, value
+          if key != "__name__":
+            fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
         fp.write("\n")
         
 class Option:
@@ -171,6 +191,36 @@ class Config:
     self.config.write(f)
     f.close()
 
+  def getModOptions1(self, twoChord, hopo8th):
+    #Do not change the order
+    #Value 0 not used / 1 used
+    if twoChord > 0:
+      twoChordUsed = 1
+    else:
+      twoChordUsed = 0
+    #Value 0 off / 1 on
+    disableVBPMUsed = int(self.get("game", "disable_vbpm"))
+    #Value 0 off / 1 on
+    hopoEnabled = int(self.get("game", "tapping"))
+    #Value 0 RFmod / 1 FoF
+    hopoMarks = int(self.get("game", "hopo_mark"))
+    #Value 0 RFmod / 1 FoF / 2 RFmod2
+    hopoStyle = int(self.get("game", "hopo_style"))
+    #Value 0 FoF / 1 GH / 2 Custom
+    pov = int(self.get("game", "pov"))
+    #Value 0 no / 1 yes
+    hopo8thUsed = int(hopo8th)
+    #Value 0 bpm / 1 difficulty
+    boardSpeed = int(self.get("game", "board_speed"))
+    encode = "%d%d%d%d%d%d%d%d" % (twoChordUsed, disableVBPMUsed, hopoEnabled, hopoMarks, hopoStyle, pov, hopo8thUsed, boardSpeed)
+    print twoChordUsed, disableVBPMUsed, hopoEnabled, hopoMarks, hopoStyle, pov, hopo8thUsed, boardSpeed
+    return encode
+  def getModOptions2(self):
+    #
+    encode = "1.5"
+    return encode
+    
+    
 def get(section, option):
   """
   Read the value of a global configuration key.

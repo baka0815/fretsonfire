@@ -165,8 +165,8 @@ class View(Task):
     s = (w, h, w, h)
 
     geometry = [(type(coord) == float) and int(s[i] * coord) or int(coord) for i, coord in enumerate(geometry)]
-    geometry[0] = geometry[0]/screens;
-    geometry[2] = geometry[2]/screens;
+    geometry[0] = int(geometry[0] / screens)
+    geometry[2] = int(geometry[2] / screens)
     geometry = tuple(geometry)
     self.savedGeometry, self.geometry = viewport, geometry
     glViewport(*geometry)

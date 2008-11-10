@@ -839,7 +839,8 @@ class SongChooser(Layer, KeyListener):
           for d in item.difficulties:
             scores = item.getHighscores(d)
             if scores:
-              score, stars, name = scores[0]
+              score, stars, name, scoreExt = scores[0]
+              notesHit, notesTotal, noteStreak, modVersion, modOptions1, modOptions2 = scoreExt
             else:
               score, stars, name = "---", 0, "---"
             Theme.setBaseColor(1 - v)
@@ -850,6 +851,10 @@ class SongChooser(Layer, KeyListener):
             else:
               font.render(unicode(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x, y + h), scale = scale * .9)
             Theme.setSelectedColor(1 - v)
+            if scores and notesTotal != 0:
+              score = "%s %.1f%%" % (score, (float(notesHit) / notesTotal) * 100.0)
+            if scores and noteStreak != 0:
+              score = "%s %d" % (score, noteStreak)
             font.render(unicode(score), (x + .15, y),     scale = scale)
             font.render(name,       (x + .15, y + h),     scale = scale)
             y += 2 * h + f / 4.0
@@ -909,14 +914,29 @@ class FileChooser(BackgroundLayer, KeyListener):
           continue
       files.append(fn)
     files.sort()
-    if self.dirSelect == True and (fnmatch.fnmatch(self.path, mask)):
+    if self.dirSelect == True and (fnmatch.fnmatch(self.path, self.masks[0])):
       files.insert(0, self.path)
     return files
 
+  def getDisks(self):
+    import win32file, string
+    driveLetters=[]
+    for drive in string.letters[len(string.letters) / 2:]:
+      if win32file.GetDriveType(drive + ":") == win32file.DRIVE_FIXED:
+        driveLetters.append(drive + ":\\")
+    return driveLetters
+  
   def updateFiles(self):
     if self.menu:
       self.engine.view.popLayer(self.menu)
-    self.menu = Menu(self.engine, choices = [(self._getFileText(f), self._getFileCallback(f)) for f in self.getFiles()], onClose = self.close, onCancel = self.cancel)
+
+    if self.path == "toplevel" and os.name != "nt":
+      self.path = "/"
+      
+    if self.path == "toplevel":
+      self.menu = Menu(self.engine, choices = [(self._getFileText(f), self._getFileCallback(f)) for f in self.getDisks()], onClose = self.close, onCancel = self.cancel)
+    else:
+      self.menu = Menu(self.engine, choices = [(self._getFileText(f), self._getFileCallback(f)) for f in self.getFiles()], onClose = self.close, onCancel = self.cancel)
     self.engine.view.pushLayer(self.menu)
 
   def chooseFile(self, fileName):
@@ -929,11 +949,17 @@ class FileChooser(BackgroundLayer, KeyListener):
           self.engine.view.popLayer(self)
           self.menu = None
           return
-          
+
+    if self.path == "toplevel":
+      self.path = ""
     path = os.path.abspath(os.path.join(self.path, fileName))
-    
+
     if os.path.isdir(path):
-      self.path = path
+
+      if path == self.path and fileName == "..":
+        self.path = "toplevel"
+      else:
+        self.path = path
       self.updateFiles()
       return
     self.selectedFile = path

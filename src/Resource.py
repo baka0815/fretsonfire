@@ -55,7 +55,9 @@ class Loader(Thread):
       os.nice(5)
     elif os.name == "nt":
       game_priority = Config.get("engine", "game_priority")
-      self.setpriority(priority = game_priority)
+      self.setPriority(priority = game_priority)
+      #wont work without ctypes
+      #self.enableScreenSaver(0)
 
     self.load()
     self.semaphore.release()
@@ -64,14 +66,14 @@ class Loader(Thread):
   def __str__(self):
     return "%s(%s) %s" % (self.function.__name__, self.name, self.canceled and "(canceled)" or "")
 
-  def setpriority(self, pid = None, priority = 2):
+  def setPriority(self, pid = None, priority = 2):
     """ Set The Priority of a Windows Process.  Priority is a value between 0-5 where
         2 is normal priority.  Default sets the priority of the current
         python process but can take any valid process ID. """
         
-    import win32api,win32process,win32con
+    import win32api, win32process, win32con
     
-    priorityclasses = [win32process.IDLE_PRIORITY_CLASS,
+    priorityClasses = [win32process.IDLE_PRIORITY_CLASS,
                        win32process.BELOW_NORMAL_PRIORITY_CLASS,
                        win32process.NORMAL_PRIORITY_CLASS,
                        win32process.ABOVE_NORMAL_PRIORITY_CLASS,
@@ -80,8 +82,13 @@ class Loader(Thread):
 
     pid = win32api.GetCurrentProcessId()
     handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
-    win32process.SetPriorityClass(handle, priorityclasses[priority])
+    win32process.SetPriorityClass(handle, priorityClasses[priority])
     win32process.SetProcessAffinityMask(handle, 1)
+
+#  def enableScreenSaver(self, on):
+#    import ctypes
+#    SPI_SETSCREENSAVEACTIVE = 17
+#    ctypes.windll.user32.SystemParametersInfoA(SPI_SETSCREENSAVEACTIVE, on, None, 0)
     
   def cancel(self):
     self.canceled = True

@@ -38,6 +38,7 @@ DEFAULT_COLOR_KEY        = "#333333"
 DEFAULT_COLOR_KEY2       = "#000000"
 DEFAULT_COLOR_TRACKS     = "#FFFF80"
 DEFAULT_COLOR_BARS       = "#FFFF80"
+DEFAULT_COLOR_GLOW       = "fret"
 
 DEFAULT_COLOR_FLAME0_1X   = "#BF6006"
 DEFAULT_COLOR_FLAME1_1X   = "#BF6006"
@@ -92,7 +93,7 @@ DEFAULT_Y_ORIGIN_POV     = 3.0
 DEFAULT_Z_ORIGIN_POV     = -3.0
 
 DEFAULT_PHRASE_LOADING   = "Tuning Guitar..."
-DEFAULT_PHRASE_RESULTS   = "Chilling"
+DEFAULT_PHRASE_RESULTS   = "Shilling"
 DEFAULT_SONG_CREDIT      = "defy"
 
 # read the color scheme from the config file
@@ -105,6 +106,7 @@ Config.define("theme", "key_color",         str, DEFAULT_COLOR_KEY)
 Config.define("theme", "key2_color",        str, DEFAULT_COLOR_KEY2)
 Config.define("theme", "tracks_color",      str, DEFAULT_COLOR_TRACKS)
 Config.define("theme", "bars_color",        str, DEFAULT_COLOR_BARS)
+Config.define("theme", "glow_color",        str, DEFAULT_COLOR_GLOW)
 
 Config.define("theme", "loading_phrase",    str, DEFAULT_PHRASE_LOADING)
 Config.define("theme", "results_phrase",    str, DEFAULT_PHRASE_RESULTS)
@@ -182,6 +184,7 @@ keyColor        = None
 key2Color       = None
 tracksColor     = None
 barsColor       = None
+glowColor       = None
 flameColors     = None
 flameSizes      = None
 loadingPhrase   = None
@@ -237,7 +240,7 @@ def setupColors(config):
   global backgroundColor, baseColor, selectedColor
   global hopoColor, spotColor
   global keyColor, key2Color
-  global tracksColor, barsColor
+  global tracksColor, barsColor, glowColor
   
   temp = config.get("theme", "background_color")
   if backgroundColor == None or temp != DEFAULT_COLOR_BACKGROUND:
@@ -275,6 +278,10 @@ def setupColors(config):
   if barsColor == None or temp != DEFAULT_COLOR_BARS:
     barsColor = hexToColor(temp)    
 
+  temp = config.get("theme", "glow_color")
+  if glowColor == None or temp != DEFAULT_COLOR_GLOW:
+    glowColor = hexToColor(temp)
+    
 def setupFrets(config):
   global fretColors
     
@@ -541,3 +548,120 @@ def setupMisc(config):
   temp = config.get("theme", "credit_song")
   if creditSong == None or temp != DEFAULT_SONG_CREDIT:
     creditSong = temp
+
+
+def write(f, config):
+  # Write read in theme.ini specific variables
+  # Should be sorted
+
+  f.write("[theme]\n")
+  
+  writeColors(f, config)
+  writeFrets(f, config)
+  writeFlameColors(f, config)
+  writeFlameSizes(f, config)
+  writeSpinny(f, config)
+  writePOV(f, config)
+  writeMisc(f, config)
+
+def writeColors(f, config):
+  global backgroundColor, baseColor, selectedColor
+  global hopoColor, spotColor
+  global keyColor, key2Color
+  global tracksColor, barsColor, glowColor
+
+  f.write("%s = %s\n" % ("background_color", backgroundColor))
+  f.write("%s = %s\n" % ("base_color", baseColor))
+  f.write("%s = %s\n" % ("selected_color", selectedColor))
+  f.write("%s = %s\n" % ("hopo_color", hopoColor))
+  f.write("%s = %s\n" % ("spot_color", spotColor))
+  f.write("%s = %s\n" % ("key_color", keyColor))
+  f.write("%s = %s\n" % ("key2_color", key2Color))
+  f.write("%s = %s\n" % ("tracks_color", tracksColor))
+  f.write("%s = %s\n" % ("bars_color", barsColor))
+  f.write("%s = %s\n" % ("glow_color", glowColor))
+
+def writeFrets(f, config):
+  global fretColors
+    
+  f.write("%s = %s\n" % ("fret0_color", fretColors[0]))
+  f.write("%s = %s\n" % ("fret1_color", fretColors[1]))
+  f.write("%s = %s\n" % ("fret2_color", fretColors[2]))
+  f.write("%s = %s\n" % ("fret3_color", fretColors[3]))
+  f.write("%s = %s\n" % ("fret4_color", fretColors[4]))
+
+def writeFlameColors(f, config):
+  global flameColors
+  
+  f.write("%s = %s\n" % ("flame0_1X_color", flameColors[0][0]))
+  f.write("%s = %s\n" % ("flame1_1X_color", flameColors[0][1]))
+  f.write("%s = %s\n" % ("flame2_1X_color", flameColors[0][2]))
+  f.write("%s = %s\n" % ("flame3_1X_color", flameColors[0][3]))
+  f.write("%s = %s\n" % ("flame4_1X_color", flameColors[0][4]))
+  f.write("%s = %s\n" % ("flame0_2X_color", flameColors[1][0]))
+  f.write("%s = %s\n" % ("flame1_2X_color", flameColors[1][1]))
+  f.write("%s = %s\n" % ("flame2_2X_color", flameColors[1][2]))
+  f.write("%s = %s\n" % ("flame3_2X_color", flameColors[1][3]))
+  f.write("%s = %s\n" % ("flame4_2X_color", flameColors[1][4]))
+  f.write("%s = %s\n" % ("flame0_3X_color", flameColors[2][0]))
+  f.write("%s = %s\n" % ("flame1_3X_color", flameColors[2][1]))
+  f.write("%s = %s\n" % ("flame2_3X_color", flameColors[2][2]))
+  f.write("%s = %s\n" % ("flame3_3X_color", flameColors[2][3]))
+  f.write("%s = %s\n" % ("flame4_3X_color", flameColors[2][4]))
+  f.write("%s = %s\n" % ("flame0_4X_color", flameColors[3][0]))
+  f.write("%s = %s\n" % ("flame1_4X_color", flameColors[3][1]))
+  f.write("%s = %s\n" % ("flame2_4X_color", flameColors[3][2]))
+  f.write("%s = %s\n" % ("flame3_4X_color", flameColors[3][3]))
+  f.write("%s = %s\n" % ("flame4_4X_color", flameColors[3][4]))
+
+def writeFlameSizes(f, config):
+  global flameSizes
+  
+  f.write("%s = %s\n" % ("flame0_1X_size", flameSizes[0][0]))
+  f.write("%s = %s\n" % ("flame1_1X_size", flameSizes[0][1]))
+  f.write("%s = %s\n" % ("flame2_1X_size", flameSizes[0][2]))
+  f.write("%s = %s\n" % ("flame3_1X_size", flameSizes[0][3]))
+  f.write("%s = %s\n" % ("flame4_1X_size", flameSizes[0][4]))
+  f.write("%s = %s\n" % ("flame0_2X_size", flameSizes[1][0]))
+  f.write("%s = %s\n" % ("flame1_2X_size", flameSizes[1][1]))
+  f.write("%s = %s\n" % ("flame2_2X_size", flameSizes[1][2]))
+  f.write("%s = %s\n" % ("flame3_2X_size", flameSizes[1][3]))
+  f.write("%s = %s\n" % ("flame4_2X_size", flameSizes[1][4]))
+  f.write("%s = %s\n" % ("flame0_3X_size", flameSizes[2][0]))
+  f.write("%s = %s\n" % ("flame1_3X_size", flameSizes[2][1]))
+  f.write("%s = %s\n" % ("flame2_3X_size", flameSizes[2][2]))
+  f.write("%s = %s\n" % ("flame3_3X_size", flameSizes[2][3]))
+  f.write("%s = %s\n" % ("flame4_3X_size", flameSizes[2][4]))
+  f.write("%s = %s\n" % ("flame0_4X_size", flameSizes[3][0]))
+  f.write("%s = %s\n" % ("flame1_4X_size", flameSizes[3][1]))
+  f.write("%s = %s\n" % ("flame2_4X_size", flameSizes[3][2]))
+  f.write("%s = %s\n" % ("flame3_4X_size", flameSizes[3][3]))
+  f.write("%s = %s\n" % ("flame4_4X_size", flameSizes[3][4]))
+
+def writeSpinny(f, config):
+  global spinnySongDisabled, spinnyEditorDisabled, spinnyResultsDisabled, spinnyMenuDisabled
+
+  f.write("%s = %s\n" % ("disable_song_spinny", spinnySongDisabled))
+  f.write("%s = %s\n" % ("disable_editor_spinny", spinnyEditorDisabled))
+  f.write("%s = %s\n" % ("disable_results_spinny", spinnyResultsDisabled))
+  f.write("%s = %s\n" % ("disable_menu_spinny", spinnyMenuDisabled))
+
+def writePOV(f, config):
+  global povTargetX, povTargetY, povTargetZ
+  global povOriginX, povOriginY, povOriginZ
+  
+  f.write("%s = %s\n" % ("pov_target_x", povTargetX))
+  f.write("%s = %s\n" % ("pov_target_y", povTargetY))
+  f.write("%s = %s\n" % ("pov_target_z", povTargetZ))
+  f.write("%s = %s\n" % ("pov_origin_x", povOriginX))
+  f.write("%s = %s\n" % ("pov_origin_y", povOriginY))
+  f.write("%s = %s\n" % ("pov_origin_z", povOriginZ))
+        
+def writeMisc(f, config):
+  global loadingPhrase, resultsPhrase
+  global creditSong
+
+  f.write("%s = %s\n" % ("loading_phrase", loadingPhrase))
+  f.write("%s = %s\n" % ("results_phrase", resultsPhrase))
+  f.write("%s = %s\n" % ("credit_song", creditSong))
+  

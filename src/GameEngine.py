@@ -62,7 +62,7 @@ Config.define("audio",  "frequency",    int,   44100, text = _("Sample Frequency
 Config.define("audio",  "bits",         int,   16,    text = _("Sample Bits"), options = [16, 8])
 Config.define("audio",  "stereo",       bool,  True)
 Config.define("audio",  "buffersize",   int,   2048,  text = _("Buffer Size"), options = [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
-Config.define("audio",  "delay",        int,   100,   text = _("A/V delay"), options = dict([(n, n) for n in range(0, 301)]))
+Config.define("audio",  "delay",        int,   100,   text = _("A/V delay"), options = dict([(n, n) for n in range(0, 1001)]))
 Config.define("audio",  "screwupvol", float,   0.25,  text = _("Screw Up Sounds"), options = {0.0: _("Off"), .25: _("Quiet"), .5: _("Loud"), 1.0: _("Painful")})
 Config.define("audio",  "guitarvol",  float,    1.0,  text = _("Guitar Volume"),   options = dict([(n / 100.0, "%02d/10" % (n / 9)) for n in range(0, 110, 10)]))
 Config.define("audio",  "songvol",    float,    1.0,  text = _("Song Volume"),     options = dict([(n / 100.0, "%02d/10" % (n / 9)) for n in range(0, 110, 10)]))
@@ -156,7 +156,7 @@ class GameEngine(Engine):
     tickrate     = self.config.get("engine", "tickrate")
     Engine.__init__(self, fps = fps, tickrate = tickrate)
     
-    pygame.init()
+    #pygame.init()
     
     self.title             = _("Frets on Fire")
     self.restartRequested  = False
@@ -171,9 +171,10 @@ class GameEngine(Engine):
     bufferSize   = self.config.get("audio", "buffersize")
     
     self.audio.pre_open(frequency = frequency, bits = bits, stereo = stereo, bufferSize = bufferSize)
-    pygame.init()
     self.audio.open(frequency = frequency, bits = bits, stereo = stereo, bufferSize = bufferSize)
-
+    
+    pygame.init()
+    
     Log.debug("Initializing video.")
     width, height = [int(s) for s in self.config.get("video", "resolution").split("x")]
     fullscreen    = self.config.get("video", "fullscreen")
@@ -204,7 +205,8 @@ class GameEngine(Engine):
 
     # Load default theme
     theme = Config.load(self.resource.fileName("theme.ini"))
-    Theme.open(theme)
+    self.theme = theme
+    Theme.open(self.theme)
     
     # Load game modifications
     Mod.init(self)

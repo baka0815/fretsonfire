@@ -28,7 +28,7 @@ import colorsys
 
 from View import Layer
 from Input import KeyListener
-from Song import loadSong, createSong, Note, difficulties, DEFAULT_LIBRARY
+from Song import loadSong, createSong, Note,DEFAULT_LIBRARY
 from Guitar import Guitar, PLAYER1KEYS, PLAYER2KEYS
 from Camera import Camera
 from Menu import Menu, Choice
@@ -38,6 +38,9 @@ import Dialogs
 import Player
 import Theme
 import Log
+import Difficulty
+import Part
+
 import shutil, os, struct, wave, tempfile
 from struct import unpack
 

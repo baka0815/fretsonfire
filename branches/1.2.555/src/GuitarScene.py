@@ -22,7 +22,7 @@
 #####################################################################
 
 from Scene import SceneServer, SceneClient
-from Song import Note, Tempo, TextEvent, PictureEvent, loadSong, Bars, parts
+from Song import Note, Tempo, TextEvent, PictureEvent, loadSong, Bars
 from Menu import Menu
 from Guitar import Guitar, PLAYER1KEYS, PLAYER2KEYS, PLAYER1ACTIONS, PLAYER2ACTIONS
 from Language import _
@@ -35,6 +35,8 @@ import Audio
 import Stage
 import Settings
 import Song
+import Part
+from Drum import Drum
 
 import math
 import pygame
@@ -68,7 +70,8 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.guitars = []
     for i, player in enumerate(self.playerList):
       print player.part
-      if player.part == parts[4]:
+      if player.part == Part.DRUM_PART:
+        print "Drum!"
         self.guitars.append(Drum(self.engine,False,i))
       else:
         self.guitars.append(Guitar(self.engine,False,i))
@@ -282,7 +285,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
     for i, guitar in enumerate(self.guitars):
       self.song.track[i].markBars()
-      if self.hopoDisabled == 0 or self.song.info.hopo == "on":
+      if self.playerList[i].part != Part.DRUM_PART and (self.hopoDisabled == 0 or self.song.info.hopo == "on"):
         if self.hopoMark == 0:
           self.song.track[i].markTappable();
         else:
@@ -341,7 +344,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             boardSpeed = 50
             difficulty = self.playerList[i].difficulty
             difficulty = self.engine.config.get("player%d" %(i), "difficulty")
-            print difficulty
             if difficulty == 0:
               boardSpeed = self.boardSpeedDiff0
             elif difficulty == 1:
@@ -451,7 +453,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.playerList[num].streak = 0
       self.guitars[num].setMultiplier(1)
       self.stage.triggerMiss(pos)
-      if `self.playerList[num].part` == "Bass Guitar":
+      if self.playerList[num].part == Part.BASS_PART:
         self.sfxChannel.play(self.engine.data.screwUpSoundBass)
       else:
         self.sfxChannel.play(self.engine.data.screwUpSound)
@@ -506,7 +508,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
       if self.engine.data.screwUpSounds and self.screwUpVolume > 0.0:
         self.sfxChannel.setVolume(self.screwUpVolume)
-        if `self.playerList[num].part` == "Bass Guitar":
+        if self.playerList[num].part == Part.BASS_PART:
           self.sfxChannel.play(self.engine.data.screwUpSoundBass)
         else:
           self.sfxChannel.play(self.engine.data.screwUpSound)
@@ -562,7 +564,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
       if self.engine.data.screwUpSounds and self.screwUpVolume > 0.0:
         self.sfxChannel.setVolume(self.screwUpVolume)
-        if `self.playerList[num].part` == "Bass Guitar":
+        if self.playerList[num].part == Part.BASS_PART:
           self.sfxChannel.play(self.engine.data.screwUpSoundBass)
         else:
           self.sfxChannel.play(self.engine.data.screwUpSound)
@@ -709,6 +711,15 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       control = self.controls.keyPressed(key)
     else:
       hopo = True
+
+#Drums need no strum
+    if self.playerList[0].part == Part.DRUM_PART and control in (self.guitars[0].keys):
+        self.doPick3(0, False)
+        return True
+    elif len(self.playerList) > 1 and self.playerList[1].part == Part.DRUM_PART and control in (self.guitars[1].keys):
+        self.doPick3(1, False)
+        return True
+        
       
     if True:
       pressed = -1

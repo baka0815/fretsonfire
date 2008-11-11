@@ -42,6 +42,8 @@ import Song
 import Data
 import Player
 import Guitar
+import Difficulty
+import Part
 
 def wrapText(font, pos, text, rightMargin = 0.9, scale = 0.002, visibility = 0.0):
   """
@@ -879,7 +881,7 @@ class SongChooser(Layer, KeyListener):
             else:
               score, stars, name = "---", 0, "---"
             Theme.setBaseColor(1 - v)
-            font.render(unicode(d),     (x, y),           scale = scale)
+            font.render(unicode(Difficulty.difficulties.get(d)),     (x, y),           scale = scale)
             if stars == 6:
               glColor3f(0, 1, 0)  
               font.render(unicode(Data.STAR2 * (stars -1)), (x, y + h), scale = scale * .9)

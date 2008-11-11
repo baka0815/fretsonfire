@@ -22,7 +22,9 @@
 
 import pygame
 import Config
-import Song
+import Part
+import Difficulty
+
 from Language import _
 
 LEFT    = 0x1
@@ -120,12 +122,12 @@ Config.define("player1", "aplayer_2_key_5",        str, "K_F12",      text = _("
 Config.define("player1", "aplayer_2_key_cancel",   str, "K_F7",       text = _("Player 2 Cancel"))
 
 Config.define("player0", "name",         str, "")
-Config.define("player0", "difficulty",   int, Song.EASY_DIFFICULTY)
-Config.define("player0", "part",         int, Song.GUITAR_PART)
+Config.define("player0", "difficulty",   int, Difficulty.EASY_DIFFICULTY)
+Config.define("player0", "part",         int, Part.GUITAR_PART)
 
 Config.define("player1", "name",         str, "")
-Config.define("player1", "difficulty",   int, Song.EASY_DIFFICULTY)
-Config.define("player1", "part",         int, Song.GUITAR_PART)
+Config.define("player1", "difficulty",   int, Difficulty.EASY_DIFFICULTY)
+Config.define("player1", "part",         int, Part.GUITAR_PART)
 
 class Controls:
   def __init__(self):
@@ -248,27 +250,16 @@ class Player(object):
   streak = property(getStreak, setStreak)
     
   def getDifficulty(self):
-    return Song.difficulties.get(Config.get(self.playerstring, "difficulty"))
+    return Config.get(self.playerstring, "difficulty")
     
   def setDifficulty(self, difficulty):
-    Config.set(self.playerstring, "difficulty", difficulty.id)
+    Config.set(self.playerstring, "difficulty", difficulty)
 
   def getPart(self):
-    part = Config.get(self.playerstring, "part")
-    if part == -1:
-      return "Party Mode"
-    elif part == -2:
-      return "No Player 2"
-    else:
-      return Song.parts.get(part)
+    return Config.get(self.playerstring, "part")
     
   def setPart(self, part):
-    if part == "Party Mode":
-      Config.set(self.playerstring, "part", -1)
-    elif part == "No Player 2":
-      Config.set(self.playerstring, "part", -2)
-    else:
-      Config.set(self.playerstring, "part", part.id)    
+    Config.set(self.playerstring, "part", part)    
     
   difficulty = property(getDifficulty, setDifficulty)
   part = property(getPart, setPart)

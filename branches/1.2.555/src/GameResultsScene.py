@@ -27,6 +27,9 @@ import Dialogs
 import Song
 import Data
 import Theme
+import Difficulty
+import Part
+
 from Audio import Sound
 from Language import _
 
@@ -260,13 +263,13 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
             self.nextHighScore()
 
           
-          text = _("%s High Scores") % (self.scorePart)
+          text = _("%s High Scores") % (Part.parts.get(self.scorePart))
           w, h = font.getStringSize(text)
 
           Theme.setBaseColor(1 - v)
           font.render(text, (.5 - w / 2, .01 - v + self.offset))
 
-          text = _("Difficulty: %s") % (self.scoreDifficulty)
+          text = _("Difficulty: %s") % (Difficulty.difficulties.get(self.scoreDifficulty))
           w, h = font.getStringSize(text)
           Theme.setBaseColor(1 - v)
           font.render(text, (.5 - w / 2, .01 - v + h + self.offset))
@@ -371,9 +374,9 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
           font.render(text, (.5 - w / 2, .54 + h + v))
         # self.player.twoChord
           if player.twoChord > 0:
-            text = _("Part: %s on %s (2 chord)") % (player.part, player.difficulty)
+            text = _("Part: %s on %s (2 chord)") % (Part.parts.get(player.part), Difficulty.difficulties.get(player.difficulty))
           else:
-            text = _("Part: %s on %s") % (player.part, player.difficulty)
+            text = _("Part: %s on %s") % (Part.parts.get(player.part), Difficulty.difficulties.get(player.difficulty))
           w, h = font.getStringSize(text)
           font.render(text, (.5 - w / 2, .54 + (2 * h)+ v))
       self.engine.view.setViewport(1,0)

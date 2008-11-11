@@ -24,7 +24,7 @@ import Menu
 from Language import _
 import Dialogs
 import Config
-import Mod
+import Skin
 import Audio
 
 import pygame
@@ -146,15 +146,24 @@ class HopoConfigChoice(ConfigChoice):
       
 
 class SettingsMenu(Menu.Menu):
+  def getSkinSettingsMenu(self, engine, skindir=None):
+    menu = []
+    for w in Skin.getAvailableSkinDirs(engine, dir=skindir):
+      menu.append((_("%s" % (w)), self.getSkinSettingsMenu(engine, skindir=w)))
+    for m in Skin.getAvailableSkins(engine, dir=skindir):
+      if skindir == None:
+        menu.append(ConfigChoice(engine.config, "skins",  "skin_" + m, autoApply = True))
+      else:
+        menu.append(ConfigChoice(engine.config, "skins",  "skin_%s/" % (skindir) + m, autoApply = True))
+    return menu
+        
   def __init__(self, engine):
     applyItem = [(_("Apply New Settings"), self.applySettings)]
 
-    modSettings = [
-      ConfigChoice(engine.config, "mods",  "mod_" + m) for m in Mod.getAvailableMods(engine)
-    ] + applyItem
+    skinSettings = self.getSkinSettingsMenu(engine) + applyItem
     
     gameSettings = [
-      (_("Mod settings"), modSettings),
+      (_("Skin settings"), skinSettings),
       ConfigChoice(engine.config, "game",  "language"),
       #ConfigChoice(engine.config, "game",  "leftymode", autoApply = True),
       #ConfigChoice(engine.config, "game",  "tapping", autoApply = True),
@@ -287,13 +296,13 @@ class SettingsMenu(Menu.Menu):
       (_("Audio Settings"),    audioSettingsMenu),
       (_("RF-mod Settings"),   rfModSettingsMenu),
     ]
-  
+
     self.settingsToApply = settings + \
                            videoSettings + \
                            audioSettings + \
                            volumeSettings + \
                            gameSettings + \
-                           modSettings
+                           skinSettings
 
     Menu.Menu.__init__(self, engine, settings)
     

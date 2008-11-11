@@ -48,9 +48,10 @@ class GameResultsSceneServer(GameResultsScene, SceneServer):
   pass
 
 class GameResultsSceneClient(GameResultsScene, SceneClient):
-  def createClient(self, libraryName, songName, players = None):
+  def createClient(self, libraryName, songName, players = None, failed = None, winner = None):
     self.libraryName     = libraryName
     self.songName        = songName
+    self.failed          = failed
     self.stars           = [0 for i in players]
     self.accuracy        = [0 for i in players]
     self.counter         = 0
@@ -334,7 +335,9 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
       Theme.setBaseColor(1 - v)
       if self.playerList[0].cheating:
         text = _("%s Cheated!" % self.song.info.name)
-  
+
+      elif self.failed != None:
+        text = _("%s Failed @ %.1f%%!" % (self.song.info.name, self.failed))
       else:
         text = _("%s Finished!" % self.song.info.name)
       w, h = font.getStringSize(text)

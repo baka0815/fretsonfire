@@ -44,7 +44,7 @@ import Config
 import Dialogs
 import Theme
 import Version
-import Mod
+import Skin
 
 # define configuration keys
 Config.define("engine", "tickrate",     float, 1.0)
@@ -212,8 +212,8 @@ class GameEngine(Engine):
     self.theme = theme
     Theme.open(self.theme)
     
-    # Load game modifications
-    Mod.init(self)
+    # Load game skins
+    Skin.init(self)
     
     self.addTask(self.input, synchronized = False)
     self.addTask(self.view)
@@ -339,6 +339,19 @@ class GameEngine(Engine):
     """
     return self.data.loadSvgDrawing(target, name, fileName, textureSize)
 
+  def loadFont(self, target, name, fileName, size, scale, reversed, systemFont):
+    """
+    Load an Font synchronously.
+    
+    @param target:      An object that will own the drawing
+    @param name:        The name of the attribute the drawing will be assigned to
+    @param fileName:    The name of the file in the data directory
+    @param textureSize  Either None or (x, y), in which case the file will
+                        be rendered to an x by y texture
+    @return:            L{SvgDrawing} instance
+    """
+    return self.data.loadFont(target, name, fileName, size, scale, reversed, systemFont)
+  
   def loading(self):
     """Loading state loop."""
     done = Engine.run(self)

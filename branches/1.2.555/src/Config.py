@@ -271,7 +271,7 @@ class Config:
       if modOptions1[6] == '1':
         encode += "C"
       if modOptions1[7] == '1':
-        encode += "9"
+        encode += "8"
       if modOptions1[8] == '1':
         encode += "d"
 

@@ -244,10 +244,12 @@ class SettingsMenu(Menu.Menu):
     rfModGameSettings = [
       (_("Select Song Library >"), self.baseLibrarySelect), 
       ConfigChoice(engine.config, "game",  "alt_keys", autoApply = True),
-      #ConfigChoice(engine.config, "game",  "strum_burst", autoApply = True),
       ConfigChoice(engine.config, "game",  "sort_order", autoApply = True),
+      ConfigChoice(engine.config, "game",  "margin", autoApply = True),
       ConfigChoice(engine.config, "game",  "disable_vbpm", autoApply = True),
+      ConfigChoice(engine.config, "game",  "board_speed", autoApply = True),
       ConfigChoice(engine.config, "game", "pov", autoApply = True),
+      ConfigChoice(engine.config, "game", "tracks_type", autoApply = True),
       ConfigChoice(engine.config, "game", "party_time", autoApply = True),
       ConfigChoice(engine.config, "audio", "miss_volume", autoApply = True),
     ]
@@ -258,6 +260,7 @@ class SettingsMenu(Menu.Menu):
       ConfigChoice(engine.config, "audio", "disable_preview", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_stats", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_notesfx", autoApply = True),
+      ConfigChoice(engine.config, "video", "disable_notewavessfx", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_fretsfx", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_flamesfx", autoApply = True),
       ConfigChoice(engine.config, "game", "disable_spinny", autoApply = True),

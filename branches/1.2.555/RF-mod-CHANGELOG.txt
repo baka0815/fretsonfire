@@ -1,5 +1,25 @@
+4.16
+   Parsing of pack,set,song tags for packs.
+   Displaying of pack, set, song tags
+   Displaying of version during song selection
+   Jump keys will use either song/set num or first letter of song
+   New difficulty/part detection.  Does not show 1 note difficulty/parts (still needs caching)
+   caching of difficulty/part in cache.ini
+   caching of song time
+   display of (cached) song time on song selection
+   Fixed held note not being counted in certain situations at end of song
+   Boardspeed adjustment
+   Boardspeed based upon difficulty
+   Themable multiplier colors
+   Disable multiplier flash toggle
+
+
+
+
 4.15
-   Changed version to 4.15 because I released 4.14 but used the 4.12 binary
+   Fixed color of bars bug
+   Rereleased because I released 4.14 as 4.15
+
 4.14
    Added some fixes for linux crashes in pygame.init
    Fixed resolution type errors for linux

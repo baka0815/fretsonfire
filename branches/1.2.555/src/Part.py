@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-                                        #
 #                                                                   #
 # Frets on Fire                                                     #
-# Copyright (C) 2006 Sami Kyöstilä                                  #
+# Copyright (C) 2008 Alex Samonte                                   #
 #                                                                   #
 # This program is free software; you can redistribute it and/or     #
 # modify it under the terms of the GNU General Public License       #
@@ -20,38 +20,36 @@
 # MA  02110-1301, USA.                                              #
 #####################################################################
 
-import sys
-import os
-VERSION = '1.2'
+from Language import _
 
-def appName():
-  return "fretsonfire"
+class Part:
+  def __init__(self, id, text):
+    self.id   = id
+    self.text = text
+    
+  def __str__(self):
+    return self.text
 
-def revision():
-  return int("$LastChangedRevision: 451 $".split(" ")[1])
+  def __repr__(self):
+    return self.text
 
-def branch():
-  return "RF-mod"
-
-def branchrevision():
-  return 4.16
-
-def branchVersion():
-  return "%s-%.2f" % (branch(), branchrevision())
-
-def version():
-  return "%s.%d-%s" % (VERSION, revision(), branchVersion())
-
-def dataPath():
-  # Determine whether were running from an exe or not
-  if hasattr(sys, "frozen"):
-    if os.name == "posix":
-      dataPath = os.path.join(os.path.dirname(sys.argv[0]), "../lib/fretsonfire")
-      if not os.path.isdir(dataPath):
-        dataPath = "data"
-    else:
-      dataPath = "data"
-  else:
-    dataPath = os.path.join("..", "data")
-  return dataPath
+NO_PART                 = -2
+PARTY_PART              = -1  
+GUITAR_PART             = 0
+RHYTHM_PART             = 1
+BASS_PART               = 2
+LEAD_PART               = 3
+DRUM_PART               = 4
+VOCAL_PART              = 5
   
+parts = {
+  NO_PART: Part(NO_PART, _("No Player 2")),
+  PARTY_PART: Part(PARTY_PART, _("Party Mode")),
+  GUITAR_PART: Part(GUITAR_PART, _("Guitar")),
+  RHYTHM_PART: Part(RHYTHM_PART, _("Rhythm Guitar")),
+  BASS_PART:   Part(BASS_PART,   _("Bass Guitar")),
+  LEAD_PART:   Part(LEAD_PART,   _("Lead Guitar")),
+  DRUM_PART:   Part(DRUM_PART,   _("Drums")),
+  VOCAL_PART:  Part(VOCAL_PART,  _("Vocals")),
+}
+

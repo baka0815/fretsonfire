@@ -22,7 +22,7 @@
 #####################################################################
 
 from Scene import SceneServer, SceneClient
-from Song import Note, Tempo, TextEvent, PictureEvent, loadSong
+from Song import Note, Tempo, TextEvent, PictureEvent, loadSong, Bars, parts
 from Menu import Menu
 from Guitar import Guitar, PLAYER1KEYS, PLAYER2KEYS, PLAYER1ACTIONS, PLAYER2ACTIONS
 from Language import _
@@ -65,7 +65,15 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.playerList = self.playerList + [self.player2]
       self.keysList   = self.keysList + [PLAYER2KEYS]
 
-    self.guitars          = [Guitar(self.engine,False,i) for i, player in enumerate(self.playerList)]
+    self.guitars = []
+    for i, player in enumerate(self.playerList):
+      print player.part
+      if player.part == parts[4]:
+        self.guitars.append(Drum(self.engine,False,i))
+      else:
+        self.guitars.append(Guitar(self.engine,False,i))
+    
+    #self.guitars          = [Guitar(self.engine,False,i) for i, player in enumerate(self.playerList)]
     
     self.visibility       = 0.0
     self.libraryName      = libraryName
@@ -95,8 +103,17 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.originX          = Theme.povOriginX
     self.originY          = Theme.povOriginY
     self.originZ          = Theme.povOriginZ
+
+    self.multColors       = Theme.multColors
+    self.multFlash        = Theme.multFlash
+
     self.ending           = False
 
+    self.boardSpeedDiff0  = 180.0                            #amazing = 0  -> 1.4 = 180.00 bpm
+    self.boardSpeedDiff1  = self.boardSpeedDiff0             #medium = 1   -> 1.4
+    self.boardSpeedDiff2  = 1.0 * self.boardSpeedDiff0 /1.4  #easy = 2     -> 1.0 = 128.57 bpm
+    self.boardSpeedDiff3  = self.boardSpeedDiff2             #supaeasy = 3 -> 1.0
+    
     #new
     
     self.loadSettings()
@@ -264,22 +281,15 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.song.stop()
 
     for i, guitar in enumerate(self.guitars):
+      self.song.track[i].markBars()
       if self.hopoDisabled == 0 or self.song.info.hopo == "on":
         if self.hopoMark == 0:
           self.song.track[i].markTappable();
-        else:  
-          self.song.track[i].markHopo()
+        else:
+          self.song.track[i].markHopo(hopo8th = self.song.info.hopo8th)
     
     if self.disableStats != True:
-      lastTime = 0
-      for i,guitar in enumerate(self.guitars):      
-        for time, event in self.song.track[i].getAllEvents():
-          if not isinstance(event, Note):
-            continue
-          if time + event.length > lastTime:
-            lastTime = time + event.length
-
-      self.lastEvent = lastTime + 1000
+      self.lastEvent = self.song.lastTime + 1000
       self.lastEvent = round(self.lastEvent / 1000) * 1000
       self.notesCum = 0
       self.noteLastTime = 0
@@ -294,6 +304,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.stage.run(pos, self.guitars[0].currentPeriod)
 
       if self.countdown <= 0 and not self.song.isPlaying() and not self.done:
+        #A held note at the end of a song may not get the score added.  Just do one last attempt
+        for i,guitar in enumerate(self.guitars):
+          score = self.getExtraScoreForCurrentlyPlayedNotes(i)
+          self.players[i].addScore(score)
         self.goToResults()
         return
         
@@ -322,8 +336,24 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       
       self.song.update(ticks)
       if self.countdown > 0:
-        for guitar in self.guitars:
-          guitar.setBPM(self.song.bpm)
+        for i, guitar in enumerate(self.guitars):
+          if guitar.boardSpeed == 2 or guitar.boardSpeed == 1:
+            boardSpeed = 50
+            difficulty = self.playerList[i].difficulty
+            difficulty = self.engine.config.get("player%d" %(i), "difficulty")
+            print difficulty
+            if difficulty == 0:
+              boardSpeed = self.boardSpeedDiff0
+            elif difficulty == 1:
+              boardSpeed = self.boardSpeedDiff1
+            elif difficulty == 2:
+              boardSpeed = self.boardSpeedDiff2
+            else:
+              boardSpeed = self.boardSpeedDiff3
+            guitar.setBPM(boardSpeed)
+          else:
+            guitar.setBPM(self.song.bpm)
+        
         self.countdown = max(self.countdown - ticks / self.song.period, 0)
         if not self.countdown:
           #RF-mod should we collect garbage when we start?
@@ -451,6 +481,11 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       if self.guitars[num].hopoActive != False and hopoFudge > 0 and hopoFudge < self.guitars[num].lateMargin:
         return
 
+    #unsure if I need more conditions around this to match the normal dopick
+    self.endPick(num)
+
+    self.lastPickPos[num] = pos
+    
     if self.guitars[num].startPick2(self.song, pos, self.controls, hopo):
       self.song.setInstrumentVolume(self.guitarVolume, self.playerList[num].part)
       if self.guitars[num].playedNotes:
@@ -500,6 +535,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       if self.guitars[num].hopoActive != False and hopoFudge > 0 and hopoFudge < self.guitars[num].lateMargin:
         return
 
+    #unsure if I need more conditions around this to match the normal dopick
+    self.endPick(num)
+
+    self.lastPickPos[num] = pos
     if self.guitars[num].startPick3(self.song, pos, self.controls, hopo):
       self.song.setInstrumentVolume(self.guitarVolume, self.playerList[num].part)
       #Any previous notes missed, but new ones hit, reset streak counter
@@ -775,6 +814,9 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       activeList = [k for k in self.keysList[i] if self.controls.getState(k) and k != control]
       if len(activeList) != 0 and guitar.hopoActive and activeList[0] != self.keysList[i][guitar.hopoLast] and control in self.keysList[i]:
         self.keyPressed2(None, 0, activeList[0])
+      elif self.lastPickPos[i] is not None and pos - self.lastPickPos[i] > self.song.period / 2:
+        self.endPick(i)
+
 
   def keyReleased3(self, key):
     control = self.controls.keyReleased(key)
@@ -957,34 +999,35 @@ class GuitarSceneClient(GuitarScene, SceneClient):
           diff = self.getSongPosition() - self.lastMultTime[i]
           if diff > 0 and diff < self.song.period * 2:
             m = player.getScoreMultiplier()
-            c = (1, 1, 1)
+            c = self.multColors[0]
             if player.streak >= 40:
               texture = None
             elif m == 1:
               texture = None
             elif m == 2:
               texture = self.fx2x.texture
-              c = (1, .5, .5)
+              c = self.multColors[1]
             elif m == 3:
               texture = self.fx3x.texture
-              c = (1, 1, .5)
+              c = self.multColors[2]
             elif m == 4:
               texture = self.fx4x.texture
-              c = (.5, .5, 1)
+              c = self.multColors[3]
             
             f = (1.0 - abs(self.song.period * 1 - diff) / (self.song.period * 1)) ** 2
           
             # Flash the screen
-            glBegin(GL_TRIANGLE_STRIP)
-            glColor4f(c[0], c[1], c[2], (f - .5) * 1)
-            glVertex2f(0, 0)
-            glColor4f(c[0], c[1], c[2], (f - .5) * 1)
-            glVertex2f(1, 0)
-            glColor4f(c[0], c[1], c[2], (f - .5) * .25)
-            glVertex2f(0, 1)
-            glColor4f(c[0], c[1], c[2], (f - .5) * .25)
-            glVertex2f(1, 1)
-            glEnd()
+            if self.multFlash == True:
+              glBegin(GL_TRIANGLE_STRIP)
+              glColor4f(c[0], c[1], c[2], (f - .5) * 1)
+              glVertex2f(0, 0)
+              glColor4f(c[0], c[1], c[2], (f - .5) * 1)
+              glVertex2f(1, 0)
+              glColor4f(c[0], c[1], c[2], (f - .5) * .25)
+              glVertex2f(0, 1)
+              glColor4f(c[0], c[1], c[2], (f - .5) * .25)
+              glVertex2f(1, 1)
+              glEnd()
             
             if texture:
               glPushMatrix()

@@ -24,9 +24,9 @@ To move your song directory to another location:
 To start a song directly from the command line:
 
 1) Go to your frets on fire directory
-2) type fretsonfire.exe -p songdirectoryunderlibrary 
+2) type fretsonfire.exe -p songdirectoryunderlibrary -D difficulty -P part
 
-( For example: fretsonfire.exe -p Artists\ACDC\ACDC - TNT )
+( For example: fretsonfire.exe -p "Artists\ACDC\ACDC - TNT" -D 1 -P 0 )
 
 To create midi files with multiple selectable tracks:
 

@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-                                        #
 #                                                                   #
 # Frets on Fire                                                     #
-# Copyright (C) 2006 Sami Kyöstilä                                  #
+# Copyright (C) 2008 Alex Samonte                                   #
 #                                                                   #
 # This program is free software; you can redistribute it and/or     #
 # modify it under the terms of the GNU General Public License       #
@@ -20,38 +20,7 @@
 # MA  02110-1301, USA.                                              #
 #####################################################################
 
-import sys
-import os
-VERSION = '1.2'
+from Guitar import Guitar
 
-def appName():
-  return "fretsonfire"
-
-def revision():
-  return int("$LastChangedRevision: 451 $".split(" ")[1])
-
-def branch():
-  return "RF-mod"
-
-def branchrevision():
-  return 4.16
-
-def branchVersion():
-  return "%s-%.2f" % (branch(), branchrevision())
-
-def version():
-  return "%s.%d-%s" % (VERSION, revision(), branchVersion())
-
-def dataPath():
-  # Determine whether were running from an exe or not
-  if hasattr(sys, "frozen"):
-    if os.name == "posix":
-      dataPath = os.path.join(os.path.dirname(sys.argv[0]), "../lib/fretsonfire")
-      if not os.path.isdir(dataPath):
-        dataPath = "data"
-    else:
-      dataPath = "data"
-  else:
-    dataPath = os.path.join("..", "data")
-  return dataPath
-  
+class Drum(Guitar):
+  pass

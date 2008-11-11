@@ -94,7 +94,12 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
             if name:
               player.name = name
             notesTotal = len([1 for time, event in self.song.track[i].getAllEvents() if isinstance(event, Song.Note)])
-            modOptions1 = self.engine.config.getModOptions1(player.twoChord, 0)
+
+            if self.song.info.hopo8th == "1":
+              hopo8th = 1
+            else:
+              hopo8th = 0
+            modOptions1 = self.engine.config.getModOptions1(player.twoChord, hopo8th)
             modOptions2 = self.engine.config.getModOptions2()
             scoreExt = (player.notesHit, notesTotal, player.longestStreak, Version.branchVersion(), modOptions1, modOptions2)
             self.highscoreIndex[i] = self.song.info.addHighscore(player.difficulty, player.score, self.stars[i], player.name, part = player.part, scoreExt = scoreExt)
@@ -291,9 +296,9 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
             if noteStreak != 0:
               score = "%s %d" % (score, noteStreak)
             font.render(unicode(score), (x + .05, y + self.offset),   scale = scale)
-            options = ""
-            #options = "%s,%s" % (modOptions1, modOptions2)
-            #options = self.engine.config.prettyModOptions(options)
+            #options = ""
+            options = "%s,%s" % (modOptions1, modOptions2)
+            options = self.engine.config.prettyModOptions(options)
             w2, h2 = font.getStringSize(options, scale = scale / 2)
             font.render(unicode(options), (.6 - w2, y + self.offset),   scale = scale / 2)
             if perfect == 1:

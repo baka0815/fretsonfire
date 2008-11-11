@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-                                        #
 #                                                                   #
 # Frets on Fire                                                     #
-# Copyright (C) 2006 Sami Kyöstilä                                  #
+# Copyright (C) 2008 Alex Samonte                                   #
 #                                                                   #
 # This program is free software; you can redistribute it and/or     #
 # modify it under the terms of the GNU General Public License       #
@@ -20,38 +20,29 @@
 # MA  02110-1301, USA.                                              #
 #####################################################################
 
-import sys
-import os
-VERSION = '1.2'
+from Language import _
 
-def appName():
-  return "fretsonfire"
+class Difficulty:
+  def __init__(self, id, text):
+    self.id   = id
+    self.text = text
+    
+  def __str__(self):
+    return self.text
 
-def revision():
-  return int("$LastChangedRevision: 451 $".split(" ")[1])
+  def __repr__(self):
+    return self.text
 
-def branch():
-  return "RF-mod"
+AMAZING_DIFFICULTY      = 0
+MEDIUM_DIFFICULTY       = 1
+EASY_DIFFICULTY         = 2
+SUPAEASY_DIFFICULTY     = 3
 
-def branchrevision():
-  return 4.16
+difficulties = {
+  SUPAEASY_DIFFICULTY: Difficulty(SUPAEASY_DIFFICULTY, _("Supaeasy")),
+  EASY_DIFFICULTY:     Difficulty(EASY_DIFFICULTY,     _("Easy")),
+  MEDIUM_DIFFICULTY:   Difficulty(MEDIUM_DIFFICULTY,   _("Medium")),
+  AMAZING_DIFFICULTY:  Difficulty(AMAZING_DIFFICULTY,  _("Amazing")),
+}
 
-def branchVersion():
-  return "%s-%.2f" % (branch(), branchrevision())
 
-def version():
-  return "%s.%d-%s" % (VERSION, revision(), branchVersion())
-
-def dataPath():
-  # Determine whether were running from an exe or not
-  if hasattr(sys, "frozen"):
-    if os.name == "posix":
-      dataPath = os.path.join(os.path.dirname(sys.argv[0]), "../lib/fretsonfire")
-      if not os.path.isdir(dataPath):
-        dataPath = "data"
-    else:
-      dataPath = "data"
-  else:
-    dataPath = os.path.join("..", "data")
-  return dataPath
-  

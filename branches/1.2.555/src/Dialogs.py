@@ -566,16 +566,24 @@ class SongChooser(Layer, KeyListener):
       found = 0
       
       for i in range(len(self.items)):
+        #Try song number for index
+        songNum = self.items[i].findTag("song")
+        if songNum == "False":
+          #If no song number, try set number
+          songNum = self.items[i].findTag("set")
+          if songNum == "False":
+            #If no set number, make it nothing so it doesn't false positive
+            songNum = ""
         if self.sortOrder == 1:
           if not self.items[i].artist:
             continue
-          if self.items[i].artist[0] == k1 or self.items[i].artist[0] == k2:
+          if self.items[i].artist[0] == k1 or self.items[i].artist[0] == k2 or (songNum != "" and (songNum[0] == k1 or songNum[0] == k2)):
             found = 1
             break
         else:
           if not self.items[i].name:
             continue
-          if self.items[i].name[0] == k1 or self.items[i].name[0] == k2:
+          if self.items[i].name[0] == k1 or self.items[i].name[0] == k2 or (songNum != "" and (songNum[0] == k1 or songNum[0] == k2)):
             found = 1
             break
       if found == 1 and self.selectedIndex != i:
@@ -812,19 +820,46 @@ class SongChooser(Layer, KeyListener):
       if self.matchesSearch(item):
         angle = self.itemAngles[self.selectedIndex]
         f = ((90.0 - angle) / 90.0) ** 2
-        pos = wrapText(font, (x, y), item.name, visibility = f, scale = 0.0016)
+        #line = "foo" + item.name
+        line = ""
+        packname = item.findTag("pack")
+        if packname != "False":
+          line += "%s " % (packname)
+        setnum = item.findTag("set")
+        if setnum != "False":
+          line += "%s." % (setnum)
+        songnum = item.findTag("song")
+        if songnum != "False":
+          line += "%s" % (songnum)
+        if line != "":
+          line += " - %s" % (item.name)
+        else:
+          line = item.name
+
+        if isinstance(item, Song.SongInfo) and item.version:
+          line += " - v%s" % (item.version)
+          
+        #line = "%s %s.%s - %s" % (packname, setnum, songnum, item.name)
+        pos = wrapText(font, (x, y), line, visibility = f, scale = 0.0016)
 
         if isinstance(item, Song.SongInfo):
           Theme.setBaseColor(1 - v)
           pos = wrapText(font, (x, pos[1] + font.getHeight() * 0.0016), item.artist, visibility = f, scale = 0.0016)
 
+          text = ""
           if item.count:
             Theme.setSelectedColor(1 - v)
             count = int(item.count)
             if count == 1: 
-              text = "Played %d time" % (count)
+              text += "Played %d time " % (count)
             else:
-              text = "Played %d times" % (count)
+              text += "Played %d times " % (count)
+
+          if item.time:
+            Theme.setSelectedColor(1 - v)
+            text += "(%d:%02d)" % (item.time / 60000, (item.time % 60000) / 1000)
+          
+          if text != "":
             pos = wrapText(font, (x, pos[1] + font.getHeight() * 0.0016), text, visibility = f, scale = 0.001)
 
           Theme.setSelectedColor(1 - v)

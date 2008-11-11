@@ -91,6 +91,7 @@ class Music(object):
     pygame.mixer.music.unpause()
 
   def setVolume(self, volume):
+    print "audiomusic", volume
     pygame.mixer.music.set_volume(volume)
 
   def fadeout(self, time):
@@ -113,6 +114,7 @@ class Channel(object):
     self.channel.stop()
 
   def setVolume(self, volume):
+    print "audiochannel", volume
     self.channel.set_volume(volume)
 
   def fadeout(self, time):
@@ -129,6 +131,7 @@ class Sound(object):
     self.sound.stop()
 
   def setVolume(self, volume):
+    print "audiosound", volume
     self.sound.set_volume(volume)
 
   def fadeout(self, time):
@@ -156,7 +159,7 @@ if ogg:
       self.playing      = False
       self.bufferSize   = 1024 * 64
       self.bufferCount  = 8
-      self.volume       = 1.0
+      self.volume       = 0.0
       self.buffer       = Numeric.zeros((2 * self.bufferSize, 2), typecode = "s")
       self.decodingRate = 4
       self._reset()
@@ -195,6 +198,7 @@ if ogg:
       self._reset()
 
     def setVolume(self, volume):
+      print "streamingogg", volume
       self.volume = volume
 
     def fadeout(self, time):
@@ -247,6 +251,7 @@ if ogg:
       if not self.playing:
         return
 
+      print "audiorun", self.volume
       self.channel.set_volume(self.volume)
 
       if len(self.buffersOut) < self.bufferCount:
@@ -287,6 +292,7 @@ class StreamingSound(Sound, Task):
     self.channel.stop()
 
   def setVolume(self, volume):
+    print "Streamingsound", volume
     Sound.setVolume(self, volume)
     self.channel.setVolume(volume)
 

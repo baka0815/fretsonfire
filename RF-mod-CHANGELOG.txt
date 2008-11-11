@@ -1,3 +1,9 @@
+4.18
+   Fixed 2nd player button press to get out of gameresults
+   Removed chords from drums (you play notes individually)
+   Made bass note dissapear when hit
+   Fixed 2nd player selection if only 1 difficulty available
+
 4.17
    Redid difficulty and parts code
    Redid song selection code

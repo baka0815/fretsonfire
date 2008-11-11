@@ -22,22 +22,22 @@
 
 import sys
 import os
-VERSION = '1.2'
+VERSION = '1.3'
 
 def appName():
   return "fretsonfire"
 
 def revision():
-  return int("$LastChangedRevision: 451 $".split(" ")[1])
+  return int("$LastChangedRevision: 001 $".split(" ")[1])
 
 def branch():
   return "RF-mod"
 
 def branchrevision():
-  return 4.17
+  return 5.00
 
 def branchVersion():
-  return "%s-%.2f" % (branch(), branchrevision())
+  return "%s-%.2fa" % (branch(), branchrevision())
 
 def version():
   return "%s.%d-%s" % (VERSION, revision(), branchVersion())

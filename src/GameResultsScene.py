@@ -86,7 +86,7 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
     ret = SceneClient.keyPressed(self, key, unicode)
 
     c = self.controls.keyPressed(key)
-    if self.song and (c in [Player.KEY1, Player.KEY2, Player.CANCEL, Player.ACTION1, Player.ACTION2] or key == pygame.K_RETURN):
+    if self.song and (c in Player.KEY1S + Player.KEY2S + Player.CANCELS +Player.ACTION1S + Player.ACTION2S or key == pygame.K_RETURN):
       for i,player in enumerate(self.playerList):
         scores = self.song.info.getHighscores(player.difficulty, part = player.part)
         if not scores or player.score > scores[-1][0] or len(scores) < 5:

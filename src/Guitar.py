@@ -42,6 +42,7 @@ class Guitar:
     self.boardLength    = 12.0
     self.beatsPerBoard  = 5.0
     self.strings        = 5
+    self.stringsOffset  = 0
     self.fretWeight     = [0.0] * self.strings
     self.fretActivity   = [0.0] * self.strings
     self.fretColors     = Theme.fretColors
@@ -66,7 +67,7 @@ class Guitar:
     self.hopoColor      = (0, .5, .5)
     self.player         = player
     self.scoreMultiplier = 1
-    self.boardspeedMultiplier = 0.5
+    self.boardspeedMultiplier = 1.0
     
     if player == 0:
       self.keys = PLAYER1KEYS
@@ -220,7 +221,7 @@ class Guitar:
     v = 1.0 - visibility
 
     if self.editorMode:
-      x = (self.strings / 2 - self.selectedString) * w
+      x = (self.strings - self.stringsOffset / 2 - self.selectedString) * w
       s = 2 * w / self.strings
       z1 = -0.5 * visibility ** 2
       z2 = (self.boardLength - 0.5) * visibility ** 2
@@ -246,8 +247,8 @@ class Guitar:
       c2 = 0
 
       
-    for n in range(self.strings + c2):
-      x = ((self.strings - n) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
+    for n in range(self.stringsOffset, self.strings + c2 + self.stringsOffset):
+      x = ((self.strings - n + self.stringsOffset) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
       glBegin(GL_TRIANGLE_STRIP)
       glColor4f(self.tracksColor[0], self.tracksColor[1], self.tracksColor[2], 0)
       glVertex3f(c + x - sw, -v, -2)
@@ -602,7 +603,7 @@ class Guitar:
     c = self.fretColors[event.number]
 
     x  = (self.strings / 2 - event.number) * w
-    x = ((self.strings - event.number) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w
+    x = ((self.strings - event.number + self.stringsOffset) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w
     z  = ((time - pos) / self.currentPeriod) / beatsPerUnit
     z2 = ((time + event.length - pos) / self.currentPeriod) / beatsPerUnit
 
@@ -659,7 +660,7 @@ class Guitar:
 
 
     x = (self.strings / 2 - event.number) * w
-    x = ((self.strings - event.number) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
+    x = ((self.strings - event.number + self.stringsOffset) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
     z = ((time - pos) / self.currentPeriod) / beatsPerUnit
     length     = event.length / self.currentPeriod / beatsPerUnit
     tailOnly   = False
@@ -696,7 +697,7 @@ class Guitar:
     step  = self.currentPeriod / 16
     t     = time + event.length
     x     = (self.strings / 2 - event.number) * w
-    x = ((self.strings - event.number) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
+    x = ((self.strings - event.number + self.stringsOffset) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
     c     = self.fretColors[event.number]
     s     = t
     proj  = 1.0 / self.currentPeriod / beatsPerUnit
@@ -790,7 +791,7 @@ class Guitar:
     glColor4f(.1 + .8 * c[0] + f, .1 + .8 * c[1] + f, .1 + .8 * c[2] + f, 1 - v)
     y = v + f / 6
     #x = (self.strings / 2 - n) * w
-    x = ((self.strings - string) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w
+    x = ((self.strings - string + self.stringsOffset) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w
     if self.keyMesh:
       glPushMatrix()
       glTranslatef(x, y + v * 6, 0)
@@ -833,7 +834,7 @@ class Guitar:
     f = self.fretWeight[string]
     c = self.fretColors[string]
 
-    x = ((self.strings - string) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w
+    x = ((self.strings - string + self.stringsOffset) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w
     y = v + f / 6
     
     if self.glowColor[0] == -1:
@@ -886,7 +887,7 @@ class Guitar:
     
     glEnable(GL_DEPTH_TEST)
     
-    for n in range(self.strings):
+    for n in range(self.stringsOffset, self.strings + self.stringsOffset):
       f = self.renderFretKey(v, controls, n)
 
       if f and self.disableFretSFX != True:
@@ -905,7 +906,7 @@ class Guitar:
     f = self.fretActivity[string]
     ff = f
     ff += 1.2
-    x = ((self.strings - string) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
+    x = ((self.strings - string + self.stringsOffset) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
     y = v + f / 6 
       
     glBlendFunc(GL_ONE, GL_ONE)
@@ -974,7 +975,7 @@ class Guitar:
     w = self.boardWidth / self.strings
     ms = math.sin(self.time) * .25 + 1
     ff = 1.25
-    x = ((self.strings - string) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
+    x = ((self.strings - string + self.stringsOffset) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
     y = v + ff / 6
 
     ff += 1.5
@@ -1071,7 +1072,7 @@ class Guitar:
     w = self.boardWidth / self.strings
     ms = math.sin(self.time) * .25 + 1
     ff = 1.25
-    x = ((self.strings - string) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
+    x = ((self.strings - string + self.stringsOffset) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
     y = v + ff / 6
     ff += 1.5
     
@@ -1187,7 +1188,7 @@ class Guitar:
     v = 1.0 - visibility
 
     if self.disableFlameSFX != True:
-      for n in range(self.strings):   
+      for n in range(self.stringsOffset, self.strings + self.stringsOffset):   
         #Spark
         if self.fretActivity[n]:
           self.renderFlameSpark(v, n)
@@ -1877,7 +1878,7 @@ class Guitar:
     else:
       activeFrets = [note.number for time, note in self.playedNotes]
     
-    for n in range(self.strings):
+    for n in range(self.stringsOffset, self.strings + self.stringsOffset):
       if controls.getState(self.keys[n]) or (self.editorMode and self.selectedString == n):
         self.fretWeight[n] = 0.5
       else:

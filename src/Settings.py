@@ -210,6 +210,7 @@ class SettingsMenu(Menu.Menu):
       VolumeConfigChoice(engine, engine.config, "audio",  "songvol"),
       VolumeConfigChoice(engine, engine.config, "audio",  "rhythmvol"),
       VolumeConfigChoice(engine, engine.config, "audio",  "screwupvol"),
+      VolumeConfigChoice(engine, engine.config, "audio",  "gamevol"),
     ]
     volumeSettingsMenu = Menu.Menu(engine, volumeSettings + applyItem)
 

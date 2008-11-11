@@ -407,7 +407,13 @@ class SongInfo(object):
 
   def setLyrics(self, value):
     self._set("lyrics", value)    
-        
+
+  def getComments(self):
+    return self._get("comments")
+
+  def setComments(self, value):
+    self._set("comments", value)
+    
   def getHighscores(self, difficulty, part = Part.parts[Part.GUITAR_PART]):
     if part == Part.parts[Part.GUITAR_PART]:
       highScores = self.highScores
@@ -505,6 +511,7 @@ class SongInfo(object):
   hopo8th       = property(getEighthNoteHopo, setEighthNoteHopo)
   count         = property(getCount, setCount)
   lyrics        = property(getLyrics, setLyrics)
+  comments      = property(getComments, setComments)
   #May no longer be necessary
   folder        = False
 
@@ -1048,8 +1055,12 @@ class Song(object):
     self.parts        = part
     self.delay        = self.engine.config.get("audio", "delay")
     self.delay        += self.info.delay
-    self.missVolume   = self.engine.config.get("audio", "miss_volume")
-    self.lastTime     = 0
+    self.guitarVolume  = self.engine.config.get("audio", "guitarvol")
+    self.songVolume    = self.engine.config.get("audio", "songvol")
+    self.rhythmVolume  = self.engine.config.get("audio", "rhythmvol")
+    self.screwUpVolume = self.engine.config.get("audio", "screwupvol")    
+    self.missVolume    = self.engine.config.get("audio", "miss_volume")
+    self.lastTime      = 0
 
     #RF-mod skip if folder (not needed anymore?)
     #if self.info.folder == True:
@@ -1122,12 +1133,14 @@ class Song(object):
     self.start = start
     self.music.play(0, start / 1000.0)
     #RF-mod No longer needed?
-    self.music.setVolume(1.0)
+    self.music.setVolume(self.songVolume)
     if self.guitarTrack:
       assert start == 0.0
+      self.guitarTrack.setVolume(self.guitarVolume)
       self.guitarTrack.play()
     if self.rhythmTrack:
       assert start == 0.0
+      self.rhythmTrack.setVolume(self.rhythmVolume)
       self.rhythmTrack.play()
     self._playing = True
 
@@ -1140,12 +1153,14 @@ class Song(object):
     self.engine.audio.unpause()
 
   def setInstrumentVolume(self, volume, part):
+    print "instrument", volume
     if part == Part.GUITAR_PART:
       self.setGuitarVolume(volume)
     else:
       self.setRhythmVolume(volume)
       
   def setGuitarVolume(self, volume):
+    print "guitar", volume
     if self.guitarTrack:
       if volume == 0:
         self.guitarTrack.setVolume(self.missVolume)
@@ -1159,6 +1174,7 @@ class Song(object):
         self.music.setVolume(volume)
 
   def setRhythmVolume(self, volume):
+    print "rhythm", volume
     if self.rhythmTrack:
       if volume == 0:
         self.rhythmTrack.setVolume(self.missVolume)
@@ -1166,6 +1182,7 @@ class Song(object):
         self.rhythmTrack.setVolume(volume)
   
   def setBackgroundVolume(self, volume):
+    print "background", volume
     self.music.setVolume(volume)
   
   def stop(self):
@@ -1403,7 +1420,7 @@ class MidiReader(midi.MidiOutStream):
       self.partnumber = Part.BASS_PART
     elif text == "PART GUITAR COOP" and Part.LEAD_PART in self.song.parts:
       self.partnumber = Part.LEAD_PART
-    elif text == "PART DRUM" and Part.DRUM_PART in self.song.parts:
+    elif (text == "PART DRUMS" or text == "PART DRUM") and Part.DRUM_PART in self.song.parts:
       self.partnumber = Part.DRUM_PART
     elif self.get_current_track() <= 1 and Part.GUITAR_PART in self.song.parts:
       #Oh dear, the track wasn't recognised, lets just assume it was the guitar part
@@ -1426,6 +1443,7 @@ class MidiReader(midi.MidiOutStream):
         track, number = noteMap[note]
         self.addEvent(track, Note(number, endTime - startTime, special = self.velocity[note] == 127), time = startTime)
       else:
+        print "MIDI note 0x%x at %d does not map to any game note." % (note, self.abs_time())
         #Log.warn("MIDI note 0x%x at %d does not map to any game note." % (note, self.abs_time()))
         pass
     except KeyError:
@@ -1479,7 +1497,7 @@ class MidiInfoReader(midi.MidiOutStream):
         self.curPart = Part.BASS_PART
       if text == "PART GUITAR COOP":
         self.curPart = Part.LEAD_PART
-      if text == "PART DRUM":
+      if text == "PART DRUMS" or text == "PART DRUM":
         self.curPart = Part.DRUM_PART
     except:
       pass
@@ -1513,7 +1531,7 @@ class MidiPartsReader(midi.MidiOutStream):
         part = Part.LEAD_PART
         self.parts.append(part)
 
-    if text == "PART DRUM":
+    if text == "PART DRUMS" or text == "PART DRUM":
       if not Part.DRUM_PART in self.parts:
         part = Part.DRUM_PART
         self.parts.append(part)
@@ -1674,7 +1692,7 @@ def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = Fals
     songs = [song for song in songs if not song.tutorial]
   songs = [song for song in songs if not song.artist == '=FOLDER=']
   if order == 1:
-    songs.sort(lambda a, b: cmp(a.findTag("song").lower() + a.artist.lower() + a.version.lower(), b.findTag("song").lower() + b.artist.lower() + b.version.lower()))
+    songs.sort(lambda a, b: cmp(a.findTag("set") + "." + a.findTag("song").lower() + a.artist.lower() + a.version.lower(), b.findTag("set") + "." + b.findTag("song").lower() + b.artist.lower() + b.version.lower()))
   else:
-    songs.sort(lambda a, b: cmp(a.findTag("song").lower() + a.name.lower() + a.version.lower(), b.findTag("song").lower() + b.name.lower() + b.version.lower()))
+    songs.sort(lambda a, b: cmp(a.findTag("set") + "." + a.findTag("song").lower() + a.name.lower() + a.version.lower(), a.findTag("set") + "." + b.findTag("song").lower() + b.name.lower() + b.version.lower()))
   return songs

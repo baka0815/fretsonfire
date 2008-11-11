@@ -102,6 +102,7 @@ class Editor(Layer, KeyListener):
                                      _("Space - Play/pause song, ") +
                                      _("Enter - Make note (hold and move for long notes), ") +
                                      _("Delete - Delete note, ") +
+                                     _("Home/End - Change Part, ") +
                                      _("Page Up/Down - Change difficulty"))
 
 
@@ -222,14 +223,25 @@ class Editor(Layer, KeyListener):
     c = self.engine.input.controls.getMapping(key)
     if c in Player.CANCELS:
       self.engine.view.pushLayer(self.menu)
+    elif key == pygame.K_END and self.song:
+      d = self.song.parts[0]
+      v = Part.parts.values()
+      self.song.parts[0] = (d + 1) % (len(v) - 2)
+      self.engine.resource.load(self, "song", lambda: loadSong(self.engine, self.songName, seekable = True, library = self.libraryName, part = d))
+      Dialogs.showLoadingScreen(self.engine, lambda: self.song, text = _("Loading song..."))
+
+    elif key == pygame.K_HOME and self.song:
+      d = self.song.parts[0]
+      v = Part.parts.values()
+      self.song.parts[0] = (d - 1) % (len(v) - 2)
     elif key == pygame.K_PAGEDOWN and self.song:
       d = self.song.difficulty[0]
-      v = difficulties.values()
-      self.song.difficulty[0] = v[(v.index(d) + 1) % len(v)]
+      v = Difficulty.difficulties.values()
+      self.song.difficulty[0] = (d + 1) % len(v)
     elif key == pygame.K_PAGEUP and self.song:
       d = self.song.difficulty[0]
-      v = difficulties.values()
-      self.song.difficulty[0] = v[(v.index(d) - 1) % len(v)]
+      v = Difficulty.difficulties.values()
+      self.song.difficulty[0] = (d - 1) % len(v)
     elif key == pygame.K_DELETE and self.song:
       # gather up all events that intersect the cursor and delete the ones on the selected string
       t1 = self.snapPos
@@ -347,11 +359,12 @@ class Editor(Layer, KeyListener):
       t = "%d.%02d'%03d" % (self.pos / 60000, (self.pos % 60000) / 1000, self.pos % 1000)
       font.render(t, (.05, .05 - h / 2))
       font.render(status, (.05, .05 + h / 2))
-      font.render(unicode(self.song.difficulty[0]), (.05, .05 + 3 * h / 2))
+      font.render(unicode(Difficulty.difficulties.get(self.song.difficulty[0])), (.05, .05 + 3 * h / 2))
 
       Theme.setBaseColor()
       text = self.song.info.name + (self.modified and "*" or "")
       Dialogs.wrapText(font, (.5, .05 - h / 2), text)
+      font.render(unicode(Part.parts.get(self.song.parts[0])), (.5, .05 + 3 * h / 2))
     finally:
       self.engine.view.resetProjection()
 

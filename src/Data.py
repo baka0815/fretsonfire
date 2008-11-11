@@ -75,9 +75,10 @@ class Data(object):
     resource.load(self, "bigFont",      font2, onLoad = self.customizeFont)
 
     # load sounds
+    volume   = Config.get("audio", "screwupvol")
     resource.load(self, "screwUpSounds", self.loadScrewUpSounds)
     resource.load(self, "screwUpSoundsBass", self.loadScrewUpSoundsBass)
-    resource.load(self, "symcSounds", self.loadScrewUpSounds)
+    #self.loadSyncSounds(self, "syncSounds")
     self.loadSoundEffect(self, "acceptSound",  "in.ogg")
     self.loadSoundEffect(self, "cancelSound",  "out.ogg")
     self.loadSoundEffect(self, "selectSound1", "crunch1.ogg")
@@ -86,7 +87,7 @@ class Data(object):
     self.loadSoundEffect(self, "startSound",   "start.ogg")
 
   def loadSoundEffect(self, target, name, fileName):
-    volume   = Config.get("audio", "guitarvol")
+    volume   = Config.get("audio", "gamevol")
     fileName = self.resource.fileName(fileName)
     self.resource.load(target, name, lambda: Sound(fileName), onLoad = lambda s: s.setVolume(volume))
 
@@ -96,9 +97,11 @@ class Data(object):
   def loadScrewUpSoundsBass(self):
     return [Sound(self.resource.fileName("bfiba%d.ogg" % i)) for i in range(1, 7)]
   
-  def loadSyncSounds(self):
-    return [Sound(self.resource.fileName("sync%d.ogg" % i)) for i in range(1, 2)]
-  
+  def loadSyncSounds(self, target, name):
+    volume = Config.get("audio", "screwupvol")
+    fileNames = [Sound(self.resource.fileName("sync%d.ogg" % i)) for i in range(1, 2)]
+    self.resource.load(target, name, lambda: Sound(fileNames), onLoad = lambda s: s.setVolume(volume))
+    
   def loadSvgDrawing(self, target, name, fileName, textureSize = None):
     """
     Load an SVG drawing synchronously.

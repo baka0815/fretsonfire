@@ -840,7 +840,7 @@ class SongChooser(Layer, KeyListener):
 
         if isinstance(item, Song.SongInfo) and item.version:
           line += " - v%s" % (item.version)
-          
+
         #line = "%s %s.%s - %s" % (packname, setnum, songnum, item.name)
         pos = wrapText(font, (x, y), line, visibility = f, scale = 0.0016)
 
@@ -849,6 +849,10 @@ class SongChooser(Layer, KeyListener):
           pos = wrapText(font, (x, pos[1] + font.getHeight() * 0.0016), item.artist, visibility = f, scale = 0.0016)
 
           text = ""
+
+          if isinstance(item, Song.SongInfo) and item.comments:
+            text += "%s " % (item.comments)
+            
           if item.count:
             Theme.setSelectedColor(1 - v)
             count = int(item.count)

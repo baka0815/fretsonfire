@@ -71,12 +71,11 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     for i, player in enumerate(self.playerList):
       print player.part
       if player.part == Part.DRUM_PART:
-        print "Drum!"
-        self.guitars.append(Drum(self.engine,False,i))
+        self.guitars.append(Drum(self.engine, False, i))
       else:
-        self.guitars.append(Guitar(self.engine,False,i))
+        self.guitars.append(Guitar(self.engine, False, i))
     
-    #self.guitars          = [Guitar(self.engine,False,i) for i, player in enumerate(self.playerList)]
+
     
     self.visibility       = 0.0
     self.libraryName      = libraryName
@@ -116,9 +115,51 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.boardSpeedDiff1  = self.boardSpeedDiff0             #medium = 1   -> 1.4
     self.boardSpeedDiff2  = 1.0 * self.boardSpeedDiff0 /1.4  #easy = 2     -> 1.0 = 128.57 bpm
     self.boardSpeedDiff3  = self.boardSpeedDiff2             #supaeasy = 3 -> 1.0
-    
-    #new
-    
+
+    #failing
+    self.failingDifficulty = self.engine.config.get("failing", "difficulty")
+    self.failingDifficulty = 1
+    if self.failingDifficulty == 1:
+      self.rockDrop         = 16
+      self.rockGain         = 4
+      self.rockMultiply     = True
+      self.rockJGain        = 12
+      self.rockJMax         = 20
+      self.rockJMultiplier  = 5
+      self.rockMax          = 1000
+    elif self.failingDifficulty == 2:
+      self.rockDrop         = 32
+      self.rockGain         = 3
+      self.rockMultiply     = True
+      self.rockJGain        = 12
+      self.rockJMax         = 20
+      self.rockJMultiplier  = 4
+      self.rockMax          = 1000
+    elif self.failingDifficulty == 3:
+      self.rockDrop         = 48
+      self.rockGain         = 2
+      self.rockMultiply     = True
+      self.rockJGain        = 12
+      self.rockJMax         = 20
+      self.rockJMultiplier  = 4
+      self.rockMax          = 1000
+    elif self.failingDifficulty == 4:
+      self.rockDrop         = self.engine.config.get("failing", "drop")
+      self.rockGain         = self.engine.config.get("failing", "gain")
+      self.rockMultiply     = self.engine.config.get("failing", "multiply")
+      self.rockJGain        = self.engine.config.get("failing", "jgain")
+      self.rockJMax         = self.engine.config.get("failing", "jmax")
+      self.rockJMultiplier  = self.engine.config.get("failing", "jmultiplier")
+      self.rockMax          = self.engine.config.get("failing", "maximum")
+
+    self.startPosition    = 0      
+    self.failingEnabled   = self.engine.config.get("failing", "failing")
+    self.drawFailing      = self.engine.config.get("failing", "drawfailing")
+    self.jurgenEnabled    = self.engine.config.get("failing", "jurgen")
+    self.arrowRotation    = .5
+    self.failed           = False
+    self.vsMode = True
+      
     self.loadSettings()
     self.engine.resource.load(self, "song",          lambda: loadSong(self.engine, songName, library = libraryName, part = [player.part for player in self.playerList]), onLoad = self.songLoaded)
       
@@ -127,8 +168,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.engine.loadSvgDrawing(self, "fx2x",   "2x.svg", textureSize = (256, 256))
     self.engine.loadSvgDrawing(self, "fx3x",   "3x.svg", textureSize = (256, 256))
     self.engine.loadSvgDrawing(self, "fx4x",   "4x.svg", textureSize = (256, 256))
-
-    #new
 
     phrase = random.choice(Theme.loadingPhrase.split(","))
     if phrase == "None":
@@ -208,7 +247,8 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
     if len(self.playerList) == 1:
       #De-emphasize non played part
-      self.rhythmVolume *= 0.6
+      #self.rhythmVolume *= 0.6
+      pass
       
     for i,guitar in enumerate(self.guitars):
       guitar.leftyMode = self.engine.config.get("player%d" % (i), "leftymode")
@@ -240,6 +280,14 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     if self.song:
       self.song.stop()
     self.done = True
+#failing
+    for guitar in self.guitars:
+      guitar.rockMeter        = self.rockMax / 2
+      guitar.jurgenPower = 0
+      guitar.jurgenStarted = False
+      guitar.jurgenMultiplier = 1
+      guitar.jurgenTimeLeft = 0
+
     self.engine.view.popLayer(self.menu)
     self.freeResources()
     self.session.world.finishGame()
@@ -248,6 +296,13 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     if self.song:
       self.song.stop()
       self.song  = None
+#failing
+    for guitar in self.guitars:
+      guitar.rockMeter        = self.rockMax / 2
+      guitar.jurgenPower = 0
+      guitar.jurgenStarted = False
+      guitar.jurgenMultiplier = 1
+      guitar.jurgenTimeLeft = 0      
     self.engine.view.popLayer(self.menu)
     self.session.world.deleteScene(self)
     self.session.world.createScene("SongChoosingScene")
@@ -264,6 +319,13 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       guitar.twoChord = 0
       guitar.hopoActive = False
       guitar.hopoLast = -1
+#failing
+    for guitar in self.guitars:
+      guitar.rockMeter        = self.rockMax / 2
+      guitar.jurgenPower = 0
+      guitar.jurgenStarted = False
+      guitar.jurgenMultiplier = 1
+      guitar.jurgenTimeLeft = 0      
       
     if self.partyMode == True:
       self.guitars[0].keys = PLAYER1KEYS
@@ -296,6 +358,44 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.lastEvent = round(self.lastEvent / 1000) * 1000
       self.notesCum = 0
       self.noteLastTime = 0
+
+  def fail(self, pos, num):
+     #self.percentFinished = ((self.startPosition - pos ) *100 / self.startPosition)
+     if len(self.guitars) == 1 or not self.vsMode:
+        self.goToResults(failed = True)
+     else:
+        self.goToResults(failed = True, winner = abs(num-1))
+
+  def failRockDrop(self, guitar):
+    pos = self.getSongPosition()
+    removeFromRock = self.rockDrop / guitar.jurgenMultiplier    
+    for i, guitar2 in enumerate(self.guitars):
+      if self.vsMode and guitar != guitar2:
+        continue
+      guitar2.rockMeter -= removeFromRock
+      if guitar2.rockMeter < 1:
+        guitar2.rockMeter = 1
+        if self.failingEnabled and not self.song.info.tutorial and not self.failed:
+          self.failed = True
+          self.fail(pos, i)
+    self.stage.triggerRock(guitar2.rockMeter / float(self.rockMax))
+    return self.failed
+
+  def failRockGain(self, guitar):
+    addToRock = self.rockGain * guitar.jurgenMultiplier
+    if self.rockMultiply:
+      addToRock = addToRock * self.player.getScoreMultiplier()
+    for i, guitar2 in enumerate(self.guitars):
+      if self.vsMode and guitar != guitar2:
+        continue
+      guitar2.rockMeter += addToRock
+      if guitar2.rockMeter > self.rockMax:
+        guitar2.rockMeter = self.rockMax
+          
+      guitar2.jurgenPower += 1.0 / self.rockJGain
+      if guitar2.jurgenPower > self.rockJMax:
+        guitar2.jurgenPower = self.rockJMax
+    self.stage.triggerRock(guitar2.rockMeter / float(self.rockMax))
         
   def run(self, ticks):
     SceneClient.run(self, ticks)
@@ -308,7 +408,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
       if self.countdown <= 0 and not self.song.isPlaying() and not self.done:
         #A held note at the end of a song may not get the score added.  Just do one last attempt
-        for i,guitar in enumerate(self.guitars):
+        for i, guitar in enumerate(self.guitars):
           score = self.getExtraScoreForCurrentlyPlayedNotes(i)
           self.players[i].addScore(score)
         self.goToResults()
@@ -379,6 +479,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         self.song.setInstrumentVolume(0.0, self.players[i].part)
         if not guitar.playedNotes:
           guitar.hopoActive = False
+#failing
+          if(self.failRockDrop(guitar)):
+             break
+            
       # late pick
       if self.keyBurstTimeout[i] is not None and self.engine.timer.time > self.keyBurstTimeout[i]:
         self.keyBurstTimeout[i] = None
@@ -392,7 +496,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             self.doPick3(i)
           else:
             self.doPick(i)
-
+          
   def endPick(self, num):
     score = self.getExtraScoreForCurrentlyPlayedNotes(num)
     if not self.guitars[num].endPick(self.song.getPosition()):
@@ -445,6 +549,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.playerList[num].notesHit += len(self.guitars[num].playedNotes)
       self.playerList[num].addScore(len(self.guitars[num].playedNotes) * 50)
       self.stage.triggerPick(pos, [n[1].number for n in self.guitars[num].playedNotes])
+      self.failRockGain(self.guitars[num])
       if self.playerList[num].streak % 10 == 0:
         self.lastMultTime[num] = pos
         self.guitars[num].setMultiplier(self.playerList[num].getScoreMultiplier())
@@ -453,6 +558,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.playerList[num].streak = 0
       self.guitars[num].setMultiplier(1)
       self.stage.triggerMiss(pos)
+      self.failRockDrop(self.guitars[num])
       if self.playerList[num].part == Part.BASS_PART:
         self.sfxChannel.play(self.engine.data.screwUpSoundBass)
       else:
@@ -495,6 +601,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.playerList[num].notesHit += len(self.guitars[num].playedNotes)
       self.stage.triggerPick(pos, [n[1].number for n in self.guitars[num].playedNotes])    
       self.players[num].addScore(len(self.guitars[num].playedNotes) * 50)
+      self.failRockGain(self.guitars[num])
       if self.players[num].streak % 10 == 0:
         self.lastMultTime[num] = self.getSongPosition()
         self.guitars[num].setMultiplier(self.playerList[num].getScoreMultiplier())
@@ -505,6 +612,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.playerList[num].streak = 0
       self.guitars[num].setMultiplier(1)
       self.stage.triggerMiss(pos)
+      self.failRockDrop(self.guitars[num])      
 
       if self.engine.data.screwUpSounds and self.screwUpVolume > 0.0:
         self.sfxChannel.setVolume(self.screwUpVolume)
@@ -551,6 +659,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.playerList[num].notesHit += len(self.guitars[num].playedNotes)
       self.stage.triggerPick(pos, [n[1].number for n in self.guitars[num].playedNotes])    
       self.players[num].addScore(len(self.guitars[num].playedNotes) * 50)
+      self.failRockGain(self.guitars[num])      
       if self.players[num].streak % 10 == 0:
         self.lastMultTime[num] = self.getSongPosition()
         self.guitars[num].setMultiplier(self.playerList[num].getScoreMultiplier())
@@ -561,6 +670,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.playerList[num].streak = 0
       self.guitars[num].setMultiplier(1)
       self.stage.triggerMiss(pos)
+      self.failRockDrop(self.guitars[num])
 
       if self.engine.data.screwUpSounds and self.screwUpVolume > 0.0:
         self.sfxChannel.setVolume(self.screwUpVolume)
@@ -573,19 +683,26 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.autoPlay = not self.autoPlay
     if self.autoPlay:
       Dialogs.showMessage(self.engine, _("Jurgen will show you how it is done."))
+      self.failingEnabled = False
     else:
       Dialogs.showMessage(self.engine, _("Jurgen has left the building."))
+      self.failingEnabled = self.engine.config.get("failing", "failing")
     return self.autoPlay
 
   def goToResults(self):
     self.ending = True
     if self.song:
       self.song.stop()
-      self.done  = True
+      self.done  = True       
       self.session.world.deleteScene(self)
       self.freeResources()
-      for i,guitar in enumerate(self.guitars):
+      for i, guitar in enumerate(self.guitars):
         self.playerList[i].twoChord = guitar.twoChord
+        guitar.rockMeter = self.rockMax / 2
+        guitar.jurgenPower = 0
+        guitar.jurgenStarted = False
+        guitar.jurgenMultiplier = 1
+        guitar.jurgenTimeLeft = 0
       self.session.world.createScene("GameResultsScene", libraryName = self.libraryName, songName = self.songName, players = self.playerList)
 
   def keyPressed(self, key, unicode, control = None):
@@ -857,6 +974,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     
     font    = self.engine.data.font
     bigFont = self.engine.data.bigFont
+#    meterfont = self.engine.data.meterfont
       
     self.visibility = v = 1.0 - ((1 - visibility) ** 2)
 
@@ -950,6 +1068,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         else:
           font.render("%d" % (player.score + self.getExtraScoreForCurrentlyPlayedNotes(i)),  (.61, y))
           font.render("%dx" % player.getScoreMultiplier(), (.61, y + h))
+          font.render("%d" % self.guitars[i].rockMeter, (.03, y + h + h))
           
         
         # show the streak counter and miss message

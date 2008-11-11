@@ -1,3 +1,15 @@
+4.17
+   Redid difficulty and parts code
+   Redid song selection code
+   Rewrote tracks code
+   Rewrote frets code
+   Rewrote note code
+   Rewrote flame code
+   Added drum rendering code
+   Added drum track reading
+   Added drum no strum
+
+
 4.16
    Parsing of pack,set,song tags for packs.
    Displaying of pack, set, song tags
@@ -12,9 +24,6 @@
    Boardspeed based upon difficulty
    Themable multiplier colors
    Disable multiplier flash toggle
-
-
-
 
 4.15
    Fixed color of bars bug

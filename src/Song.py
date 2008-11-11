@@ -35,63 +35,12 @@ import urllib
 import Version
 import Theme
 import copy
+import Part
+import Difficulty
+
 from Language import _
 
-DEFAULT_LIBRARY         = "songs"
-
-AMAZING_DIFFICULTY      = 0
-MEDIUM_DIFFICULTY       = 1
-EASY_DIFFICULTY         = 2
-SUPAEASY_DIFFICULTY     = 3
-
-FOF_TYPE                = 0
-GH1_TYPE                = 1
-GH2_TYPE                = 2
-
-GUITAR_PART             = 0
-RHYTHM_PART             = 1
-BASS_PART               = 2
-LEAD_PART               = 3
-DRUM_PART               = 4
-VOCAL_PART              = 5
-
-class Part:
-  def __init__(self, id, text):
-    self.id   = id
-    self.text = text
-    
-  def __str__(self):
-    return self.text
-
-  def __repr__(self):
-    return self.text
-
-parts = {
-  GUITAR_PART: Part(GUITAR_PART, _("Guitar")),
-  RHYTHM_PART: Part(RHYTHM_PART, _("Rhythm Guitar")),
-  BASS_PART:   Part(BASS_PART,   _("Bass Guitar")),
-  LEAD_PART:   Part(LEAD_PART,   _("Lead Guitar")),
-  DRUM_PART:   Part(DRUM_PART,   _("Drums")),
-  VOCAL_PART:  Part(VOCAL_PART,  _("Vocals")),
-}
-
-class Difficulty:
-  def __init__(self, id, text):
-    self.id   = id
-    self.text = text
-    
-  def __str__(self):
-    return self.text
-
-  def __repr__(self):
-    return self.text
-
-difficulties = {
-  SUPAEASY_DIFFICULTY: Difficulty(SUPAEASY_DIFFICULTY, _("Supaeasy")),
-  EASY_DIFFICULTY:     Difficulty(EASY_DIFFICULTY,     _("Easy")),
-  MEDIUM_DIFFICULTY:   Difficulty(MEDIUM_DIFFICULTY,   _("Medium")),
-  AMAZING_DIFFICULTY:  Difficulty(AMAZING_DIFFICULTY,  _("Amazing")),
-}
+DEFAULT_LIBRARY        = "songs"
 
 class SongInfo(object):
   def __init__(self, infoFileName):
@@ -126,25 +75,21 @@ class SongInfo(object):
       if scores_ext:
         scores_ext = Cerealizer.loads(binascii.unhexlify(scores_ext))
       for difficulty in scores.keys():
-        try:
-          difficulty = difficulties[difficulty]
-        except KeyError:
-          continue
-        for i, base_scores in enumerate(scores[difficulty.id]):
+        for i, base_scores in enumerate(scores[difficulty]):
           score, stars, name, hash = base_scores
           if scores_ext != "":
             #Someone may have mixed extended and non extended
             try:
-              hash_ext, stars2, notesHit, notesTotal, noteStreak, modVersion, modOptions1, modOptions2 =  scores_ext[difficulty.id][i]
+              hash_ext, stars2, notesHit, notesTotal, noteStreak, modVersion, modOptions1, modOptions2 =  scores_ext[difficulty][i]
               scoreExt = (notesHit, notesTotal, noteStreak, modVersion, modOptions1, modOptions2)
             except:
               hash_ext = 0
               scoreExt = (0, 0, 0 , "RF-mod", "Default", "Default")
           if self.getScoreHash(difficulty, score, stars, name) == hash:
             if scores_ext != "" and hash == hash_ext:
-              self.addHighscore(difficulty, score, stars, name, part = parts[GUITAR_PART], scoreExt = scoreExt)
+              self.addHighscore(difficulty, score, stars, name, part = Part.GUITAR_PART, scoreExt = scoreExt)
             else:
-              self.addHighscore(difficulty, score, stars, name, part = parts[GUITAR_PART])
+              self.addHighscore(difficulty, score, stars, name, part = Part.GUITAR_PART)
           else:
             Log.warn("Weak hack attempt detected. Better luck next time.")
 
@@ -154,13 +99,9 @@ class SongInfo(object):
     if scores:
       scores = Cerealizer.loads(binascii.unhexlify(scores))
       for difficulty in scores.keys():
-        try:
-          difficulty = difficulties[difficulty]
-        except KeyError:
-          continue
-        for score, stars, name, hash in scores[difficulty.id]:
+        for score, stars, name, hash in scores[difficulty]:
           if self.getScoreHash(difficulty, score, stars, name) == hash:
-            self.addHighscore(difficulty, score, stars, name, part = parts[RHYTHM_PART])
+            self.addHighscore(difficulty, score, stars, name, part = Part.RHYTHM_PART)
           else:
             Log.warn("Weak hack attempt detected. Better luck next time.")
 
@@ -170,13 +111,9 @@ class SongInfo(object):
     if scores:
       scores = Cerealizer.loads(binascii.unhexlify(scores))
       for difficulty in scores.keys():
-        try:
-          difficulty = difficulties[difficulty]
-        except KeyError:
-          continue
-        for score, stars, name, hash in scores[difficulty.id]:
+        for score, stars, name, hash in scores[difficulty]:
           if self.getScoreHash(difficulty, score, stars, name) == hash:
-            self.addHighscore(difficulty, score, stars, name, part = parts[BASS_PART])
+            self.addHighscore(difficulty, score, stars, name, part = Part.BASS_PART)
           else:
             Log.warn("Weak hack attempt detected. Better luck next time.")
 
@@ -186,13 +123,9 @@ class SongInfo(object):
     if scores:
       scores = Cerealizer.loads(binascii.unhexlify(scores))
       for difficulty in scores.keys():
-        try:
-          difficulty = difficulties[difficulty]
-        except KeyError:
-          continue
-        for score, stars, name, hash in scores[difficulty.id]:
+        for score, stars, name, hash in scores[difficulty]:
           if self.getScoreHash(difficulty, score, stars, name) == hash:
-            self.addHighscore(difficulty, score, stars, name, part = parts[LEAD_PART])
+            self.addHighscore(difficulty, score, stars, name, part = Part.LEAD_PART)
           else:
             Log.warn("Weak hack attempt detected. Better luck next time.")            
 
@@ -202,13 +135,9 @@ class SongInfo(object):
     if scores:
       scores = Cerealizer.loads(binascii.unhexlify(scores))
       for difficulty in scores.keys():
-        try:
-          difficulty = difficulties[difficulty]
-        except KeyError:
-          continue
-        for score, stars, name, hash in scores[difficulty.id]:
+        for score, stars, name, hash in scores[difficulty]:
           if self.getScoreHash(difficulty, score, stars, name) == hash:
-            self.addHighscore(difficulty, score, stars, name, part = parts[DRUM_PART])
+            self.addHighscore(difficulty, score, stars, name, part = Part.DRUM_PART)
           else:
             Log.warn("Weak hack attempt detected. Better luck next time.")
             
@@ -221,60 +150,65 @@ class SongInfo(object):
       value = str(value)
     self.info.set("song", attr, value)
     
-  def getObfuscatedScores(self, part = parts[GUITAR_PART]):
+  def getObfuscatedScores(self, part = Part.GUITAR_PART):
     s = {}
-    if part == parts[GUITAR_PART]:
+    if part == Part.GUITAR_PART:
       highScores = self.highScores
-    elif part == parts[RHYTHM_PART]:
+    elif part == Part.RHYTHM_PART:
       highScores = self.highScoresRhythm
-    elif part == parts[BASS_PART]:
+    elif part == Part.BASS_PART:
       highScores = self.highScoresBass
-    elif part == parts[LEAD_PART]:
+    elif part == Part.LEAD_PART:
       highScores = self.highScoresLead
-    elif part == parts[DRUM_PART]:
+    elif part == Part.DRUM_PART:
       highScores = self.highScoresDrum
     else:
       highScores = self.highScores
       
     for difficulty in highScores.keys():
-      s[difficulty.id] = [(score, stars, name, self.getScoreHash(difficulty, score, stars, name)) for score, stars, name, scores_ext in highScores[difficulty]]
+      s[difficulty] = [(score, stars, name, self.getScoreHash(difficulty, score, stars, name)) for score, stars, name, scores_ext in highScores[difficulty]]
     return binascii.hexlify(Cerealizer.dumps(s))
 
-  def getObfuscatedScoresExt(self, part = parts[GUITAR_PART]):
+  def getObfuscatedScoresExt(self, part = Part.GUITAR_PART):
     s = {}
-    if part == parts[GUITAR_PART]:
+    if part == Part.GUITAR_PART:
       highScores = self.highScores
-    elif part == parts[RHYTHM_PART]:
+    elif part == Part.RHYTHM_PART:
       highScores = self.highScoresRhythm
-    elif part == parts[BASS_PART]:
+    elif part == Part.BASS_PART:
       highScores = self.highScoresBass
-    elif part == parts[LEAD_PART]:
+    elif part == Part.LEAD_PART:
       highScores = self.highScoresLead
-    elif part == parts[DRUM_PART]:
+    elif part == Part.DRUM_PART:
       highScores = self.highScoresDrum
     else:
       highScores = self.highScores
       
     for difficulty in highScores.keys():
-      s[difficulty.id] = [(self.getScoreHash(difficulty, score, stars, name), stars) + scores_ext for score, stars, name, scores_ext in highScores[difficulty]]
+      s[difficulty] = [(self.getScoreHash(difficulty, score, stars, name), stars) + scores_ext for score, stars, name, scores_ext in highScores[difficulty]]
     return binascii.hexlify(Cerealizer.dumps(s))
 
   def save(self):
     if self.highScores != {}:
-      self._set("scores",        self.getObfuscatedScores(part = parts[GUITAR_PART]))
-      self._set("scores_ext",    self.getObfuscatedScoresExt(part = parts[GUITAR_PART]))
+      myPart = Part.GUITAR_PART
+      self._set("scores",        self.getObfuscatedScores(part = myPart))
+      self._set("scores_ext",    self.getObfuscatedScoresExt(part = myPart))
     if self.highScoresRhythm != {}:
-      self._set("scores_rhythm", self.getObfuscatedScores(part = parts[RHYTHM_PART]))
-      self._set("scores_rhythm_ext", self.getObfuscatedScoresExt(part = parts[RHYTHM_PART]))
+      myPart = Part.RHYTHM_PART
+      self._set("scores_rhythm", self.getObfuscatedScores(part = myPart))
+      self._set("scores_rhythm_ext", self.getObfuscatedScoresExt(part = myPart))
     if self.highScoresBass != {}:
-      self._set("scores_bass",   self.getObfuscatedScores(part = parts[BASS_PART]))
-      self._set("scores_bass_ext",   self.getObfuscatedScoresExt(part = parts[BASS_PART]))
+      myPart = Part.BASS_PART
+      self._set("scores_bass",   self.getObfuscatedScores(part = myPart))
+      self._set("scores_bass_ext",   self.getObfuscatedScoresExt(part = myPart))
     if self.highScoresLead != {}:
-      self._set("scores_lead",   self.getObfuscatedScores(part = parts[LEAD_PART]))
-      self._set("scores_lead_ext",   self.getObfuscatedScoresExt(part = parts[LEAD_PART]))
+      myPart = Part.LEAD_PART
+      self._set("scores_lead",   self.getObfuscatedScores(part = myPart))
+      self._set("scores_lead_ext",   self.getObfuscatedScoresExt(part = myPart))
     if self.highScoresDrum != {}:
-      self._set("scores_drum",   self.getObfuscatedScores(part = parts[DRUM_PART]))
-      self._set("scores_drum_ext",   self.getObfuscatedScoresExt(part = parts[DRUM_PART]))
+      myPart = Part.DRUM_PART
+      self._set("scores_drum",   self.getObfuscatedScores(part = myPart))
+      self._set("scores_drum_ext",   self.getObfuscatedScoresExt(part = myPart))
       
     f = open(self.fileName, "w")
     self.info.write(f)
@@ -319,7 +253,7 @@ class SongInfo(object):
 
     # Tutorials only have the medium difficulty
     if self.tutorial:
-      return [difficulties[MEDIUM_DIFFICULTY]]
+      return [Difficulty.MEDIUM_DIFFICULTY]
 
     if self._difficulties is not None:
       return self._difficulties
@@ -328,10 +262,7 @@ class SongInfo(object):
     cache_diffs = self._cacheget("cache_diffs")
     if cache_diffs is not "":
       diffNums = Cerealizer.loads(binascii.unhexlify(cache_diffs))
-      for diffNum in diffNums:
-        diff = difficulties[diffNum]
-        diffTemp.append(diff)
-      self._difficulties = diffTemp
+      self._difficulties = diffNums
       return self._difficulties
 
     # Otherwise do it the hard way
@@ -346,24 +277,19 @@ class SongInfo(object):
         pass
 
       #info reader now will get both difficulties and parts
-      info.difficulties.sort(lambda a, b: cmp(a.id, b.id))
+      info.difficulties.sort()
       self._difficulties = info.difficulties
-      info.parts.sort(lambda b, a: cmp(b.id, a.id))
+      info.parts.sort()
       self._parts = info.parts
     except:
-      info.difficulties.sort(lambda a, b: cmp(b.id, a.id))
+      info.difficulties.sort()
       self._difficulties = info.difficulties
-      info.parts.sort(lambda b, a: cmp(a.id, b.id))
+      info.parts.sort()
       self._parts = info.parts
 
-    for diff in info.difficulties:
-      diffNum.append(diff.id)
-    for part in info.parts:
-      partNum.append(part.id)
-
     #Save values in song.ini cache
-    self._cacheset("cache_diffs", binascii.hexlify(Cerealizer.dumps(diffNum)))
-    self._cacheset("cache_parts", binascii.hexlify(Cerealizer.dumps(partNum)))
+    self._cacheset("cache_diffs", binascii.hexlify(Cerealizer.dumps(info.difficulties)))
+    self._cacheset("cache_parts", binascii.hexlify(Cerealizer.dumps(info.parts)))
     self.cachesave()
     return self._difficulties
 
@@ -376,10 +302,8 @@ class SongInfo(object):
     cache_parts = self._cacheget("cache_parts")
     if cache_parts is not "":
       partNums = Cerealizer.loads(binascii.unhexlify(cache_parts))
-      for partNum in partNums:
-        part = parts[partNum]
-        partTemp.append(part)
-      self._parts = partTemp
+
+      self._parts = partNums
       return self._parts
     
     # See which parts are available
@@ -393,9 +317,9 @@ class SongInfo(object):
       except MidiPartsReader.Done:
         pass
       if info.parts == []:
-        part = parts[GUITAR_PART]
+        part = Part.GUITAR_PART
         info.parts.append(part)
-      info.parts.sort(lambda b, a: cmp(b.id, a.id))
+      info.parts.sort()
       self._parts = info.parts
     except:
       self._parts = parts.values()
@@ -434,7 +358,7 @@ class SongInfo(object):
     self._set("artist", value)
     
   def getScoreHash(self, difficulty, score, stars, name):
-    return sha.sha("%d%d%d%s" % (difficulty.id, score, stars, name)).hexdigest()
+    return sha.sha("%d%d%d%s" % (difficulty, score, stars, name)).hexdigest()
     
   def getDelay(self):
     return self._get("delay", int, 0)
@@ -484,16 +408,16 @@ class SongInfo(object):
   def setLyrics(self, value):
     self._set("lyrics", value)    
         
-  def getHighscores(self, difficulty, part = parts[GUITAR_PART]):
-    if part == parts[GUITAR_PART]:
+  def getHighscores(self, difficulty, part = Part.parts[Part.GUITAR_PART]):
+    if part == Part.parts[Part.GUITAR_PART]:
       highScores = self.highScores
-    elif part == parts[RHYTHM_PART]:
+    elif part == Part.parts[Part.RHYTHM_PART]:
       highScores = self.highScoresRhythm
-    elif part == parts[BASS_PART]:
+    elif part == Part.parts[Part.BASS_PART]:
       highScores = self.highScoresBass
-    elif part == parts[LEAD_PART]:
+    elif part == Part.parts[Part.LEAD_PART]:
       highScores = self.highScoresLead
-    elif part == parts[DRUM_PART]:
+    elif part == Part.parts[Part.DRUM_PART]:
       highScores = self.highScoresDrum
     else:
       highScores = self.highScores
@@ -503,7 +427,7 @@ class SongInfo(object):
     except KeyError:
       return []
       
-  def uploadHighscores(self, url, songHash, part = parts[GUITAR_PART]):
+  def uploadHighscores(self, url, songHash, part = Part.parts[Part.GUITAR_PART]):
     try:
       d = {
         "songName": self.songName,
@@ -521,16 +445,16 @@ class SongInfo(object):
       return False
     return True
   
-  def addHighscore(self, difficulty, score, stars, name, part = parts[GUITAR_PART], scoreExt = (0, 0, 0, "RF-mod", "Default", "Default")):
-    if part == parts[GUITAR_PART]:
+  def addHighscore(self, difficulty, score, stars, name, part = Part.parts[Part.GUITAR_PART], scoreExt = (0, 0, 0, "RF-mod", "Default", "Default")):
+    if part == Part.parts[Part.GUITAR_PART]:
       highScores = self.highScores
-    elif part == parts[RHYTHM_PART]:
+    elif part == Part.parts[Part.RHYTHM_PART]:
       highScores = self.highScoresRhythm
-    elif part == parts[BASS_PART]:
+    elif part == Part.parts[Part.BASS_PART]:
       highScores = self.highScoresBass
-    elif part == parts[LEAD_PART]:
+    elif part == Part.parts[Part.LEAD_PART]:
       highScores = self.highScoresLead
-    elif part == parts[DRUM_PART]:
+    elif part == Part.parts[Part.DRUM_PART]:
       highScores = self.highScoresDrum
     else:
       highScores = self.highScores
@@ -1111,17 +1035,17 @@ class Bars(Event):
     return "<#%d>" % self.barType
   
 class Song(object):
-  def __init__(self, engine, infoFileName, songTrackName, guitarTrackName, rhythmTrackName, noteFileName, scriptFileName = None, partlist = [parts[GUITAR_PART]]):
+  def __init__(self, engine, infoFileName, songTrackName, guitarTrackName, rhythmTrackName, noteFileName, scriptFileName = None, part = [Part.GUITAR_PART]):
     self.engine        = engine
     self.info         = SongInfo(infoFileName)
-    self.tracks       = [[Track() for t in range(len(difficulties))] for i in range(len(partlist))]
-    self.difficulty   = [difficulties[AMAZING_DIFFICULTY] for i in partlist]
+    self.tracks       = [[Track() for t in range(len(Difficulty.difficulties))] for i in range(len(part))]
+    self.difficulty   = [Difficulty.AMAZING_DIFFICULTY for i in part]
     self._playing     = False
     self.start        = 0.0
     self.noteFileName = noteFileName
     self.bpm          = None
     self.period       = 0
-    self.parts        = partlist
+    self.parts        = part
     self.delay        = self.engine.config.get("audio", "delay")
     self.delay        += self.info.delay
     self.missVolume   = self.engine.config.get("audio", "miss_volume")
@@ -1216,7 +1140,7 @@ class Song(object):
     self.engine.audio.unpause()
 
   def setInstrumentVolume(self, volume, part):
-    if part == parts[GUITAR_PART]:
+    if part == Part.GUITAR_PART:
       self.setGuitarVolume(volume)
     else:
       self.setRhythmVolume(volume)
@@ -1291,31 +1215,31 @@ class Song(object):
     pass
 
   def getTrack(self):
-    return [self.tracks[i][self.difficulty[i].id] for i in range(len(self.difficulty))]
+    return [self.tracks[i][self.difficulty[i]] for i in range(len(self.difficulty))]
 
   track = property(getTrack)
 
 noteMap = {     # difficulty, note
-  0x60: (AMAZING_DIFFICULTY,  0),
-  0x61: (AMAZING_DIFFICULTY,  1),
-  0x62: (AMAZING_DIFFICULTY,  2),
-  0x63: (AMAZING_DIFFICULTY,  3),
-  0x64: (AMAZING_DIFFICULTY,  4),
-  0x54: (MEDIUM_DIFFICULTY,   0),
-  0x55: (MEDIUM_DIFFICULTY,   1),
-  0x56: (MEDIUM_DIFFICULTY,   2),
-  0x57: (MEDIUM_DIFFICULTY,   3),
-  0x58: (MEDIUM_DIFFICULTY,   4),
-  0x48: (EASY_DIFFICULTY,     0),
-  0x49: (EASY_DIFFICULTY,     1),
-  0x4a: (EASY_DIFFICULTY,     2),
-  0x4b: (EASY_DIFFICULTY,     3),
-  0x4c: (EASY_DIFFICULTY,     4),
-  0x3c: (SUPAEASY_DIFFICULTY, 0),
-  0x3d: (SUPAEASY_DIFFICULTY, 1),
-  0x3e: (SUPAEASY_DIFFICULTY, 2),
-  0x3f: (SUPAEASY_DIFFICULTY, 3),
-  0x40: (SUPAEASY_DIFFICULTY, 4),
+  0x60: (Difficulty.AMAZING_DIFFICULTY,  0),
+  0x61: (Difficulty.AMAZING_DIFFICULTY,  1),
+  0x62: (Difficulty.AMAZING_DIFFICULTY,  2),
+  0x63: (Difficulty.AMAZING_DIFFICULTY,  3),
+  0x64: (Difficulty.AMAZING_DIFFICULTY,  4),
+  0x54: (Difficulty.MEDIUM_DIFFICULTY,   0),
+  0x55: (Difficulty.MEDIUM_DIFFICULTY,   1),
+  0x56: (Difficulty.MEDIUM_DIFFICULTY,   2),
+  0x57: (Difficulty.MEDIUM_DIFFICULTY,   3),
+  0x58: (Difficulty.MEDIUM_DIFFICULTY,   4),
+  0x48: (Difficulty.EASY_DIFFICULTY,     0),
+  0x49: (Difficulty.EASY_DIFFICULTY,     1),
+  0x4a: (Difficulty.EASY_DIFFICULTY,     2),
+  0x4b: (Difficulty.EASY_DIFFICULTY,     3),
+  0x4c: (Difficulty.EASY_DIFFICULTY,     4),
+  0x3c: (Difficulty.SUPAEASY_DIFFICULTY, 0),
+  0x3d: (Difficulty.SUPAEASY_DIFFICULTY, 1),
+  0x3e: (Difficulty.SUPAEASY_DIFFICULTY, 2),
+  0x3f: (Difficulty.SUPAEASY_DIFFICULTY, 3),
+  0x40: (Difficulty.SUPAEASY_DIFFICULTY, 4),
 }
 
 reverseNoteMap = dict([(v, k) for k, v in noteMap.items()])
@@ -1471,19 +1395,19 @@ class MidiReader(midi.MidiOutStream):
     #if self.get_current_track() == 0:
     self.partnumber = None
       
-    if (text == "PART GUITAR" or text == "T1 GEMS" or text == "Click" or text == "MIDI out") and parts[GUITAR_PART] in self.song.parts:
-      self.partnumber = parts[GUITAR_PART]
-    elif text == "PART RHYTHM" and parts[RHYTHM_PART] in self.song.parts:
-      self.partnumber = parts[RHYTHM_PART]
-    elif text == "PART BASS" and parts[BASS_PART] in self.song.parts:
-      self.partnumber = parts[BASS_PART]
-    elif text == "PART GUITAR COOP" and parts[LEAD_PART] in self.song.parts:
-      self.partnumber = parts[LEAD_PART]
-    elif text == "PART DRUM" and parts[DRUM_PART] in self.song.parts:
-      self.partnumber = parts[DRUM_PART]
-    elif self.get_current_track() <= 1 and parts [GUITAR_PART] in self.song.parts:
+    if (text == "PART GUITAR" or text == "T1 GEMS" or text == "Click" or text == "MIDI out") and Part.GUITAR_PART in self.song.parts:
+      self.partnumber = Part.GUITAR_PART
+    elif text == "PART RHYTHM" and Part.RHYTHM_PART in self.song.parts:
+      self.partnumber = Part.RHYTHM_PART
+    elif text == "PART BASS" and Part.BASS_PART in self.song.parts:
+      self.partnumber = Part.BASS_PART
+    elif text == "PART GUITAR COOP" and Part.LEAD_PART in self.song.parts:
+      self.partnumber = Part.LEAD_PART
+    elif text == "PART DRUM" and Part.DRUM_PART in self.song.parts:
+      self.partnumber = Part.DRUM_PART
+    elif self.get_current_track() <= 1 and Part.GUITAR_PART in self.song.parts:
       #Oh dear, the track wasn't recognised, lets just assume it was the guitar part
-      self.partnumber = parts[GUITAR_PART]
+      self.partnumber = Part.GUITAR_PART
       
   def note_on(self, channel, note, velocity):
     if self.partnumber == None:
@@ -1518,12 +1442,12 @@ class MidiInfoReader(midi.MidiOutStream):
     self.diffTemp = []
     self.diffTemp2 = []
     self.parts = []
-    self.curPart = parts[GUITAR_PART]
+    self.curPart = Part.GUITAR_PART
     
   def note_on(self, channel, note, velocity):
     try:
-      track, number = noteMap[note]
-      diff = difficulties[track]
+      diff, number = noteMap[note]
+      #diff = Difficulty.difficulties[track]
 
       if not diff in self.diffTemp:
         self.diffTemp.append(diff)
@@ -1548,15 +1472,15 @@ class MidiInfoReader(midi.MidiOutStream):
 
     try:
       if text == "PART GUITAR" or text == "T1 GEMS" or text == "Click":
-        self.curPart = parts[GUITAR_PART]
+        self.curPart = Part.GUITAR_PART
       if text == "PART RHYTHM":
-        self.curPart = parts[RHYTHM_PART]    
+        self.curPart = Part.RHYTHM_PART  
       if text == "PART BASS":
-        self.curPart = parts[BASS_PART]
+        self.curPart = Part.BASS_PART
       if text == "PART GUITAR COOP":
-        self.curPart = parts[LEAD_PART]
+        self.curPart = Part.LEAD_PART
       if text == "PART DRUM":
-        self.curPart = parts[DRUM_PART]
+        self.curPart = Part.DRUM_PART
     except:
       pass
 
@@ -1569,33 +1493,32 @@ class MidiPartsReader(midi.MidiOutStream):
     self.parts = []
 
   def sequence_name(self, text):
-    print text
     if text == "PART GUITAR" or text == "T1 GEMS" or text == "Click":
-      if not parts[GUITAR_PART] in self.parts:
-        part = parts[GUITAR_PART]
+      if not Part.GUITAR_PART in self.parts:
+        part = Part.GUITAR_PART
         self.parts.append(part)
 
     if text == "PART RHYTHM":
-      if not parts[RHYTHM_PART] in self.parts:
-        part = parts[RHYTHM_PART]
+      if not Part.RHYTHM_PART in self.parts:
+        part = PartRHYTHM_PART
         self.parts.append(part)        
      
     if text == "PART BASS":
-      if not parts[BASS_PART] in self.parts:
-        part = parts[BASS_PART]
+      if not Part.BASS_PART in self.parts:
+        part = Part.BASS_PART
         self.parts.append(part)
 
     if text == "PART GUITAR COOP":
-      if not parts[LEAD_PART] in self.parts:
-        part = parts[LEAD_PART]
+      if not Part.LEAD_PART in self.parts:
+        part = Part.LEAD_PART
         self.parts.append(part)
 
     if text == "PART DRUM":
-      if not parts[DRUM_PART] in self.parts:
-        part = parts[DRUM_PART]
+      if not Part.DRUM_PART in self.parts:
+        part = Part.DRUM_PART
         self.parts.append(part)
         
-def loadSong(engine, name, library = DEFAULT_LIBRARY, seekable = False, playbackOnly = False, notesOnly = False, part = [parts[GUITAR_PART]]):
+def loadSong(engine, name, library = DEFAULT_LIBRARY, seekable = False, playbackOnly = False, notesOnly = False, part = [Part.GUITAR_PART]):
   #RF-mod (not needed?)
   #library = Config.get("game", "selected_library")
   guitarFile = engine.resource.fileName(library, name, "guitar.ogg")
@@ -1644,8 +1567,8 @@ def loadSong(engine, name, library = DEFAULT_LIBRARY, seekable = False, playback
     #Simply checking file size, no md5
     if songStat.st_size == guitarStat.st_size:
       guitarFile = None
-  
-  song       = Song(engine, infoFile, songFile, guitarFile, rhythmFile, noteFile, scriptFile, part)
+
+  song = Song(engine, infoFile, songFile, guitarFile, rhythmFile, noteFile, scriptFile, part)
   return song
 
 def loadSongInfo(engine, name, library = DEFAULT_LIBRARY):

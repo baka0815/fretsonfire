@@ -21,6 +21,151 @@
 #####################################################################
 
 from Guitar import Guitar
+from OpenGL.GL import *
+from Mesh import Mesh
+from Song import Note, Tempo
+import math
 
 class Drum(Guitar):
-  pass
+  def __init__(self, engine, editorMode = False, player = 0):
+    Guitar.__init__(self, engine, editorMode, player)
+    self.strings = 4
+    engine.resource.load(self,  "openNoteMesh", lambda: Mesh(engine.resource.fileName("opennote.dae")))
+    
+  def renderOpenNote(self, visibility, f, color):
+    if not self.openNoteMesh:
+      return
+
+    #mesh = Main Bar (color) 
+    #mesh_001 = Bar tips (white) 
+    #mesh_002 = top (spot or hopo if no mesh_003) 
+
+
+    glColor4f(*color)
+    
+    glPushMatrix()
+    glEnable(GL_DEPTH_TEST)
+    glDepthMask(1)
+    glShadeModel(GL_SMOOTH)
+
+    glRotatef(-90, 0, 1, 0)
+    glRotatef(-90, 1, 0, 0)
+    glTranslatef(0, 2.5, 0)
+    p = 1
+    #glColor3f(0.25 * p * color[0], 0.25 * p * color[1], 0.25 * p * color[2])
+    self.openNoteMesh.render("Mesh")
+    p = 1
+    glColor3f(1, 1, 1)
+    self.openNoteMesh.render("Mesh_001")
+    glColor3f(0.25 * p * color[0], 0.25 * p * color[1], 0.25 * p * color[2])
+    #self.openNoteMesh.render("Mesh_002")
+    
+    glDepthMask(0)
+    glPopMatrix()
+
+  def renderNoteBody(self, time, pos, visibility, event): 
+    beatsPerUnit = self.beatsPerBoard / self.boardLength
+    w = self.boardWidth / self.strings
+    c = self.fretColors[event.number]
+
+    x  = (self.strings / 2 - event.number) * w
+    x = ((self.strings - event.number) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w
+    z  = ((time - pos) / self.currentPeriod) / beatsPerUnit
+    z2 = ((time + event.length - pos) / self.currentPeriod) / beatsPerUnit
+
+    if z > self.boardLength * .8:
+      f = (self.boardLength - z) / (self.boardLength * .2)
+    elif z < 0:
+      f = min(1, max(0, 1 + z2))
+    else:
+      f = 1.0
+    
+    color      = (.1 + .8 * c[0], .1 + .8 * c[1], .1 + .8 * c[2], 1 * visibility * f)
+    length     = event.length / self.currentPeriod / beatsPerUnit
+    tailOnly   = False
+    colortail  = color
+    playedstart = False
+    playedcontinue = False
+    if event.tappable < 2:
+      isTappable = False
+    else:
+      isTappable = True
+
+    if event.number == 4:
+      glPushMatrix()
+      glTranslatef(x, (1.0 - visibility) ** (event.number + 1), z)
+      self.renderOpenNote(visibility, f, color)
+      glPopMatrix()
+      return
+    
+    # Clip the played notes to the origin
+    if event.played or event.hopod:
+      playedstart = True
+      tailOnly = True
+      length += z
+      z = 0
+      if length <= 0:
+        return -1
+    if z < 0 and not (event.played or event.hopod):   
+      colortail = (.2 + .4, .2 + .4, .2 + .4, .5 * visibility * f)
+    if z + length < -1.0:
+      return -1
+    sustain = False
+    if event.length > (1.4 * (60000.0 / event.noteBpm) / 4):
+      sustain = True
+
+    e = event.number
+    if playedstart == True:
+      for time, event in self.playedNotes:
+        if e == event.number:
+          playedcontinue = True        
+    
+    glPushMatrix()
+    glTranslatef(x, (1.0 - visibility) ** (e + 1), z)
+    self.renderNote2(visibility, f, length, sustain = sustain, color = color, colortail = colortail, tailOnly = tailOnly, playedstart = playedstart, playedcontinue = playedcontinue, isTappable = isTappable)
+    glPopMatrix()
+    return 1
+
+  def renderFlames(self, visibility, song, pos, controls):
+    if not song or self.flameColors[0][0][0] == -1:
+      return
+
+    track = song.track[self.player]
+    v = 1.0 - visibility
+
+    if self.disableFlameSFX == True:
+      for n in range(self.strings):   
+        #Spark
+        if self.fretActivity[n]:
+          self.renderFlameSpark(v, n)
+
+    #Burst
+    if self.disableFlameSFX != True:
+      flameLimit = self.flameLimit
+      flameLimitHalf = round(self.flameLimit / 2.0)
+
+      for time, event in track.getEvents(pos - self.currentPeriod * 2, pos + self.currentPeriod * self.beatsPerBoard):
+        if isinstance(event, Tempo):
+          continue
+        
+        if not isinstance(event, Note):
+          continue
+        
+        if (event.played or event.hopod) and event.flameCount < flameLimit:
+          glBlendFunc(GL_ONE, GL_ONE)
+                  
+          if event.flameCount < flameLimitHalf:
+            if event.number == 4:
+              for n in range(self.strings):
+                self.renderFlameBurst1(v, n, event.flameCount)
+            else:
+              self.renderFlameBurst1(v, event.number, event.flameCount)
+          else:
+            if event.number == 4:
+              for n in range(self.strings):
+                self.renderFlameBurst2(v, n, event.flameCount)
+            else:
+              self.renderFlameBurst2(v, event.number, event.flameCount)            
+         
+          glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+          event.flameCount += 1

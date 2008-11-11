@@ -126,7 +126,7 @@ class DebugLayer(Layer):
     currentDir = os.getcwd()
     dataDir = Version.dataPath()
     translationDir = dataDir + "/translations"
-    modsDir = dataDir + "/mods"
+    skinsDir = dataDir + "/skins"
 
     f.write("Date = %s\n" % datetime.datetime.now())   
     f.write("\nVersion = %s\n" %  version)
@@ -151,16 +151,16 @@ class DebugLayer(Layer):
     f.write("\nTranslation Directory = %s\n" % translationDir)
     self.directoryList(f, translationDir)
     
-    f.write("\nMods Directory = %s\n" % modsDir)
-    self.directoryList(f, modsDir)
+    f.write("\nSkins Directory = %s\n" % skinsDir)
+    self.directoryList(f, skinsDir)
 
-    mods = os.listdir(modsDir)
+    skins = os.listdir(skinsDir)
 
-    for mod in mods:
-      modDir = os.path.join(modsDir, mod)
-      if os.path.isdir(modDir):
-        f.write("\nMod Directory = %s\n" % modDir)
-        self.directoryList(f, modDir)
+    for skin in skins:
+      skinDir = os.path.join(skinsDir, skin)
+      if os.path.isdir(skinDir):
+        f.write("\nSkin Directory = %s\n" % skinDir)
+        self.directoryList(f, skinDir)
 
     f.write("\nFretsonfire.ini\n")   
     engine.config.config.write(f)

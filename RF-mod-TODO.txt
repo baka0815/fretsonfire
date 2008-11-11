@@ -1,15 +1,12 @@
 TODO Items/Bugs
 ---------------
 
-improved drum hit detection for chords (allow individual notes to be played, culminating in a chord, but only during hit window)
-
 Add audio delay calibrator (3 notes going by 1 faster than audio_delay, 1 same as audio delay, one slower) ask them to choose which seems correct and then do it again until they can't tell the difference
 
 Investigate multi channel ogg
 
 update copyright
 
-add drums
 
 add failing
 
@@ -170,3 +167,7 @@ debug flag to dump a file with file sizes and settings and such (DONE)
 fix score going backwards when doing 2 note chord (DONE)
 cache song time (DONE)
 add scores_ext to bass/rhythm, etc...duh (DONE)
+
+improved drum hit detection for chords (allow individual notes to be played, culminating in a chord, but only during hit window) (DONE)
+add drums (DONE)
+add mod directories (DONE)

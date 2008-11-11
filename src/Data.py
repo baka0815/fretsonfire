@@ -69,10 +69,8 @@ class Data(object):
       bigFont = resource.fileName("international.ttf")
 
     # load fonts
-    font1     = lambda: Font(font,    fontSize[0], scale = scale, reversed = reversed, systemFont = not asciiOnly)
-    font2     = lambda: Font(bigFont, fontSize[1], scale = scale, reversed = reversed, systemFont = not asciiOnly)
-    resource.load(self, "font",         font1, onLoad = self.customizeFont)
-    resource.load(self, "bigFont",      font2, onLoad = self.customizeFont)
+    self.loadFont(self, "font", font, fontSize[0], scale, reversed, not asciiOnly)
+    self.loadFont(self, "bigFont", bigFont, fontSize[1], scale, reversed, not asciiOnly)
 
     # load sounds
     volume   = Config.get("audio", "screwupvol")
@@ -118,7 +116,23 @@ class Data(object):
     if textureSize:
       drawing.convertToTexture(textureSize[0], textureSize[1])
     return drawing
-      
+
+  def loadFont(self, target, name, fileName, size, scale, reversed, systemFont):
+    """
+    Load an Font synchronously.
+
+    @param target:      An object that will own the drawing
+    @param name:        The name of the attribute the drawing will be assigned to
+    @param fileName:    The name of the file in the data directory
+    @param textureSize  Either None or (x, y), in which case the file will
+                        be rendered to an x by y texture
+    @return:            L{SvgDrawing} instance
+    """
+    fileName = self.resource.fileName(fileName)
+    #font1     = lambda: Font(fileName, size, scale = scale, reversed = reversed, systemFont = systemFont)
+    #font     = self.resource.load(target, name, font1, onLoad = self.customizeFont)
+    font     = self.resource.load(target, name, lambda: Font(fileName, size, scale = scale, reversed = reversed, systemFont = systemFont), onLoad = self.customizeFont, synch = True)    
+    return font
       
   def customizeFont(self, font):
     # change some predefined characters to custom images

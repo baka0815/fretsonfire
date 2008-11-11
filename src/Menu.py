@@ -121,17 +121,24 @@ class Menu(Layer, KeyListener):
     
   def keyPressed(self, key, unicode):
     self.time = 0
-    choice = self.choices[self.currentIndex]
+
     c = self.engine.input.controls.getMapping(key)
-    if c in Player.KEY1S or key == pygame.K_RETURN:
-      choice.trigger(self.engine)
-      self.engine.data.acceptSound.play()
-    elif c in Player.CANCELS + Player.KEY2S:
+    
+    if c in Player.CANCELS + Player.KEY2S:
       if self.onCancel:
         self.onCancel()
       self.engine.view.popLayer(self)
       self.engine.input.removeKeyListener(self)
       self.engine.data.cancelSound.play()
+
+    if len(self.choices) == 0 or self.currentIndex > len(self.choices):
+      return
+    
+    choice = self.choices[self.currentIndex]
+
+    if c in Player.KEY1S or key == pygame.K_RETURN:
+      choice.trigger(self.engine)
+      self.engine.data.acceptSound.play()
     elif c in Player.DOWNS + Player.ACTION2S:
       self.currentIndex = (self.currentIndex + 1) % len(self.choices)
       self.updateSelection()

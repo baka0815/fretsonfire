@@ -69,7 +69,6 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
     self.guitars = []
     for i, player in enumerate(self.playerList):
-      print player.part
       if player.part == Part.DRUM_PART:
         self.guitars.append(Drum(self.engine, False, i))
       else:
@@ -92,6 +91,8 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     self.autoPlay         = False
     self.lastPickPos      = [None for i in self.playerList]
     self.lastSongPos      = 0.0
+    self.lastEvent        = 0.0
+    self.lastStats        = 0.0
     self.keyBurstTimeout  = [None for i in self.playerList]
     self.keyBurstPeriod   = 30
     self.camera.target    = (0.0, 0.0, 4.0)
@@ -154,10 +155,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
     self.startPosition    = 0      
     self.failingEnabled   = self.engine.config.get("failing", "failing")
-    self.drawFailing      = self.engine.config.get("failing", "drawfailing")
     self.jurgenEnabled    = self.engine.config.get("failing", "jurgen")
-    self.arrowRotation    = .5
-    self.failed           = False
     self.vsMode = True
       
     self.loadSettings()
@@ -187,7 +185,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     ], fadeScreen = True, onClose = self.resumeGame)
 
     self.restartSong()
-
+    
   def pauseGame(self):
     if self.song:
       self.song.pause()
@@ -356,18 +354,18 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     if self.disableStats != True:
       self.lastEvent = self.song.lastTime + 1000
       self.lastEvent = round(self.lastEvent / 1000) * 1000
+      self.stage.triggerTimer("%d:%02d" % (self.lastEvent / 60000, (self.lastEvent % 60000) / 1000))      
       self.notesCum = 0
       self.noteLastTime = 0
 
-  def fail(self, pos, num):
-     #self.percentFinished = ((self.startPosition - pos ) *100 / self.startPosition)
+  def fail(self, num):
+     percentFinished = (self.lastSongPos / self.lastEvent) * 100.0
      if len(self.guitars) == 1 or not self.vsMode:
-        self.goToResults(failed = True)
+        self.goToResults(failed = percentFinished)
      else:
         self.goToResults(failed = True, winner = abs(num-1))
 
   def failRockDrop(self, guitar):
-    pos = self.getSongPosition()
     removeFromRock = self.rockDrop / guitar.jurgenMultiplier    
     for i, guitar2 in enumerate(self.guitars):
       if self.vsMode and guitar != guitar2:
@@ -375,11 +373,9 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       guitar2.rockMeter -= removeFromRock
       if guitar2.rockMeter < 1:
         guitar2.rockMeter = 1
-        if self.failingEnabled and not self.song.info.tutorial and not self.failed:
-          self.failed = True
-          self.fail(pos, i)
+        if self.failingEnabled == True and not self.song.info.tutorial:
+          self.fail(i)
     self.stage.triggerRock(guitar2.rockMeter / float(self.rockMax))
-    return self.failed
 
   def failRockGain(self, guitar):
     addToRock = self.rockGain * guitar.jurgenMultiplier
@@ -411,6 +407,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         for i, guitar in enumerate(self.guitars):
           score = self.getExtraScoreForCurrentlyPlayedNotes(i)
           self.players[i].addScore(score)
+          self.stage.triggerScore(self.players[i].score)
         self.goToResults()
         return
         
@@ -472,16 +469,20 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         self.endPick(i)
 
       # missed some notes?
-      if self.playerList[i].streak != 0 and not guitar.playedNotes and guitar.getMissedNotes(self.song, pos):
+      missedNotes = guitar.getMissedNotes(self.song, pos, catchup=True)
+      if self.playerList[i].streak != 0 and not guitar.playedNotes and missedNotes:
         self.playerList[i].streak = 0
+        self.stage.triggerStreak(self.playerList[i].streak)
         self.guitars[i].setMultiplier(1)
+        self.stage.triggerMult(1)
         guitar.hopoLast = -1
         self.song.setInstrumentVolume(0.0, self.players[i].part)
         if not guitar.playedNotes:
           guitar.hopoActive = False
 #failing
-          if(self.failRockDrop(guitar)):
-             break
+      if missedNotes:
+        self.failRockDrop(guitar)
+        break
             
       # late pick
       if self.keyBurstTimeout[i] is not None and self.engine.timer.time > self.keyBurstTimeout[i]:
@@ -503,6 +504,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.song.setInstrumentVolume(0.0, self.players[num].part)
     if score != 0:
       self.players[num].addScore(score)
+      self.stage.triggerScore(self.players[num].score)
 
   def render3D(self):
     self.stage.render(self.visibility)
@@ -546,17 +548,22 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     if self.guitars[num].startPick(self.song, pos, self.controls):
       self.song.setInstrumentVolume(self.guitarVolume, self.playerList[num].part)
       self.playerList[num].streak += 1
+      self.stage.triggerStreak(self.playerList[num].streak)
       self.playerList[num].notesHit += len(self.guitars[num].playedNotes)
       self.playerList[num].addScore(len(self.guitars[num].playedNotes) * 50)
+      self.stage.triggerScore(self.playerList[num].score)
       self.stage.triggerPick(pos, [n[1].number for n in self.guitars[num].playedNotes])
       self.failRockGain(self.guitars[num])
       if self.playerList[num].streak % 10 == 0:
         self.lastMultTime[num] = pos
         self.guitars[num].setMultiplier(self.playerList[num].getScoreMultiplier())
+        self.stage.triggerMult(self.playerList[num].getScoreMultiplier())
     else:
       self.song.setInstrumentVolume(0.0, self.playerList[num].part)
       self.playerList[num].streak = 0
+      self.stage.triggerStreak(self.playerList[num].streak)
       self.guitars[num].setMultiplier(1)
+      self.stage.triggerMult(1)
       self.stage.triggerMiss(pos)
       self.failRockDrop(self.guitars[num])
       if self.playerList[num].part == Part.BASS_PART:
@@ -575,7 +582,9 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
     if len(missedNotes) > 0:
       self.playerList[num].streak = 0
+      self.stage.triggerStreak(self.playerList[num].streak)
       self.guitars[num].setMultiplier(1)
+      self.stage.triggerMult(1)
       self.guitars[num].hopoActive = False
       self.guitars[num].hopoLast = -1
       if hopo == True:
@@ -598,19 +607,24 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.song.setInstrumentVolume(self.guitarVolume, self.playerList[num].part)
       if self.guitars[num].playedNotes:
         self.playerList[num].streak += 1
+        self.stage.triggerStreak(self.playerList[num].streak)
       self.playerList[num].notesHit += len(self.guitars[num].playedNotes)
       self.stage.triggerPick(pos, [n[1].number for n in self.guitars[num].playedNotes])    
       self.players[num].addScore(len(self.guitars[num].playedNotes) * 50)
+      self.stage.triggerScore(self.players[num].score)
       self.failRockGain(self.guitars[num])
       if self.players[num].streak % 10 == 0:
         self.lastMultTime[num] = self.getSongPosition()
         self.guitars[num].setMultiplier(self.playerList[num].getScoreMultiplier())
+        self.stage.triggerMult(self.playerList[num].getScoreMultiplier())
     else:
       self.guitars[num].hopoActive = False
       self.guitars[num].hopoLast = -1
       self.song.setInstrumentVolume(0.0, self.playerList[num].part)
       self.playerList[num].streak = 0
+      self.stage.triggerStreak(self.playerList[num].streak)
       self.guitars[num].setMultiplier(1)
+      self.stage.triggerMult(1)
       self.stage.triggerMiss(pos)
       self.failRockDrop(self.guitars[num])      
 
@@ -631,7 +645,9 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
     if len(missedNotes) > 0:
       self.playerList[num].streak = 0
+      self.stage.triggerStreak(self.playerList[num].streak)
       self.guitars[num].setMultiplier(1)
+      self.stage.triggerMult(1)
       self.guitars[num].hopoActive = False
       self.guitars[num].hopoLast = -1
       if hopo == True:
@@ -654,21 +670,27 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       #Any previous notes missed, but new ones hit, reset streak counter
       if len(self.guitars[num].missedNotes) != 0:
         self.playerList[num].streak = 0
+        self.stage.triggerStreak(self.playerList[num].streak)
       if self.guitars[num].playedNotes:
         self.playerList[num].streak += 1
+        self.stage.triggerStreak(self.playerList[num].streak)
       self.playerList[num].notesHit += len(self.guitars[num].playedNotes)
       self.stage.triggerPick(pos, [n[1].number for n in self.guitars[num].playedNotes])    
       self.players[num].addScore(len(self.guitars[num].playedNotes) * 50)
+      self.stage.triggerScore(self.players[num].score)
       self.failRockGain(self.guitars[num])      
       if self.players[num].streak % 10 == 0:
         self.lastMultTime[num] = self.getSongPosition()
         self.guitars[num].setMultiplier(self.playerList[num].getScoreMultiplier())
+        self.stage.triggerMult(self.playerList[num].getScoreMultiplier())
     else:
       self.guitars[num].hopoActive = False
       self.guitars[num].hopoLast = -1
       self.song.setInstrumentVolume(0.0, self.playerList[num].part)
       self.playerList[num].streak = 0
+      self.stage.triggerStreak(self.playerList[num].streak)
       self.guitars[num].setMultiplier(1)
+      self.stage.triggerMult(1)
       self.stage.triggerMiss(pos)
       self.failRockDrop(self.guitars[num])
 
@@ -689,7 +711,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.failingEnabled = self.engine.config.get("failing", "failing")
     return self.autoPlay
 
-  def goToResults(self):
+  def goToResults(self, failed = None):
     self.ending = True
     if self.song:
       self.song.stop()
@@ -703,7 +725,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         guitar.jurgenStarted = False
         guitar.jurgenMultiplier = 1
         guitar.jurgenTimeLeft = 0
-      self.session.world.createScene("GameResultsScene", libraryName = self.libraryName, songName = self.songName, players = self.playerList)
+      self.session.world.createScene("GameResultsScene", libraryName = self.libraryName, songName = self.songName, players = self.playerList, failed = failed)
 
   def keyPressed(self, key, unicode, control = None):
     #RF style HOPO playing
@@ -985,7 +1007,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       # Out cheaters
       if self.playerList[0].cheating == True:
         scale = 0.002 + 0.0005 * (((pos % 60000) / 1000) % 1) ** 3
-        text = _("Cheater")
+        text = _("Autoplay")
         w, h = bigFont.getStringSize(text, scale = scale)
         Theme.setSelectedColor()
         if (((pos % 60000) / 1000 % 6) > 3):
@@ -998,6 +1020,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         text = _("Get Ready to Rock")
         w, h = font.getStringSize(text)
         font.render(text,  (.5 - w / 2, .3))
+        font.render("Woo", (0.0, 0.3), scale = 0.002)
         if self.countdown < 6:
           scale = 0.002 + 0.0005 * (self.countdown % 1) ** 3
           text = "%d" % (self.countdown)
@@ -1005,6 +1028,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
           Theme.setSelectedColor()
           bigFont.render(text,  (.5 - w / 2, .45 - h / 2), scale = scale)
 
+          
       w, h = font.getStringSize(" ")
       y = .05 - h / 2 - (1.0 - v) * .2
 
@@ -1026,9 +1050,12 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             pos = 0
           
           Theme.setSelectedColor()
-          t = "%d:%02d" % (pos / 60000, (pos % 60000) / 1000)
-          w, h = font.getStringSize(t)
-          font.render(t,  (.5 - w / 2, y))
+          if self.lastStats != round(pos / 1000):
+            self.lastStats = round(pos / 1000)
+            self.stage.triggerTimer("%d:%02d" % (pos / 60000, (pos % 60000) / 1000))          
+          #t = "%d:%02d" % (pos / 60000, (pos % 60000) / 1000)
+          #w, h = font.getStringSize(t)
+          #font.render(t,  (.5 - w / 2, y))
           #Not ready for 2player yet
           if self.notesCum:
             f = int(100 * (float(self.playerList[0].notesHit) / self.notesCum))
@@ -1062,14 +1089,17 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       for i,player in enumerate(self.playerList):
         self.engine.view.setViewportHalf(len(self.playerList),i)
         Theme.setSelectedColor()
-        if len(self.playerList) > 1 and i == 0:
-          font.render("%d" % (player.score + self.getExtraScoreForCurrentlyPlayedNotes(i)),  (.03, y))
-          font.render("%dx" % player.getScoreMultiplier(), (.03, y + h))
-        else:
-          font.render("%d" % (player.score + self.getExtraScoreForCurrentlyPlayedNotes(i)),  (.61, y))
-          font.render("%dx" % player.getScoreMultiplier(), (.61, y + h))
-          font.render("%d" % self.guitars[i].rockMeter, (.03, y + h + h))
+        extraScore = self.getExtraScoreForCurrentlyPlayedNotes(i)
+        if player.lastExtraScore != extraScore:
+          self.stage.triggerScore(self.players[i].score + extraScore)
+          player.lastExtraScore = extraScore
           
+        #if len(self.playerList) > 1 and i == 0:
+        #  font.render("%d" % (player.score + self.getExtraScoreForCurrentlyPlayedNotes(i)),  (.03, y))
+        #  #font.render("%dx" % player.getScoreMultiplier(), (.03, y + h))
+        #else:
+        #  font.render("%d" % (player.score + self.getExtraScoreForCurrentlyPlayedNotes(i)),  (.61, y))
+        #  #font.render("%dx" % player.getScoreMultiplier(), (.61, y + h))
         
         # show the streak counter and miss message
         if player.streak > 0 and self.song:
@@ -1083,13 +1113,13 @@ class GuitarSceneClient(GuitarScene, SceneClient):
               if diff > 0 and diff < self.song.period * 2:
                 factor = .25 * (1.0 - (diff / (self.song.period * 2))) ** 2
           factor = (1.0 + factor) * 0.002
-          tw, th = font.getStringSize(text, scale = factor)
-          if len(self.playerList) > 1 and i == 0:
-            font.render(text, (.72 - tw / 2, y + h / 2 - th / 2), scale = factor)
-          elif len(self.playerList) > 1 and i == 1:
-            font.render(text, (.26 - tw / 2, y + h / 2 - th / 2), scale = factor)
-          else:
-            font.render(text, (.16 - tw / 2, y + h / 2 - th / 2), scale = factor)
+          #tw, th = font.getStringSize(text, scale = factor)
+          #if len(self.playerList) > 1 and i == 0:
+          #  font.render(text, (.72 - tw / 2, y + h / 2 - th / 2), scale = factor)
+          #elif len(self.playerList) > 1 and i == 1:
+          #  font.render(text, (.26 - tw / 2, y + h / 2 - th / 2), scale = factor)
+          #else:
+          #  font.render(text, (.16 - tw / 2, y + h / 2 - th / 2), scale = factor)
         elif self.lastPickPos[i] is not None and self.countdown <= 0:
           diff = self.getSongPosition() - self.lastPickPos[i]
           alpha = 1.0 - diff * 0.005
@@ -1109,24 +1139,24 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             #self.song.setInstrumentVolume(0.0, self.players[i].part)
 
         # show the streak balls
-        if player.streak >= 30:
-          glColor3f(.5, .5, 1)
-        elif player.streak >= 20:
-          glColor3f(1, 1, .5)
-        elif player.streak >= 10:
-          glColor3f(1, .5, .5)
-        else:
-          glColor3f(.5, 1, .5)
-        
-        s = min(39, player.streak) % 10 + 1
-        if len(self.playerList) > 1 and i == 0:
-          font.render(Data.BALL2 * s + Data.BALL1 * (10 - s),   (.1, y + h * 1.3), scale = 0.0011)
-        else:
-          font.render(Data.BALL2 * s + Data.BALL1 * (10 - s),   (.67, y + h * 1.3), scale = 0.0011)
+#        if player.streak >= 30:
+#          glColor3f(.5, .5, 1)
+#        elif player.streak >= 20:
+#          glColor3f(1, 1, .5)
+#        elif player.streak >= 10:
+#          glColor3f(1, .5, .5)
+#        else:
+#          glColor3f(.5, 1, .5)
+#        
+#        s = min(39, player.streak) % 10 + 1
+#        if len(self.playerList) > 1 and i == 0:
+#          font.render(Data.BALL2 * s + Data.BALL1 * (10 - s),   (.1, y + h * 1.3), scale = 0.0011)
+#        else:
+#          font.render(Data.BALL2 * s + Data.BALL1 * (10 - s),   (.67, y + h * 1.3), scale = 0.0011)
           
         # show multiplier changes
         if self.song and self.lastMultTime[i] is not None:
-          diff = self.getSongPosition() - self.lastMultTime[i]
+#          diff = self.getSongPosition() - self.lastMultTime[i]
           if diff > 0 and diff < self.song.period * 2:
             m = player.getScoreMultiplier()
             c = self.multColors[0]
@@ -1135,13 +1165,13 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             elif m == 1:
               texture = None
             elif m == 2:
-              texture = self.fx2x.texture
+#              texture = self.fx2x.texture
               c = self.multColors[1]
             elif m == 3:
-              texture = self.fx3x.texture
+#              texture = self.fx3x.texture
               c = self.multColors[2]
             elif m == 4:
-              texture = self.fx4x.texture
+#              texture = self.fx4x.texture
               c = self.multColors[3]
             
             f = (1.0 - abs(self.song.period * 1 - diff) / (self.song.period * 1)) ** 2
@@ -1159,30 +1189,30 @@ class GuitarSceneClient(GuitarScene, SceneClient):
               glVertex2f(1, 1)
               glEnd()
             
-            if texture:
-              glPushMatrix()
-              glEnable(GL_TEXTURE_2D)
-              texture.bind()
-              size = (texture.pixelSize[0] * .002, texture.pixelSize[1] * .002)
+#            if texture:
+#              glPushMatrix()
+#              glEnable(GL_TEXTURE_2D)
+#              texture.bind()
+#              size = (texture.pixelSize[0] * .002, texture.pixelSize[1] * .002)
+#            
+#              glTranslatef(.5, .15, 0)
+#              glBlendFunc(GL_SRC_ALPHA, GL_ONE)
             
-              glTranslatef(.5, .15, 0)
-              glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+#              f = .5 + .5 * (diff / self.song.period) ** 3
+#              glColor4f(1, 1, 1, min(1, 2 - f))
+#              glBegin(GL_TRIANGLE_STRIP)
+#              glTexCoord2f(0.0, 0.0)
+#              glVertex2f(-size[0] * f, -size[1] * f)
+#              glTexCoord2f(1.0, 0.0)
+#              glVertex2f( size[0] * f, -size[1] * f)
+#              glTexCoord2f(0.0, 1.0)
+#              glVertex2f(-size[0] * f,  size[1] * f)
+#              glTexCoord2f(1.0, 1.0)
+#              glVertex2f( size[0] * f,  size[1] * f)
+#              glEnd()
             
-              f = .5 + .5 * (diff / self.song.period) ** 3
-              glColor4f(1, 1, 1, min(1, 2 - f))
-              glBegin(GL_TRIANGLE_STRIP)
-              glTexCoord2f(0.0, 0.0)
-              glVertex2f(-size[0] * f, -size[1] * f)
-              glTexCoord2f(1.0, 0.0)
-              glVertex2f( size[0] * f, -size[1] * f)
-              glTexCoord2f(0.0, 1.0)
-              glVertex2f(-size[0] * f,  size[1] * f)
-              glTexCoord2f(1.0, 1.0)
-              glVertex2f( size[0] * f,  size[1] * f)
-              glEnd()
-            
-              glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-              glPopMatrix()
+#              glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+#              glPopMatrix()
 
       self.engine.view.setViewport(1,0)  
       # show the comments

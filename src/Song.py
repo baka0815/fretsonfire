@@ -249,7 +249,7 @@ class SongInfo(object):
   def getDifficulties(self):
     diffNum = []
     partNum = []
-    diffTemp = []
+    diffTemp = [0,0,0,0]
 
     # Tutorials only have the medium difficulty
     if self.tutorial:
@@ -1153,14 +1153,12 @@ class Song(object):
     self.engine.audio.unpause()
 
   def setInstrumentVolume(self, volume, part):
-    print "instrument", volume
     if part == Part.GUITAR_PART:
       self.setGuitarVolume(volume)
     else:
       self.setRhythmVolume(volume)
       
   def setGuitarVolume(self, volume):
-    print "guitar", volume
     if self.guitarTrack:
       if volume == 0:
         self.guitarTrack.setVolume(self.missVolume)
@@ -1174,7 +1172,6 @@ class Song(object):
         self.music.setVolume(volume)
 
   def setRhythmVolume(self, volume):
-    print "rhythm", volume
     if self.rhythmTrack:
       if volume == 0:
         self.rhythmTrack.setVolume(self.missVolume)
@@ -1182,7 +1179,6 @@ class Song(object):
         self.rhythmTrack.setVolume(volume)
   
   def setBackgroundVolume(self, volume):
-    print "background", volume
     self.music.setVolume(volume)
   
   def stop(self):
@@ -1457,8 +1453,7 @@ class MidiInfoReader(midi.MidiOutStream):
   def __init__(self):
     midi.MidiOutStream.__init__(self)
     self.difficulties = []
-    self.diffTemp = []
-    self.diffTemp2 = []
+    self.diffTemp = [0,0,0,0]
     self.parts = []
     self.curPart = Part.GUITAR_PART
     
@@ -1467,15 +1462,13 @@ class MidiInfoReader(midi.MidiOutStream):
       diff, number = noteMap[note]
       #diff = Difficulty.difficulties[track]
 
-      if not diff in self.diffTemp:
-        self.diffTemp.append(diff)
-      elif not diff in self.diffTemp2:
-        self.diffTemp2.append(diff)        
-      else:
-        if not self.curPart in self.parts:
-          self.parts.append(self.curPart)
-        if not diff in self.difficulties:
-          self.difficulties.append(diff)
+      self.diffTemp[diff] += 1
+
+      if self.diffTemp[diff] > 7:
+          if not diff in self.difficulties:
+            self.difficulties.append(diff)
+          if not self.curPart in self.parts:
+            self.parts.append(self.curPart)
 
         #ASSUMES ALL parts (lead, rhythm, bass) have same difficulties of guitar part!
         #if len(self.difficulties) == len(difficulties):
@@ -1485,8 +1478,7 @@ class MidiInfoReader(midi.MidiOutStream):
       pass
 
   def sequence_name(self, text):
-    self.diffTemp = []
-    self.diffTemp2 = []
+    self.diffTemp = [0,0,0,0]
 
     try:
       if text == "PART GUITAR" or text == "T1 GEMS" or text == "Click":

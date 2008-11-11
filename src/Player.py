@@ -231,6 +231,7 @@ class Player(object):
     self.longestStreak = 0
     self.cheating      = False
     self.twoChord      = 0
+    self.lastExtraScore = 0
     
   def getName(self):
     return Config.get(self.playerstring, "name")

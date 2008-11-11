@@ -1,8 +1,26 @@
+4.19
+   New FoF Stage
+   New Example stages (GH3, RB)
+   Fixed menu error when there are no items
+   New stage effects color, pulse, translate, text, textpulse
+   New stage triggers: mult, streak, timer, score
+   New stage variables: mod, modcap, start, stop, show, xfactor, yfactor, xend, yend
+   Fixed bug in new part detection
+   Made loadFont function call
+   Fixed empty skin directory bug
+   
+
 4.18
    Fixed 2nd player button press to get out of gameresults
    Removed chords from drums (you play notes individually)
    Made bass note dissapear when hit
-   Fixed 2nd player selection if only 1 difficulty available
+   New Stage effects: rotate, and display
+   New Stage triggers: rock
+   New Stage variable: relative
+   Mod folders now supported
+   Changed 'mod' to 'skin'
+   Changed 'cheater' to 'autoplay'
+   Fixed part/difficulty detection to handle more than 2 notes
 
 4.17
    Redid difficulty and parts code

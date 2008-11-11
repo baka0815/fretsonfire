@@ -1,7 +1,20 @@
 TODO Items/Bugs
 ---------------
 
-fix score going backwards when doing 2 note chord
+add scores_ext to bass/rhythm, etc...duh
+update copyright
+
+add drums
+
+add failing
+
+add jurgen
+
+add date to scores_ext
+
+add song hash to scores (may break stuff)
+
+add song name to pause menu
 
 fix funny hopo in pride and joy (expert)
 
@@ -10,8 +23,6 @@ make a second background to load if playing 2 player split screen
 Allow 2nd neck.svg/png for player 2
 
 Somehow disable windows screensaver when game is running (needs ctypes)
-
-Add a 'uploadas' option in song.ini (can be abused)
 
 less distracting multiplier toggle
 
@@ -151,3 +162,5 @@ High score entry with guitar keys (DONE)
 flag to read different file than fretsonfire.ini (DONE)
 flag to read NO fretsonfire.ini (DONE)
 debug flag to dump a file with file sizes and settings and such (DONE)
+fix score going backwards when doing 2 note chord (DONE)
+cache song time (DONE)

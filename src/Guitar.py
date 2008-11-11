@@ -21,7 +21,7 @@
 #####################################################################
 
 import Player
-from Song import Note, Tempo
+from Song import Note, Tempo, Bars
 from Mesh import Mesh
 import Theme
 
@@ -54,8 +54,9 @@ class Guitar:
     self.leftyMode      = False
     self.currentBpm     = 50.0
     self.currentPeriod  = 60000.0 / self.currentBpm
+    self.targetPeriod   = self.currentPeriod
     self.targetBpm      = self.currentBpm
-    self.targetPeriod   = 60000.0 / self.targetBpm
+    self.tempoBpm       = self.currentBpm
     self.lastBpmChange  = -1.0
     self.baseBeat       = 0.0
 
@@ -65,20 +66,15 @@ class Guitar:
     self.hopoColor      = (0, .5, .5)
     self.player         = player
     self.scoreMultiplier = 1
+    self.boardspeedMultiplier = 0.5
     
     if player == 0:
       self.keys = PLAYER1KEYS
       self.actions = PLAYER1ACTIONS
-      #self.ACTION1 = Player.ACTION1
-      #self.ACTION2 = Player.ACTION2
     else:
       self.keys = PLAYER2KEYS
-      self.actions = PLAYER2ACTIONS
-      #self.ACTION1 = Player.PLAYER_2_ACTION1
-      #self.ACTION2 = Player.PLAYER_2_ACTION2    
+      self.actions = PLAYER2ACTIONS  
     
-    self.setBPM(self.currentBpm)
-
     engine.resource.load(self,  "noteMesh", lambda: Mesh(engine.resource.fileName("note.dae")))
     engine.resource.load(self,  "keyMesh",  lambda: Mesh(engine.resource.fileName("key.dae")))
     engine.loadSvgDrawing(self, "glowDrawing", "glow.svg",  textureSize = (128, 128))
@@ -98,14 +94,38 @@ class Guitar:
     self.flameColors = Theme.flameColors
     self.flameSizes = Theme.flameSizes
     self.glowColor  = Theme.glowColor
-    
+
+    self.tailWidth      = Theme.tailWidth      ## Width of the tails
+    self.tailHeight     = Theme.tailHeight     ## Height of the tails
+    self.tailRoundness  = Theme.tailRoundness  ## Roundness of the tails, higher number for smoother curves (consumes more cpu too)
+    self.tail2Size      = Theme.tail2Size      ## Size for the second part of the tail (the end/tip),
+                                               ## if the second part of the tail increases in size, the first part will be shorter
+    self.initTails()  ## Initialize the vectors for the tail    
     
     self.twoChordMax = self.engine.config.get("player%d" % (player), "two_chord_max")
     self.disableVBPM  = self.engine.config.get("game", "disable_vbpm")
     self.disableNoteSFX  = self.engine.config.get("video", "disable_notesfx")
     self.disableFretSFX  = self.engine.config.get("video", "disable_fretsfx")
     self.disableFlameSFX  = self.engine.config.get("video", "disable_flamesfx")
+    self.disableNoteWavesSFX = self.engine.config.get("video", "disable_notewavessfx")
+    self.tracksType  = self.engine.config.get("game", "tracks_type")
 
+    self.boardSpeed  = self.engine.config.get("game", "board_speed")
+
+    print self.boardSpeed
+
+    #self.boardspeedMultiplier = Theme.boardspeedMultiplier
+    print self.boardspeedMultiplier
+    
+    if self.boardSpeed == 1 or self.boardSpeed == 2:
+      print "boardspeedMult1"
+
+      #self.boardspeedMultiplier = 1.0
+
+    self.marginType  = self.engine.config.get("game", "margin")
+    self.marginCap = 110.0      
+
+    self.setBPM(self.currentBpm)
     
   def selectPreviousString(self):
     self.selectedString = (self.selectedString - 1) % self.strings
@@ -117,20 +137,45 @@ class Guitar:
     self.selectedString = (self.selectedString + 1) % self.strings
 
   def setBPM(self, bpm):
-    self.earlyMargin       = 60000.0 / bpm / 3.5
-    self.lateMargin        = 60000.0 / bpm / 3.5
-    self.noteReleaseMargin = 60000.0 / bpm / 2
-    self.currentBpm        = bpm
-    self.targetBpm         = bpm
     self.baseBeat          = 0.0
+    self.targetBpm         = bpm
+    self.targetPeriod      = round(60000.0 / (self.targetBpm * self.boardspeedMultiplier), 4)
+    self.setDynamicBPM(bpm)
 
   def setDynamicBPM(self, bpm):
-    #if bpm > 110:
-    #  bpm = 110
-    self.earlyMargin       = 60000.0 / bpm / 3.5
-    self.lateMargin        = 60000.0 / bpm / 3.5
-    self.noteReleaseMargin = 60000.0 / bpm / 2
+    self.currentBpm        = bpm
+    self.currentPeriod     = round(60000.0 / (self.currentBpm * self.boardspeedMultiplier), 4)
+    self.setMargin(bpm)
+    print self.currentBpm, self.currentPeriod
     
+  def setMargin(self, bpm):
+    marginBPM = bpm
+    if self.marginType == 1: 
+      if bpm > self.marginCap:
+        marginBPM = self.marginCap
+    
+    self.earlyMargin       = 60000.0 / marginBPM / 3.5
+    self.lateMargin        = 60000.0 / marginBPM / 3.5
+    self.noteReleaseMargin = 60000.0 / marginBPM / 2
+
+  def updateBPM(self):
+    diff = self.targetBpm - self.currentBpm
+    if diff == 0:
+      return
+    #max 30bpm change per
+    if abs(diff) > 40:
+      diff = 40 * (diff/abs(diff))
+    elif abs(diff) < .025:
+      diff = 0
+    if (round((diff * .03), 4) != 0):
+      self.currentBpm = round(self.currentBpm + (diff * .025), 4)
+    else:
+      self.currentBpm = self.targetBpm
+      self.targetPeriod = round(60000.0 / (self.targetBpm * self.boardspeedMultiplier), 4)
+
+    if self.currentBpm != self.targetBpm:
+      self.setDynamicBPM(self.currentBpm)
+      
   def setMultiplier(self, multiplier):
     self.scoreMultiplier = multiplier
     
@@ -146,7 +191,7 @@ class Guitar:
     l            = self.boardLength
 
     beatsPerUnit = self.beatsPerBoard / self.boardLength
-    offset       = (pos - self.lastBpmChange) / self.currentPeriod + self.baseBeat 
+    offset       = ((pos - self.lastBpmChange) / self.currentPeriod) + self.baseBeat
 
     glEnable(GL_TEXTURE_2D)
     self.neckDrawing.texture.bind()
@@ -199,24 +244,33 @@ class Guitar:
       glVertex3f(x + s, 0, z2)
       glEnd()
 
+#string width
     sw = 0.025
-    for n in range(self.strings - 1, -1, -1):
+#    sw = 0.01
+
+    if self.tracksType == 1:
+      c = 0.4
+      c2 = 2
+    else:
+      c = 0.0
+      c2 = 1
+      
+    for n in range(self.strings - c2, -1, -1):
       glBegin(GL_TRIANGLE_STRIP)
       glColor4f(self.tracksColor[0], self.tracksColor[1], self.tracksColor[2], 0)
-      glVertex3f((n - self.strings / 2) * w - sw, -v, -2)
-      glVertex3f((n - self.strings / 2) * w + sw, -v, -2)
+      glVertex3f(c + (n - self.strings / 2) * w - sw, -v, -2)
+      glVertex3f(c + (n - self.strings / 2) * w + sw, -v, -2)
       glColor4f(self.tracksColor[0], self.tracksColor[1], self.tracksColor[2], (1.0 - v) * .75)
-      glVertex3f((n - self.strings / 2) * w - sw, -v, -1)
-      glVertex3f((n - self.strings / 2) * w + sw, -v, -1)
+      glVertex3f(c + (n - self.strings / 2) * w - sw, -v, -1)
+      glVertex3f(c + (n - self.strings / 2) * w + sw, -v, -1)
       glColor4f(self.tracksColor[0], self.tracksColor[1], self.tracksColor[2], (1.0 - v) * .75)
-      glVertex3f((n - self.strings / 2) * w - sw, -v, self.boardLength * .7)
-      glVertex3f((n - self.strings / 2) * w + sw, -v, self.boardLength * .7)
+      glVertex3f(c + (n - self.strings / 2) * w - sw, -v, self.boardLength * .7)
+      glVertex3f(c + (n - self.strings / 2) * w + sw, -v, self.boardLength * .7)
       glColor4f(self.tracksColor[0], self.tracksColor[1], self.tracksColor[2], 0)
-      glVertex3f((n - self.strings / 2) * w - sw, -v, self.boardLength)
-      glVertex3f((n - self.strings / 2) * w + sw, -v, self.boardLength)
+      glVertex3f(c + (n - self.strings / 2) * w - sw, -v, self.boardLength)
+      glVertex3f(c + (n - self.strings / 2) * w + sw, -v, self.boardLength)
       glEnd()
       v *= 2
-      
       
   def renderBars(self, visibility, song, pos):
     if not song or self.tracksColor[0] == -1:
@@ -273,6 +327,68 @@ class Guitar:
     glVertex3f(w / 2,  0, -sw)
     glEnd()
 
+  def renderBars2(self, visibility, song, pos):
+    if not song or self.barsColor[0] == -1:
+      return
+
+    w            = self.boardWidth
+
+    beatsPerUnit = self.beatsPerBoard / self.boardLength
+    track = song.track[self.player]
+
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    for time, event in track.getEvents(pos - self.currentPeriod * 2, pos + self.currentPeriod * self.beatsPerBoard):
+      if not isinstance(event, Bars):
+        continue   
+
+      glPushMatrix()
+
+      z  = ((time - pos) / self.currentPeriod) / beatsPerUnit
+      z2 = ((time + event.length - pos) / self.currentPeriod) / beatsPerUnit
+
+      if z > self.boardLength:
+        f = (self.boardLength - z) / (self.boardLength * .2)
+      elif z < 0:
+        f = min(1, max(0, 1 + z2))
+      else:
+        f = 1.0
+        
+      if event.barType == 0: #half-beat
+        barColorMod0 = 0.64795918367346938775510204081633
+        barColorMod1 = 0.6791443850267379679144385026738
+        barColorMod2 = 0.75595238095238095238095238095238
+        c = (self.barsColor[0] * barColorMod0, self.barsColor[1] * barColorMod1, self.barsColor[2] * barColorMod2)
+        sw  = 0.020 #width
+        v = 0.0     #height
+        color = (.1 + .8 * c[0], .1 + .8 * c[1], .1 + .8 * c[2], .8 * visibility * f)
+      elif event.barType == 1: #beat
+        barColorMod0 = 1.0
+        barColorMod1 = 1.0
+        barColorMod2 = 1.0
+        c = (self.barsColor[0] * barColorMod0, self.barsColor[1] * barColorMod1, self.barsColor[2] * barColorMod2)
+        sw  = 0.025 #width
+        v = 0.010   #height
+        color = (.1 + .8 * c[0], .1 + .8 * c[1], .1 + .8 * c[2], .8 * visibility * f)
+      elif event.barType == 2: #measure
+        barColorMod0 = 0.93367346938775510204081632653061
+        barColorMod1 = 0.97860962566844919786096256684492
+        barColorMod2 = 1.0892857142857142857142857142857
+        c = (self.barsColor[0] * barColorMod0, self.barsColor[1] * barColorMod1, self.barsColor[2] * barColorMod2)
+        sw  = 0.035 #width
+        v = 0.025   #height
+        color = (.1 + .8 * c[0], .1 + .8 * c[1], .1 + .8 * c[2], 1 * visibility * f)
+        
+      glColor4f(*color)
+      glBegin(GL_TRIANGLE_STRIP)
+      glVertex3f(-(w / 2), v, z + sw)
+      glVertex3f(-(w / 2), 0, z - sw)
+      glVertex3f(w / 2,    v, z + sw)
+      glVertex3f(w / 2,    0, z - sw)
+      glEnd()
+      glPopMatrix()
+
   def renderNote(self, length, color, flat = False, tailOnly = False, isTappable = False):
     if not self.noteMesh:
       return
@@ -322,14 +438,63 @@ class Guitar:
     glDepthMask(0)
     glPopMatrix()
 
+  def renderNote2(self, visibility, f, length, sustain, color, colortail, tailOnly = False, playedstart = False, playedcontinue = False, isTappable = False):
+    if not self.noteMesh:
+      return
+
+    if playedstart == True and playedcontinue == False:
+      colortail = (.2 + .4, .2 + .4, .2 + .4, .5 * visibility * f)
+
+    glColor4f(*colortail)
+
+    if sustain:
+      size = length + 0.00001
+
+      ## Draw the first part of the tail
+      self.polygon1(size - self.tail2Size, colortail)
+
+      ## Draw the second part of the tail
+      self.polygon2(size - self.tail2Size, colortail)
+
+    if tailOnly:
+      return
+
+    #mesh = outer ring (black) 
+    #mesh_001 = main note (key color) 
+    #mesh_002 = top (spot or hopo if no mesh_003) 
+    #mesh_003 = hopo bump (hopo color)
+
+    glColor4f(*color)
+    
+    glPushMatrix()
+    glEnable(GL_DEPTH_TEST)
+    glDepthMask(1)
+    glShadeModel(GL_SMOOTH)
+
+    self.noteMesh.render("Mesh_001")
+    glColor3f(self.spotColor[0], self.spotColor[1], self.spotColor[2])
+    if isTappable:
+      if self.hopoColor[0] == -2:
+        glColor4f(*color)
+      else:
+        glColor3f(self.hopoColor[0], self.hopoColor[1], self.hopoColor[2])
+      if(self.noteMesh.find("Mesh_003")) == True:
+        self.noteMesh.render("Mesh_003")
+        glColor3f(self.spotColor[0], self.spotColor[1], self.spotColor[2])
+    self.noteMesh.render("Mesh_002")
+    glColor3f(0, 0, 0)
+    self.noteMesh.render("Mesh")
+
+    glDepthMask(0)
+    glPopMatrix()
+
   def renderNotes(self, visibility, song, pos):
     if not song:
       return
 
     # Update dynamic period
-    self.currentPeriod = round(60000.0 / self.currentBpm, 4)
-    self.targetPeriod  = round(60000.0 / self.targetBpm, 4)
-
+    self.currentPeriod = round(60000.0 / (self.currentBpm * self.boardspeedMultiplier), 4)
+      
     beatsPerUnit = self.beatsPerBoard / self.boardLength
     w = self.boardWidth / self.strings
     track = song.track[self.player]
@@ -341,8 +506,9 @@ class Guitar:
         if (pos - time > self.currentPeriod or self.lastBpmChange < 0) and time > self.lastBpmChange:
           self.baseBeat         += (time - self.lastBpmChange) / self.currentPeriod
           self.targetBpm         = event.bpm
+          self.targetPeriod      = round(60000.0 / (self.targetBpm * self.boardspeedMultiplier), 4)
           self.lastBpmChange     = time
-          self.setDynamicBPM(self.targetBpm)
+          #self.setDynamicBPM(self.targetBpm)
         continue
       
       if not isinstance(event, Note):
@@ -399,6 +565,174 @@ class Guitar:
       return
     glBlendFunc(GL_SRC_ALPHA, GL_ONE)
     for time, event in self.playedNotes:
+      step  = self.currentPeriod / 16
+      t     = time + event.length
+      x     = (self.strings / 2 - event.number) * w
+      c     = self.fretColors[event.number]
+      s     = t
+      proj  = 1.0 / self.currentPeriod / beatsPerUnit
+      zStep = step * proj
+
+      def waveForm(t):
+        u = ((t - time) * -.1 + pos - time) / 64.0 + .0001
+        return (math.sin(event.number + self.time * -.01 + t * .03) + math.cos(event.number + self.time * .01 + t * .02)) * .1 + .1 + math.sin(u) / (5 * u)
+
+      glBegin(GL_TRIANGLE_STRIP)
+      f1 = 0
+      while t > time:
+        z  = (t - pos) * proj
+        if z < 0:
+          break
+        f2 = min((s - t) / (6 * step), 1.0)
+        a1 = waveForm(t) * f1
+        a2 = waveForm(t - step) * f2
+        glColor4f(c[0], c[1], c[2], .5)
+        glVertex3f(x - a1, 0, z)
+        glVertex3f(x - a2, 0, z - zStep)
+        glColor4f(1, 1, 1, .75)
+        glVertex3f(x, 0, z)
+        glVertex3f(x, 0, z - zStep)
+        glColor4f(c[0], c[1], c[2], .5)
+        glVertex3f(x + a1, 0, z)
+        glVertex3f(x + a2, 0, z - zStep)
+        glVertex3f(x + a2, 0, z - zStep)
+        glVertex3f(x - a2, 0, z - zStep)
+        t -= step
+        f1 = f2
+      glEnd()
+      
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+  def renderNotes2(self, visibility, song, pos):
+    if not song:
+      return
+
+    # Update dynamic period
+    self.currentPeriod = round(60000.0 / (self.currentBpm * self.boardspeedMultiplier), 4)
+
+    if self.boardSpeed == 1:
+      self.currentPeriod = self.targetPeriod
+
+    beatsPerUnit = self.beatsPerBoard / self.boardLength
+    w = self.boardWidth / self.strings
+    track = song.track[self.player]
+
+    for time, event in track.getEvents(pos - self.currentPeriod * 2, pos + self.currentPeriod * self.beatsPerBoard):
+      if isinstance(event, Tempo):
+        if self.boardSpeed == 1 or (self.lastBpmChange > 0 and self.disableVBPM == True):
+            continue
+        self.tempoBpm = event.bpm
+        if (pos - time > self.currentPeriod or self.lastBpmChange < 0) and time > self.lastBpmChange:
+          self.baseBeat         += (time - self.lastBpmChange) / self.currentPeriod
+          self.targetBpm         = event.bpm
+          self.targetPeriod      = round(60000.0 / (self.targetBpm * self.boardspeedMultiplier), 4)
+          self.lastBpmChange     = time
+          #self.setDynamicBPM(self.targetBpm)
+        continue
+      
+      if not isinstance(event, Note):
+        continue
+
+      if (event.noteBpm == 0.0):
+        event.noteBpm = self.tempoBpm      
+        
+      c = self.fretColors[event.number]
+
+      x  = (self.strings / 2 - event.number) * w
+      z  = ((time - pos) / self.currentPeriod) / beatsPerUnit
+      z2 = ((time + event.length - pos) / self.currentPeriod) / beatsPerUnit
+
+      if z > self.boardLength * .8:
+        f = (self.boardLength - z) / (self.boardLength * .2)
+      elif z < 0:
+        f = min(1, max(0, 1 + z2))
+      else:
+        f = 1.0
+
+      color      = (.1 + .8 * c[0], .1 + .8 * c[1], .1 + .8 * c[2], 1 * visibility * f)
+      length     = event.length / self.currentPeriod / beatsPerUnit
+      tailOnly   = False
+      colortail  = color
+      playedstart = False
+      playedcontinue = False
+
+      if event.tappable < 2:
+        isTappable = False
+      else:
+        isTappable = True
+      
+      # Clip the played notes to the origin
+      if event.played or event.hopod:
+        playedstart = True
+        tailOnly = True
+        length += z
+        z = 0
+        if length <= 0:
+          continue
+      if z < 0 and not (event.played or event.hopod):   
+        colortail = (.2 + .4, .2 + .4, .2 + .4, .5 * visibility * f)
+
+      if z + length < -1.0:
+        continue
+
+      sustain = False
+      if event.length > (1.4 * (60000.0 / event.noteBpm) / 4):
+        sustain = True
+
+      e = event.number
+      if playedstart == True:
+        for time, event in self.playedNotes:
+          if e == event.number:
+            playedcontinue = True        
+      
+      glPushMatrix()
+      glTranslatef(x, (1.0 - visibility) ** (e + 1), z)
+      self.renderNote2(visibility, f, length, sustain = sustain, color = color, colortail = colortail, tailOnly = tailOnly, playedstart = playedstart, playedcontinue = playedcontinue, isTappable = isTappable)
+      glPopMatrix()
+
+    if self.disableNoteSFX != True:
+      glBlendFunc(GL_ONE, GL_ONE)
+      for time, event in self.playedNotes:
+        c = self.fretColors[event.number]
+        x = (self.strings / 2 - event.number) * w
+        z = ((time - pos) / self.currentPeriod) / beatsPerUnit
+        length     = event.length / self.currentPeriod / beatsPerUnit
+        tailOnly   = False
+
+        if event.played or event.hopod:
+          tailOnly = True
+          length += z
+          z = 0
+          if length <= 0:
+            continue
+
+        sustain = False
+        if event.length > (1.4 * (60000.0 / event.noteBpm) / 4):
+          sustain = True
+        else:
+          continue
+        
+        glPushMatrix()
+        glTranslatef(x, 0, z)
+        for x in range(10):
+          glScalef(1.05, 1, 1)
+          glTranslatef(0, .005, 0)
+          f = 1.0 - (x / 10.0)
+          color = (f * c[0], f * c[1], f * c[2], 1)
+          self.renderNote2(visibility, f, length, sustain, color = color, colortail = color, tailOnly = tailOnly)
+        glPopMatrix()
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+      
+
+    # Draw a waveform shape over the currently playing notes
+    if self.disableNoteWavesSFX == True:
+      return
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+    for time, event in self.playedNotes:
+
+      if event.length <= (1.4 * (60000.0 / event.noteBpm) / 4):
+        continue
+      
       step  = self.currentPeriod / 16
       t     = time + event.length
       x     = (self.strings / 2 - event.number) * w
@@ -549,7 +883,6 @@ class Guitar:
     if not song or self.flameColors[0][0][0] == -1:
       return
 
-    beatsPerUnit = self.beatsPerBoard / self.boardLength
     w = self.boardWidth / self.strings
     track = song.track[self.player]
 
@@ -837,6 +1170,257 @@ class Guitar:
 
           glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
           event.flameCount += 1
+
+  def initTails(self):
+    width = self.tailWidth            
+    height = self.tailHeight  
+    v1 = [0 for i in range(4)]
+    v2 = [0 for i in range(4)]
+
+    ##Init. vectors for the first part of the tail
+    v1[0] = self.CREATE_VECTOR(-width, 0, 0)
+    v1[1] = self.CREATE_VECTOR(-width, height, 0)
+    v1[2] = self.CREATE_VECTOR(width, height, 0)
+    v1[3] = self.CREATE_VECTOR(width, 0, 0)
+
+    self.SMixBezier1(v1, 3)
+
+    ##Init. vectors for the second part of the tail
+    v1[0] = self.CREATE_VECTOR(-width, 0, 0)
+    v1[1] = self.CREATE_VECTOR(-width, height, 0)
+    v1[2] = self.CREATE_VECTOR(width, height, 0)
+    v1[3] = self.CREATE_VECTOR(width, 0, 0)
+    
+    v2[0] = self.CREATE_VECTOR(-width, 0, 0)
+    v2[1] = self.CREATE_VECTOR(-width, 0, self.tail2Size)
+    v2[2] = self.CREATE_VECTOR(width, 0, self.tail2Size)
+    v2[3] = self.CREATE_VECTOR(width, 0, 0)
+
+    self.SMixBezier2(v1, 3, v2, 3)    
+    
+
+  def CREATE_VECTOR(self, x, y, z):
+    C = [0 for i in range(4)]
+    C[0]=x
+    C[1]=y
+    C[2]=z
+    C[3]=1
+    return C
+
+  def Bern(self, s, j, n):
+    return (self.fac(n)/(self.fac(n-j)*self.fac(j)))*pow(1-s, n-j)*pow(s,j)
+
+  def fac(self, n):
+    resul = 1  
+    if n == 0:
+      resul = 1
+    else :
+      resul = self.fac(n-1) * n     
+    return  resul
+
+  def PtBezier(self, s, p, np):
+    V = self.CREATE_VECTOR(0, 0, 0)
+    k = 0
+    while k <= np:
+      V = self.addV(V, self.mulV(self.Bern(s, k, np), p[k]))
+      k += 1 
+    return V
+
+  def SMixBezier1(self, p, m1):
+    N = self.tailRoundness   
+    self.pp1 = [0 for i in range((N+1)*2)]
+    a = 0.0
+    b = 1.0
+    c = 0.0
+    d = 1.0
+
+    ## Vectors for the first part of the tail (Incomplete, more vectors will be added
+    ## when the size of the tail is known)
+    j = 0
+    i = 0
+    v = c + (d - c) * j / N
+    k = 0
+    while k <= N:
+      u1 = a+((b-a)*k)/N
+      u2 = c+((d-c)*k)/N
+      self.pp1[i] = self.mulV((1-v), self.PtBezier(u1, p, m1)) 
+      k += 1
+      i += 1
+
+  def SMixBezier2(self, p, m1, q, m2):
+    N = self.tailRoundness  
+    vv = [0 for i in range((N+1)*(N+1))]
+    a = 0.0
+    b = 1.0
+    c = 0.0
+    d = 1.0
+
+    ## Vectors for the second part of the tail (Complete, but unorganized)
+    ## CURVE ON EACH HORIZONTAL********************
+    j = 0
+    i = 0
+    while j <= N:
+      v = c + (d - c) * j / N
+      k = 0
+      while k <= N:
+        u1 = a+((b-a)*k)/N
+        u2 = c+((d-c)*k)/N
+        vv[i] = self.addV(self.mulV((1-v), self.PtBezier(u1, p, m1)), self.mulV(v, self.PtBezier(u2, q, m2))) 
+        k += 1
+        i += 1
+      j += 1
+
+    dd = (N+1)*(N+1) + N*(N-1)
+    start = [0 for i in range(N+1)]
+    i = 0
+    while i <= N:
+      start[i] = i*(N+1)
+      i += 1
+    self.pp2 = [0 for i in range(dd)]
+
+    ## Rearrange vectors so that they form triangles and can be drawn
+    i = 0
+    k = 0
+    mm = 0
+    lim = 0
+    while mm <= N-1:
+      if lim == 0:
+        lim = N
+        var1 = k
+        var2 = lim
+        adj = -2
+        inc = 1
+      else:
+        lim = 0
+        var1 = lim
+        var2 = k
+        adj = 2
+        inc = -1
+      while var1 <= var2:
+        self.pp2[i] = vv[start[k] + mm]
+        self.pp2[i+1] = vv[start[k] + mm + 1]
+        if var1 == var2 and (i+2) != dd:
+          self.pp2[i+2] = vv[start[k] + mm + 2]
+        k += inc
+        i += 2
+        if lim == N:
+          var1 = k
+        else:
+          var2 = k
+      i += 1
+      k += adj
+      mm += 1
+
+
+  def addV(self, c, v):
+    return self.CREATE_VECTOR(c[0]+v[0], c[1]+v[1], c[2]+v[2])
+
+
+  def  mulV(self, s, u):
+    C = [0 for i in range(4)]
+    C[0] = s * u[0]
+    C[1] = s * u[1]
+    C[2] = s * u[2]
+    C[3] = 1
+    return  C
+
+
+  def polygon1(self, size, colortail):
+    if size < 0:
+        return
+    
+    V = self.CREATE_VECTOR(0, 0, size)
+    N = len(self.pp1) / 2 - 1
+
+    ## Complete the vectors for the first part of the tail, unorganized
+    i = 0
+    while i <= N:
+      self.pp1[i+N+1] = self.addV(V, self.pp1[i]) 
+      i += 1
+
+    dd = ((N+1)*2) + (N-1)
+    start = [0 for i in range(2)]
+    i = 0
+    while i <= 1:
+      start[i] = i*(N+1)
+      i += 1
+    vv = [0 for i in range(dd)]
+
+    ## Rearrange the vectors so that they form triangles and can be drawn
+    i = 0
+    k = 0
+    mm = 0
+    lim = 0
+    while mm <= N-1:
+      if lim == 0:
+        lim = 1
+        var1 = k
+        var2 = lim
+        adj = -2
+        inc = 1
+      else:
+        lim = 0
+        var1 = lim
+        var2 = k
+        adj = 2
+        inc = -1
+      while var1 <= var2:
+        vv[i] = self.pp1[start[k] + mm]
+        vv[i+1] = self.pp1[start[k] + mm + 1]
+        if var1 == var2 and (i+2) != dd:
+          vv[i+2] = self.pp1[start[k] + mm + 2]
+        k += inc
+        i += 2
+        if lim == 1:
+          var1 = k
+        else:
+          var2 = k
+      i += 1
+      k += adj
+      mm += 1    
+
+    ## Draw the first part of the tail
+    j = 0
+    glBegin(GL_TRIANGLE_STRIP)
+    while j <= (dd - 1):
+      u = vv[j]
+      if u[0] > (self.tailWidth*2.0/3.0):
+        glColor4f(0.7*colortail[0], 0.7*colortail[1], 0.7*colortail[2], colortail[3])
+      elif u[0] < (-self.tailWidth*2.0/3.0):
+        glColor4f(*colortail)
+      else:
+        glColor4f(1.5*colortail[0], 1.5*colortail[1], 1.5*colortail[2], colortail[3])
+      glVertex3f(u[0], u[1], u[2])
+      j += 1
+    glEnd()
+
+
+  def polygon2(self, size, colortail):
+    V = self.CREATE_VECTOR(0, 0, size)
+    vv = [0 for i in range(len(self.pp2))]
+
+    ## Move all the vectors in the z axis to their corresponding location
+    i = 0
+    while i <= len(self.pp2)-1:
+      vv[i] = self.addV(V, self.pp2[i])
+      i += 1
+
+    ## Draw the second part of the tail
+    j = 0
+    glBegin(GL_TRIANGLE_STRIP)
+    while j <= len(vv)-1:
+      u = vv[j]
+      if u[0] > (self.tailWidth*2.0/3.0):
+        glColor4f(0.7*colortail[0], 0.7*colortail[1], 0.7*colortail[2], colortail[3])
+      elif u[0] < (-self.tailWidth*2.0/3.0):
+        glColor4f(*colortail)
+      else:
+        glColor4f(1.5*colortail[0], 1.5*colortail[1], 1.5*colortail[2], colortail[3])
+      if u[2] < 0:
+        glColor4f(0.0, 0.0, 0.0, 0.0)
+      glVertex3f(u[0], u[1], u[2])
+      j += 1
+    glEnd()
         
   def render(self, visibility, song, pos, controls):
     glEnable(GL_BLEND)
@@ -847,8 +1431,8 @@ class Guitar:
 
     self.renderNeck(visibility, song, pos)
     self.renderTracks(visibility)
-    self.renderBars(visibility, song, pos)
-    self.renderNotes(visibility, song, pos)
+    self.renderBars2(visibility, song, pos)
+    self.renderNotes2(visibility, song, pos)
     self.renderFrets(visibility, song, controls)
     self.renderFlames(visibility, song, pos, controls)
     
@@ -1264,12 +1848,5 @@ class Guitar:
         return False
 
     # update bpm
-    diff = self.targetBpm - self.currentBpm
-    if (round((diff * .03), 4) != 0):
-      self.currentBpm = round(self.currentBpm + (diff * .03), 4)
-    else:
-      self.currentBpm = self.targetBpm
-
-    if self.currentBpm != self.targetBpm:
-      self.setDynamicBPM(self.currentBpm)    
+    self.updateBPM()  
     return True

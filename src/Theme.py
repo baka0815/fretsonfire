@@ -82,6 +82,12 @@ DEFAULT_SIZE_FLAME2_4X   = 0.075
 DEFAULT_SIZE_FLAME3_4X   = 0.075
 DEFAULT_SIZE_FLAME4_4X   = 0.075
 
+DEFAULT_COLOR_MULT_1X   = "#FFFFFF"
+DEFAULT_COLOR_MULT_2X   = "#FF8080"
+DEFAULT_COLOR_MULT_3X   = "#FFFF80"
+DEFAULT_COLOR_MULT_4X   = "#8080FF"
+DEFAULT_FLASH_MULT      = True
+
 DEFAULT_SPINNY           = False
 
 DEFAULT_X_TARGET_POV     = 0.0
@@ -92,9 +98,15 @@ DEFAULT_X_ORIGIN_POV     = 0.0
 DEFAULT_Y_ORIGIN_POV     = 3.0
 DEFAULT_Z_ORIGIN_POV     = -3.0
 
+DEFAULT_WIDTH_TAIL       = .075
+DEFAULT_HEIGHT_TAIL      = 0.1
+DEFAULT_ROUNDNESS_TAIL   = 2
+DEFAULT_SIZE_TAIL2       = 0.25
+
 DEFAULT_PHRASE_LOADING   = "Tuning Guitar..."
 DEFAULT_PHRASE_RESULTS   = "Chilling"
 DEFAULT_SONG_CREDIT      = "defy"
+DEFAULT_MULTIPLIER_BOARDSPEED = 1.0
 
 # read the color scheme from the config file
 Config.define("theme", "background_color",  str, DEFAULT_COLOR_BACKGROUND)
@@ -160,6 +172,12 @@ Config.define("theme", "flame2_4X_size",     float, DEFAULT_SIZE_FLAME2_4X)
 Config.define("theme", "flame3_4X_size",     float, DEFAULT_SIZE_FLAME3_4X)
 Config.define("theme", "flame4_4X_size",     float, DEFAULT_SIZE_FLAME4_4X)
 
+Config.define("theme", "mult_1X_color",    str, DEFAULT_COLOR_MULT_1X)
+Config.define("theme", "mult_2X_color",    str, DEFAULT_COLOR_MULT_2X)
+Config.define("theme", "mult_3X_color",    str, DEFAULT_COLOR_MULT_3X)
+Config.define("theme", "mult_4X_color",    str, DEFAULT_COLOR_MULT_4X)
+Config.define("theme", "mult_flash",       bool, DEFAULT_FLASH_MULT)
+
 Config.define("theme", "disable_song_spinny",    bool, DEFAULT_SPINNY)
 Config.define("theme", "disable_editor_spinny",  bool, DEFAULT_SPINNY)
 Config.define("theme", "disable_results_spinny", bool, DEFAULT_SPINNY)
@@ -173,6 +191,13 @@ Config.define("theme", "pov_origin_x",       float, DEFAULT_X_ORIGIN_POV)
 Config.define("theme", "pov_origin_y",       float, DEFAULT_Y_ORIGIN_POV)
 Config.define("theme", "pov_origin_z",       float, DEFAULT_Z_ORIGIN_POV)
 
+Config.define("theme", "tail_width",       float, DEFAULT_WIDTH_TAIL)
+Config.define("theme", "tail_height",      float, DEFAULT_HEIGHT_TAIL)
+Config.define("theme", "tail_roundness",   int, DEFAULT_ROUNDNESS_TAIL)
+Config.define("theme", "tail_size2",       float, DEFAULT_SIZE_TAIL2)
+
+Config.define("theme", "boardspeed_multiplier", float, DEFAULT_MULTIPLIER_BOARDSPEED)
+
 backgroundColor = None
 baseColor       = None
 selectedColor   = None
@@ -185,6 +210,8 @@ key2Color       = None
 tracksColor     = None
 barsColor       = None
 glowColor       = None
+multColors      = None
+multFlash       = None
 flameColors     = None
 flameSizes      = None
 loadingPhrase   = None
@@ -201,6 +228,13 @@ povTargetZ = None
 povOriginX = None
 povOriginY = None
 povOriginZ = None
+
+tailWidth      = None
+tailHeight     = None
+tailRoundness  = None
+tail2Size      = None
+
+boardspeedMultiplier = None
 
 def hexToColor(color):
   if color[0] == "#":
@@ -234,6 +268,8 @@ def open(config):
   setupFlameSizes(config)
   setupSpinny(config)
   setupPOV(config)
+  setupTail(config)
+  setupMult(config)
   setupMisc(config)
 
 def setupColors(config):
@@ -533,9 +569,59 @@ def setupPOV(config):
   if povOriginZ == None or temp != DEFAULT_Z_ORIGIN_POV:
     povOriginZ = temp
 
+def setupTail(config):
+  global tailWidth, tailHeight, tailRoundness, tail2Size
+
+  temp = config.get("theme", "tail_width")
+  if tailWidth == None or temp != DEFAULT_WIDTH_TAIL:
+    tailWidth = temp
+
+  temp = config.get("theme", "tail_height")
+  if tailHeight == None or temp != DEFAULT_HEIGHT_TAIL:
+    tailHeight = temp
+
+  temp = config.get("theme", "tail_roundness")
+  if tailRoundness == None or temp != DEFAULT_ROUNDNESS_TAIL:
+    tailRoundness = temp
+
+  temp = config.get("theme", "tail_size2")
+  if tail2Size == None or temp != DEFAULT_SIZE_TAIL2:
+    tail2Size = temp
+
+def setupMult(config):
+  global multColors
+  global multFlash
+  
+  if multColors == None:
+    multColors = [hexToColor(config.get("theme", "mult_1X_color"))]
+    multColors.append(hexToColor(config.get("theme", "mult_2X_color")))
+    multColors.append(hexToColor(config.get("theme", "mult_3X_color")))
+    multColors.append(hexToColor(config.get("theme", "mult_4X_color")))
+  else:
+    temp = config.get("theme", "mult_1X_color")
+    if temp != DEFAULT_COLOR_MULT_1X:
+      multColors[0] = hexToColor(temp)
+
+    temp = config.get("theme", "mult_2X_color")
+    if temp != DEFAULT_COLOR_MULT_1X:
+      multColors[1] = hexToColor(temp)
+
+    temp = config.get("theme", "mult_3X_color")
+    if temp != DEFAULT_COLOR_MULT_1X:
+      multColors[2] = hexToColor(temp)
+
+    temp = config.get("theme", "mult_4X_color")
+    if temp != DEFAULT_COLOR_MULT_1X:
+      multColors[3] = hexToColor(temp)
+
+  temp = config.get("theme", "mult_flash")
+  if multFlash == None or temp != DEFAULT_FLASH_MULT:
+    multFlash = temp
+    
 def setupMisc(config):
   global loadingPhrase, resultsPhrase
   global creditSong
+  global boardspeedMultiplier
 
   temp = config.get("theme", "loading_phrase")
   if loadingPhrase == None or temp != DEFAULT_PHRASE_LOADING:
@@ -549,6 +635,9 @@ def setupMisc(config):
   if creditSong == None or temp != DEFAULT_SONG_CREDIT:
     creditSong = temp
 
+  temp = config.get("theme", "boardspeed_multiplier")
+  if boardspeedMultiplier == None or temp != DEFAULT_MULTIPLIER_BOARDSPEED:
+    boardspeedMultiplier = temp
 
 def write(f, config):
   # Write read in theme.ini specific variables
@@ -562,6 +651,8 @@ def write(f, config):
   writeFlameSizes(f, config)
   writeSpinny(f, config)
   writePOV(f, config)
+  writeTail(f, config)
+  writeMult(f, config)
   writeMisc(f, config)
 
 def writeColors(f, config):
@@ -656,12 +747,32 @@ def writePOV(f, config):
   f.write("%s = %s\n" % ("pov_origin_x", povOriginX))
   f.write("%s = %s\n" % ("pov_origin_y", povOriginY))
   f.write("%s = %s\n" % ("pov_origin_z", povOriginZ))
-        
+
+def writeTail(f, config):
+  global tailWidth, tailHeight, tailRoundness, tail2Size
+  
+  f.write("%s = %s\n" % ("tail_width", tailWidth))
+  f.write("%s = %s\n" % ("tail_height", tailHeight))
+  f.write("%s = %s\n" % ("tail_roundness", tailRoundness))
+  f.write("%s = %s\n" % ("tail2_size", tail2Size))
+
+def writeMult(f, config):
+  global multColors
+  global multFlash
+  
+  f.write("%s = %s\n" % ("mult_1X_color", multColors[0]))
+  f.write("%s = %s\n" % ("mult_2X_color", multColors[1]))
+  f.write("%s = %s\n" % ("mult_3X_color", multColors[2]))
+  f.write("%s = %s\n" % ("mult_4X_color", multColors[3]))
+
+  f.write("%s = %s\n" % ("mult_flash", multFlash))  
+  
 def writeMisc(f, config):
   global loadingPhrase, resultsPhrase
   global creditSong
-
+  global boardspeedMultiplier
+  
   f.write("%s = %s\n" % ("loading_phrase", loadingPhrase))
   f.write("%s = %s\n" % ("results_phrase", resultsPhrase))
   f.write("%s = %s\n" % ("credit_song", creditSong))
-  
+  f.write("%s = %s\n" % ("boardspeed_multiplier", boardspeedMultiplier))

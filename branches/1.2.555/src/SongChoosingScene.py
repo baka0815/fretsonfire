@@ -215,10 +215,10 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
       if not self.player.part in info.parts:
         self.player.part = info.parts[0]
 
-      if not self.player.difficulty in info.difficulties:
-        self.player.difficulty = info.difficulties[0]
-      if not self.player.part in info.parts:
-        self.player.part = info.parts[0]   
+      if not self.player2.difficulty in info.difficulties:
+        self.player2.difficulty = info.difficulties[0]
+      if not self.player2.part in info.parts:
+        self.player2.part = info.parts[0]   
 
       print "player1 diff", self.player.difficulty
       print "player1 part", self.player.part

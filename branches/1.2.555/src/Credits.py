@@ -214,6 +214,7 @@ class Credits(Layer, KeyListener):
 
   def songLoaded(self, song):
     self.engine.boostBackgroundThreads(False)
+    song.setBackgroundVolume(self.engine.config.get("audio", "gamevol"))
     song.play()
 
   def shown(self):

@@ -78,7 +78,7 @@ class Layer(object):
 
 class Effect(object):
   """
-  An animationn effect that can be attached to a Layer.
+  An animation effect that can be attached to a Layer.
   """
   def __init__(self, layer, options):
     """
@@ -132,6 +132,11 @@ class Effect(object):
     t = self.stage.pos - self.delay * self.period - self.stage.lastMissPos
     return self.intensity * (1.0 - self.triggerProf(0, self.period, t))
 
+  def triggerRock(self):
+    if not self.stage.lastRockValue:
+      return 0.0
+    return self.stage.lastRockValue
+  
   def step(self, threshold, x):
     return (x > threshold) and 1 or 0
 
@@ -299,6 +304,7 @@ class Stage(object):
     self.playedNotes        = []
     self.averageNotes       = [0.0]
     self.beatPeriod         = 0.0
+    self.lastRockValue      = None
 
   def triggerPick(self, pos, notes):
     if notes:
@@ -306,6 +312,10 @@ class Stage(object):
       self.playedNotes      = self.playedNotes[-3:] + [sum(notes) / float(len(notes))]
       self.averageNotes[-1] = sum(self.playedNotes) / float(len(self.playedNotes))
 
+  def triggerRock(self, value):
+    print "blah", value
+    self.lastRockValue = value
+    
   def triggerMiss(self, pos):
     self.lastMissPos = pos
 

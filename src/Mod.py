@@ -38,13 +38,7 @@ def init(engine):
 
 def getAvailableMods(engine):
   modPath = _getModPath(engine)
-  try:
-    dirList = os.listdir(modPath)
-  except OSError, e:
-    import Log
-    Log.warn("Could not find mods directory")
-    return []
-  return [m for m in dirList if os.path.isdir(os.path.join(modPath, m)) and not m.startswith(".")]
+  return [m for m in os.listdir(modPath) if os.path.isdir(os.path.join(modPath, m)) and not m.startswith(".")]
 
 def getActiveMods(engine):
   mods = []

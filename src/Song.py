@@ -860,14 +860,11 @@ def getAvailableLibraries(engine, library = DEFAULT_LIBRARY):
       if not os.path.isdir(libraryRoot):
         continue
       for name in os.listdir(libraryRoot):
-        # If the directory has at least one song under it or a file called "library.ini", add it
-        if os.path.isfile(os.path.join(libraryRoot, name, "song.ini")) or \
-           name == "library.ini":
+        if os.path.isfile(os.path.join(libraryRoot, name, "song.ini")):
           if not libraryRoot in libraryRoots:
             libName = library + os.path.join(libraryRoot.replace(songRoot, ""))
             libraries.append(LibraryInfo(libName, os.path.join(libraryRoot, "library.ini")))
             libraryRoots.append(libraryRoot)
-            break
   return libraries
 
 def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = False):

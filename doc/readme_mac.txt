@@ -1,6 +1,3 @@
-NOTE: The following is mostly for historical interest, as it concerns an old version of the game.
-
-
 Readme for building and packing Frets on Fire and components on Mac OS X.
 
 ********************************************************************************

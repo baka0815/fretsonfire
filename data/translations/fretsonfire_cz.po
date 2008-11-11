@@ -28,11 +28,11 @@ msgstr "Verze %s"
 
 #: Credits.py:118
 msgid "Game Design,"
-msgstr "Herní Design,"
+msgstr "Game design,"
 
 #: Credits.py:119
 msgid "Programming:"
-msgstr "Programování:"
+msgstr "Program:"
 
 #: Credits.py:122
 msgid "Music,"
@@ -48,11 +48,11 @@ msgstr "Grafika:"
 
 #: Credits.py:129
 msgid "Introducing:"
-msgstr "Úcinkují:"
+msgstr "Účinkují:"
 
 #: Credits.py:131
 msgid "as Jurgen, Your New God"
-msgstr "jako Jurgen, vás nový bůh"
+msgstr "jako Jurgen, váš nový bůh"
 
 #: Credits.py:134
 msgid "as Groupie"
@@ -92,7 +92,7 @@ msgstr "Mostly Playing Guitar"
 
 #: Credits.py:146
 msgid "composed and performed by Tommi Inkila"
-msgstr "slozil a zahrál: Tommi Inkila"
+msgstr "složil a zahrál: Tommi Inkila"
 
 #: Credits.py:148
 msgid "Testing:"
@@ -108,7 +108,7 @@ msgstr "Zvláštní poděkování:"
 
 #: Credits.py:161
 msgid "Made with:"
-msgstr "Vytvořeno s:"
+msgstr "Vytvořeno pomocí:"
 
 #: Credits.py:184
 msgid "Source Code available under the GNU General Public License"
@@ -128,7 +128,7 @@ msgstr "<OK>"
 
 #: Dialogs.py:350
 msgid "Browsing Collection..."
-msgstr "Prohlízím sbírku..."
+msgstr "Prohlížím si sbírku..."
 
 #: Dialogs.py:669
 msgid "Find: %s"
@@ -140,19 +140,19 @@ msgstr "Nahrávám ukázku..."
 
 #: Dialogs.py:712
 msgid "One song in this library"
-msgstr "V knihovne je jedna skladba"
+msgstr "V knihovně je jedna skladba"
 
 #: Dialogs.py:714
 msgid "%d songs in this library"
-msgstr "V knihovne je %d skladeb"
+msgstr "V knihovně je %d skladeb"
 
 #: Dialogs.py:740
 msgid "[Parent Folder]"
-msgstr "[O úroven výs]"
+msgstr "[O úroveň výš]"
 
 #: Dialogs.py:742
 msgid "%s [Folder]"
-msgstr "%s [Slozka]"
+msgstr "%s [Složka]"
 
 #: Dialogs.py:948
 msgid "%.2f beats per minute"
@@ -160,11 +160,11 @@ msgstr "%.2f úderů za minutu"
 
 #: Dialogs.py:1012
 msgid "Pick!"
-msgstr "Vybrat"
+msgstr "Trsátko"
 
 #: Dialogs.py:1051
 msgid "Choose a Song"
-msgstr "Zvolte skladbu"
+msgstr "Zvolte si skladbu"
 
 #: Dialogs.py:1066
 msgid "Choose a File"
@@ -172,7 +172,7 @@ msgstr "Vyberte soubor"
 
 #: Dialogs.py:1092
 msgid "Play with the keys and press Escape when you're done."
-msgstr "Hrajte klávesami a zmácknete Escape az budete hotovi."
+msgstr "Hrajte na klávesách a poté přerušte Escapem."
 
 #: Dialogs.py:1102
 msgid "Loading..."
@@ -180,7 +180,7 @@ msgstr "Nahrávám..."
 
 #: Editor.py:66
 msgid "Save Song"
-msgstr "Ulozit skladbu"
+msgstr "Uložit skladbu"
 
 #: Editor.py:67
 msgid "Set Song Name"
@@ -196,7 +196,7 @@ msgstr "Nastavit tempo"
 
 #: Editor.py:70
 msgid "Estimate Beats per Minute"
-msgstr "Rucne odhadnout tempo"
+msgstr "Ručně odhadnout tempo"
 
 #: Editor.py:71
 msgid "Set A/V delay"
@@ -212,15 +212,15 @@ msgstr "Nastavit potisk kazety"
 
 #: Editor.py:74
 msgid "Editing Help"
-msgstr "Nápoveda"
+msgstr "Nápověda"
 
 #: Editor.py:75 GameResultsScene.py:60 GuitarScene.py:92
 msgid "Quit to Main Menu"
-msgstr "Zpet do hlavního menu"
+msgstr "Zpět do menu"
 
 #: Editor.py:81
 msgid "There are no changes to save."
-msgstr "Nejsou zadne zmeny k ulození."
+msgstr "Neproběhly žádné změny k uložení."
 
 #: Editor.py:89
 msgid "Saving..."
@@ -228,7 +228,7 @@ msgstr "Ukládám..."
 
 #: Editor.py:90
 msgid "'%s' saved."
-msgstr "'%s' ulozeno."
+msgstr "'%s' uloženo."
 
 #: Editor.py:93
 msgid "Editing keys: "
@@ -236,7 +236,7 @@ msgstr "Klávesy:"
 
 #: Editor.py:94
 msgid "Arrows - Move cursor, "
-msgstr "Sipky - Pohyb kurzoru, "
+msgstr "Šipky - Pohyb kurzoru, "
 
 #: Editor.py:95
 msgid "Space - Play/pause song, "
@@ -244,7 +244,7 @@ msgstr "Mezerník - Spustit/pozastavit skladbu, "
 
 #: Editor.py:96
 msgid "Enter - Make note (hold and move for long notes), "
-msgstr "Enter - Umístit notu (pridrzte pro delsi noty), "
+msgstr "Enter - Umístit notu (přidržet pro dlouhou notu), "
 
 #: Editor.py:97
 msgid "Delete - Delete note, "
@@ -252,15 +252,15 @@ msgstr "Delete - Vymazat notu,"
 
 #: Editor.py:98
 msgid "Page Up/Down - Change difficulty"
-msgstr "Page Up/Down - Zmenit obtíznost"
+msgstr "Page Up/Down - Změnit obtížnost"
 
 #: Editor.py:102
 msgid "Enter Song Name"
-msgstr "Vlozte název skladby"
+msgstr "Vložte název skladby"
 
 #: Editor.py:108
 msgid "Enter Artist Name"
-msgstr "Vlozte jméno interpreta"
+msgstr "Vložte jméno interpreta"
 
 #: Editor.py:114
 msgid "Enter A/V delay in milliseconds"
@@ -268,27 +268,27 @@ msgstr "Nastavte prodlevu A/V v milisekundách"
 
 #: Editor.py:120 Editor.py:129
 msgid "That isn't a number."
-msgstr "To neni cislo."
+msgstr "Musíte zadat číslo."
 
 #: Editor.py:123
 msgid "Enter Beats per Minute Value"
-msgstr "Zadejte pocet úderů za minutu"
+msgstr "Zadejte počet úderů za minutu"
 
 #: Editor.py:132
 msgid "Tap the Space bar to the beat of the song. Press Enter when done or Escape to cancel."
-msgstr "Mackejte mezerník do rytmu skladby. Poté potvrdte Enterem, nebo zrušte Escapem."
+msgstr "Mačkejte mezerník v rytmu skladby. Poté potvrďte Enterem, nebo zrušte Escapem."
 
 #: Editor.py:142
 msgid "Enter cassette color in HTML (#RRGGBB) format."
-msgstr "Vlozte barvu v HTML formátu (#RRGGBB)."
+msgstr "Vložte barvu v HTML formátu (#RRGGBB)."
 
 #: Editor.py:148
 msgid "That isn't a color."
-msgstr "To neni barva."
+msgstr "Neplatný kód barvy."
 
 #: Editor.py:151
 msgid "Choose a 256x128 PNG format label image."
-msgstr "Zvolte PNG obrázek pro kazetu o rozlisení 256x128."
+msgstr "Zvolte PNG obrázek o rozlišení 256x128."
 
 #: Editor.py:168
 msgid "Loading song..."
@@ -296,7 +296,7 @@ msgstr "Nahrávám skladbu..."
 
 #: Editor.py:334
 msgid "Playing"
-msgstr "Prehrávám"
+msgstr "Přehrávám"
 
 #: Editor.py:336
 msgid "Stopped"
@@ -304,11 +304,11 @@ msgstr "Zastaveno"
 
 #: Editor.py:377
 msgid "Enter a name for the song."
-msgstr "Vlozte název skladby."
+msgstr "Vložte název skladby."
 
 #: Editor.py:385
 msgid "That song already exists."
-msgstr "Tato skladba jiz existuje."
+msgstr "Tato skladba již existuje."
 
 #: Editor.py:389
 msgid "Choose the Instrument Track (OGG format)."
@@ -324,7 +324,7 @@ msgstr "Importuji..."
 
 #: Editor.py:591
 msgid "Stage 1/8: Splitting VGS file"
-msgstr "Krok 1/8: Rozdeluji soubor VGS"
+msgstr "Krok 1/8: Rozděluji soubor VGS"
 
 #: Editor.py:626
 msgid "Stage 6/8: Joining song stereo tracks"
@@ -340,7 +340,7 @@ msgstr "Krok 8/8: Komprimuji stopy"
 
 #: Editor.py:680
 msgid "Reading the song list."
-msgstr "Ctu seznam skladeb."
+msgstr "Načítám seznam skladeb."
 
 #: Editor.py:687
 msgid "Reading the archive index."
@@ -348,19 +348,19 @@ msgstr "Načítám index archivu."
 
 #: Editor.py:711
 msgid "Extracting %s by %s. %d of %d songs imported. Yeah, this is going to take forever."
-msgstr "Rozbaluji %s od %s. %d z %d skladeb importováno. Jo, bude to trvat celou vecnost."
+msgstr "Rozbaluji %s od %s. %d z %d skladeb importováno. Jo, bude to trvat věčnost."
 
 #: Editor.py:756
 msgid "Ready"
-msgstr "Pripraveno"
+msgstr "Připraveno"
 
 #: Editor.py:771
 msgid "All done! %d songs imported. Have fun!"
-msgstr "Hotovo! %d skladeb importováno. Príjemnou zábavu!"
+msgstr "Hotovo! %d skladeb importováno. Příjemnou zábavu!"
 
 #: Editor.py:773
 msgid "No songs could be imported, sorry. Check the log files for more information."
-msgstr "Prominte, zadná skladba nemůže být importována. Více informací naleznete v souborech logu (LOG)."
+msgstr "Promiňte, žadná skladba nemůže být importována. Více informací naleznete v souborech logu (LOG)."
 
 #: Editor.py:782
 msgid "Ogg Vorbis encoder (oggenc.exe) not found. Please install it to the game directory and try again."
@@ -372,7 +372,7 @@ msgstr "Nebyl nalezen Ogg Vorbis encoder (oggenc). Prosím, nainstalujte jej a z
 
 #: Editor.py:788
 msgid "Make sure you have at least 500 megabytes of free disk space before using this importer."
-msgstr "Ujistete se, ze mate aspon 500 MegaBytů volného místa na disku pred pouzitím importéru."
+msgstr "Pro import potřebujete alespoň 500 megabytů volného místa na disku."
 
 #: Editor.py:792
 msgid "Enter the path to the mounted Guitar Hero (tm) DVD"
@@ -428,7 +428,7 @@ msgstr "Kvalita vyhlazování"
 
 #: GameEngine.py:55
 msgid "None"
-msgstr "Zádné"
+msgstr "Žádné"
 
 #: GameEngine.py:57
 msgid "Frames per Second"
@@ -480,7 +480,7 @@ msgstr "Tiché"
 
 #: GameEngine.py:64
 msgid "Screw Up Sounds"
-msgstr "Zvuky prehmatů"
+msgstr "Zvuky přehmatů"
 
 #: GameEngine.py:64 Mod.py:33
 msgid "Off"
@@ -496,7 +496,7 @@ msgstr "Hlasitost skladby"
 
 #: GameEngine.py:67
 msgid "Rhythm Volume"
-msgstr "Hlasitost rytmu"
+msgstr "Hlasitost basy"
 
 #: GameEngine.py:68
 msgid "Text scale"
@@ -504,7 +504,7 @@ msgstr "Velikost textů"
 
 #: GameEngine.py:134
 msgid "Frets on Fire"
-msgstr "Horící Prazce"
+msgstr "Frets on Fire"
 
 #: GameResultsScene.py:58
 msgid "Replay"
@@ -512,23 +512,23 @@ msgstr "Hrát znovu"
 
 #: GameResultsScene.py:59 GuitarScene.py:90
 msgid "Change Song"
-msgstr "Zmenit skladbu"
+msgstr "Změnit skladbu"
 
 #: GameResultsScene.py:66
 msgid "Chilling..."
-msgstr "Chladím zesilovac..."
+msgstr "Chladím zesilovač..."
 
 #: GameResultsScene.py:76
 msgid "No highscores for cheaters!"
-msgstr "Zadná vysoká skóre pro podvodníky!"
+msgstr "Podvodníky do výsledků nezaznamenávám!"
 
 #: GameResultsScene.py:78
 msgid "%d points is a new high score! Please enter your name:"
-msgstr "%d bodů je nové vysoké skóre! Prosím, zadejte své jméno:"
+msgstr "%d bodů patří k nelepším výsledkům! Zadejte své jméno:"
 
 #: GameResultsScene.py:176
 msgid "Highest Scores (%s)"
-msgstr "Nejvyssí skóre (%s)"
+msgstr "Nejlepší skóre (%s)"
 
 #: GameResultsScene.py:197
 msgid "Uploading Scores..."
@@ -536,23 +536,23 @@ msgstr "Odesílám skóre..."
 
 #: GameResultsScene.py:201
 msgid "Song Finished!"
-msgstr "Skladba dokoncena!"
+msgstr "Skladba dokončena!"
 
 #: GameResultsScene.py:219
 msgid "Accuracy: %d%%"
-msgstr "Presnost: %d%%"
+msgstr "Přesnost: %d%%"
 
 #: GameResultsScene.py:222
 msgid "Longest note streak: %d"
-msgstr "Nejdelsi bezchybná rada: %d"
+msgstr "Nejdelší bezchybná řada: %d"
 
 #: GameTask.py:72
 msgid "Connection lost."
-msgstr "Spojení ztraceno."
+msgstr "Spojení přerušeno."
 
 #: GuitarScene.py:83
 msgid "Tuning Guitar..."
-msgstr "Ladím kytaru..."
+msgstr "Natahuji struny..."
 
 #: GuitarScene.py:89
 msgid "Restart Song"
@@ -564,7 +564,7 @@ msgstr "Nastavení"
 
 #: GuitarScene.py:289
 msgid "Jurgen will show you how it is done."
-msgstr "Jurgen ti ukaze jak na to."
+msgstr "Jurgen ti ukáže jak na to."
 
 #: GuitarScene.py:291
 msgid "Jurgen has left the building."
@@ -572,15 +572,15 @@ msgstr "Jurgen opustil budovu."
 
 #: GuitarScene.py:365
 msgid "Get Ready to Rock"
-msgstr "Připrav se parit!"
+msgstr "Jde se na věc!"
 
 #: GuitarScene.py:390
 msgid "%d hit"
-msgstr "%d rána"
+msgstr "%d v řadě"
 
 #: GuitarScene.py:407
 msgid "Missed!"
-msgstr "Vedle!"
+msgstr "Chyba!"
 
 #: Language.py:56
 msgid "Language"
@@ -588,7 +588,7 @@ msgstr "Jazyk"
 
 #: Lobby.py:52
 msgid "Player"
-msgstr "Hrác"
+msgstr "Hráč"
 
 #: Lobby.py:59
 msgid "Enter your name:"
@@ -596,11 +596,11 @@ msgstr "Zadejte své jméno:"
 
 #: Lobby.py:59
 msgid "Player #%d"
-msgstr "Hrác #%d"
+msgstr "Hráč #%d"
 
 #: Lobby.py:109
 msgid "Lobby (%d players)"
-msgstr "Hala (%d hráců)"
+msgstr "Lobby (%d hráčů)"
 
 #: Lobby.py:138
 msgid "Press Enter to Start Game"
@@ -608,15 +608,15 @@ msgstr "Hru zahájíte stiskem Enteru"
 
 #: MainMenu.py:54
 msgid "Host Multiplayer Game"
-msgstr "Zalozit hru"
+msgstr "Založit hru"
 
 #: MainMenu.py:55
 msgid "Join Multiplayer Game"
-msgstr "Pripojit se ke hre"
+msgstr "Připojit se ke hře"
 
 #: MainMenu.py:132
 msgid "Edit Existing Song"
-msgstr "Upravit existující skladbu"
+msgstr "Upravit stávající skladbu"
 
 #: MainMenu.py:133
 msgid "Import New Song"
@@ -632,7 +632,7 @@ msgstr "Hrát hru"
 
 #: MainMenu.py:141
 msgid "Tutorial"
-msgstr "Cvicení"
+msgstr "Výuka"
 
 #: MainMenu.py:142
 msgid "Song Editor"
@@ -644,7 +644,7 @@ msgstr "Nastavení >"
 
 #: MainMenu.py:144
 msgid "Credits"
-msgstr "Autori"
+msgstr "Autoři"
 
 #: MainMenu.py:221
 msgid "Enter the server address:"
@@ -652,7 +652,7 @@ msgstr "Zadejte adresu serveru:"
 
 #: MainMenu.py:228
 msgid "Connecting..."
-msgstr "Pripojuji se..."
+msgstr "Připojuji se..."
 
 #: Mod.py:33
 msgid "On"
@@ -676,35 +676,35 @@ msgstr "Dolů"
 
 #: Player.py:48
 msgid "Pick"
-msgstr "Vybrat"
+msgstr "Trsátko"
 
 #: Player.py:49
 msgid "Secondary Pick"
-msgstr "Vybrat (sekundární)"
+msgstr "Sekundární trsátko"
 
 #: Player.py:50
 msgid "Fret #1"
-msgstr "Prazec #1"
+msgstr "Pražec #1"
 
 #: Player.py:51
 msgid "Fret #2"
-msgstr "Prazec #2"
+msgstr "Pražec #2"
 
 #: Player.py:52
 msgid "Fret #3"
-msgstr "Prazec #3"
+msgstr "Pražec #3"
 
 #: Player.py:53
 msgid "Fret #4"
-msgstr "Prazec #4"
+msgstr "Pražec #4"
 
 #: Player.py:54
 msgid "Fret #5"
-msgstr "Prazec #5"
+msgstr "Pražec #5"
 
 #: Player.py:55
 msgid "Cancel"
-msgstr "Zrusit"
+msgstr "Zrušit"
 
 #: Settings.py:118
 msgid "Press a key for '%s' or Escape to cancel."
@@ -712,7 +712,7 @@ msgstr "Zadejte klávesu pro '%s', nebo stornujte Escapem."
 
 #: Settings.py:130
 msgid "Apply New Settings"
-msgstr "Pouzít změny"
+msgstr "Použít změny"
 
 #: Settings.py:137
 msgid "Mod settings"
@@ -720,11 +720,11 @@ msgstr "Nastavení modifikací"
 
 #: Settings.py:145
 msgid "Test Keys"
-msgstr "Otestovat klávesy"
+msgstr "Test kláves"
 
 #: Settings.py:163
 msgid "Video Resolution"
-msgstr "Rozlisení"
+msgstr "Rozlišení"
 
 #: Settings.py:184
 msgid "Volume Settings"
@@ -748,7 +748,7 @@ msgstr "Nastavení zvuku"
 
 #: Song.py:58
 msgid "Supaeasy"
-msgstr "Suprlehká"
+msgstr "Primitivní"
 
 #: Song.py:59
 msgid "Easy"
@@ -756,15 +756,15 @@ msgstr "Lehká"
 
 #: Song.py:60
 msgid "Medium"
-msgstr "Strední"
+msgstr "Střední"
 
 #: Song.py:61
 msgid "Amazing"
-msgstr "Úzasná"
+msgstr "Šílená"
 
 #: SongChoosingScene.py:68
 msgid "Choose a difficulty:"
-msgstr "Zvolte si obtíznost:"
+msgstr "Zvolte si obtížnost:"
 
 #: Dialogs.py:683
 msgid "Filter: %s"
@@ -776,8 +776,8 @@ msgstr "Nenalezeno"
 
 #: GameEngine.py:54
 msgid "Tappable notes"
-msgstr "Noty bez Vybrat"
+msgstr "Noty bez trsátka"
 
 #: MainMenu.py:72
 msgid "Quit"
-msgstr "Ukoncit"
+msgstr "Ukončit"

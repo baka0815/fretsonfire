@@ -23,15 +23,6 @@
 """
 Main game executable.
 """
-import sys
-import os
-
-# This trickery is needed to get OpenGL 3.x working with py2exe
-if hasattr(sys, "frozen") and os.name == "nt":
-  import ctypes
-  from ctypes import util
-  sys.path.insert(0, "data/PyOpenGL-3.0.0a5-py2.5.egg")
-  sys.path.insert(0, "data/setuptools-0.6c8-py2.5.egg")
 
 # Register the latin-1 encoding
 import codecs
@@ -47,7 +38,10 @@ from MainMenu import MainMenu
 import Log
 import Config
 import Version
+
 import getopt
+import sys
+import os
 
 usage = """%(prog)s [options]
 Options:
@@ -99,7 +93,7 @@ if __name__ == "__main__":
             os.execl("./FretsOnFire", "./FretsOnFire", *sys.argv[1:])
         else:
           if os.name == "nt":
-            bin = "c:/python25/python"
+            bin = "c:/python24/python"
           else:
             bin = "/usr/bin/python"
           os.execl(bin, bin, "FretsOnFire.py", *sys.argv[1:])

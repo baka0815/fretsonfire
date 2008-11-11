@@ -24,7 +24,7 @@ import re
 import os
 from xml import sax
 from OpenGL.GL import *
-from numpy import reshape, dot, transpose, identity, zeros, float32
+from Numeric import reshape, matrixmultiply, transpose, identity, zeros, Float
 from math import sin, cos
 
 import Log
@@ -64,7 +64,7 @@ class SvgGradient:
     self.transform = transform
 
   def applyTransform(self, transform):
-    m = dot(transform.matrix, self.transform.matrix)
+    m = matrixmultiply(transform.matrix, self.transform.matrix)
     self.gradientDesc.SetMatrix(transform.getGMatrix(m))
 
 class SvgContext:
@@ -256,13 +256,13 @@ class SvgTransform:
         e = [float(c) for c in m.groups()]
         e = [e[0], e[2], e[4], e[1], e[3], e[5], 0, 0, 1]
         m = reshape(e, (3, 3))
-        self.matrix = dot(self.matrix, m)
+        self.matrix = matrixmultiply(self.matrix, m)
 
   def transform(self, transform):
-    self.matrix = dot(self.matrix, transform.matrix)
+    self.matrix = matrixmultiply(self.matrix, transform.matrix)
 
   def reset(self):
-    self.matrix = identity(3, float32)
+    self.matrix = identity(3, typecode = Float)
 
   def translate(self, dx, dy):
     m = zeros((3, 3))
@@ -271,20 +271,20 @@ class SvgTransform:
     self.matrix += m
 
   def rotate(self, angle):
-    m = identity(3, float32)
+    m = identity(3, typecode = Float)
     s = sin(angle)
     c = cos(angle)
     m[0, 0] =  c
     m[0, 1] = -s
     m[1, 0] =  s
     m[1, 1] =  c
-    self.matrix = dot(self.matrix, m)
+    self.matrix = matrixmultiply(self.matrix, m)
 
   def scale(self, sx, sy):
-    m = identity(3, float32)
+    m = identity(3, typecode = Float)
     m[0, 0] = sx
     m[1, 1] = sy
-    self.matrix = dot(self.matrix, m)
+    self.matrix = matrixmultiply(self.matrix, m)
 
   def applyGL(self):
     # Interpret the 2D matrix as 3D
@@ -296,11 +296,10 @@ class SvgTransform:
     glMultMatrixf(m)
 
   def getGMatrix(self, m):
-    f = float
     self._gmatrix.Set( \
-      f(m[0, 0]), f(m[0, 1]), f(m[0, 2]), \
-      f(m[1, 0]), f(m[1, 1]), f(m[1, 2]), \
-      f(m[2, 0]), f(m[2, 1]), f(m[2, 2]))
+      m[0, 0], m[0, 1], m[0, 2], \
+      m[1, 0], m[1, 1], m[1, 2], \
+      m[2, 0], m[2, 1], m[2, 2])
     return self._gmatrix
 
   def apply(self, drawBoard):
@@ -539,7 +538,7 @@ class SvgDrawing:
     elif type(svgData) == str:
       # Check whether we have a cached bitmap version
       bitmapFile = svgData.replace(".svg", ".png")
-      if svgData.endswith(".svg") and os.path.exists(bitmapFile) and 0:
+      if svgData.endswith(".svg") and os.path.exists(bitmapFile):
         Log.debug("Loading cached bitmap '%s' instead of '%s'." % (bitmapFile, svgData))
         self.texture = Texture(bitmapFile)
       else:

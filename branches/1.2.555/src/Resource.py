@@ -26,6 +26,7 @@ from threading import Thread, BoundedSemaphore
 import time
 import shutil
 import stat
+import Config
 
 from Task import Task
 import Log
@@ -52,6 +53,12 @@ class Loader(Thread):
     # Reduce priority on posix
     if os.name == "posix":
       os.nice(5)
+    elif os.name == "nt":
+      game_priority = Config.get("engine", "game_priority")
+      self.setPriority(priority = game_priority)
+      #wont work without ctypes
+      #self.enableScreenSaver(0)
+
     self.load()
     self.semaphore.release()
     self.resultQueue.put(self)
@@ -59,6 +66,30 @@ class Loader(Thread):
   def __str__(self):
     return "%s(%s) %s" % (self.function.__name__, self.name, self.canceled and "(canceled)" or "")
 
+  def setPriority(self, pid = None, priority = 2):
+    """ Set The Priority of a Windows Process.  Priority is a value between 0-5 where
+        2 is normal priority.  Default sets the priority of the current
+        python process but can take any valid process ID. """
+        
+    import win32api, win32process, win32con
+    
+    priorityClasses = [win32process.IDLE_PRIORITY_CLASS,
+                       win32process.BELOW_NORMAL_PRIORITY_CLASS,
+                       win32process.NORMAL_PRIORITY_CLASS,
+                       win32process.ABOVE_NORMAL_PRIORITY_CLASS,
+                       win32process.HIGH_PRIORITY_CLASS,
+                       win32process.REALTIME_PRIORITY_CLASS]
+
+    pid = win32api.GetCurrentProcessId()
+    handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
+    win32process.SetPriorityClass(handle, priorityClasses[priority])
+    win32process.SetProcessAffinityMask(handle, 1)
+
+#  def enableScreenSaver(self, on):
+#    import ctypes
+#    SPI_SETSCREENSAVEACTIVE = 17
+#    ctypes.windll.user32.SystemParametersInfoA(SPI_SETSCREENSAVEACTIVE, on, None, 0)
+    
   def cancel(self):
     self.canceled = True
 
@@ -96,6 +127,8 @@ class Resource(Task):
     self.loaderSemaphore = BoundedSemaphore(value = 1)
     self.loaders = []
 
+      
+
   def addDataPath(self, path):
     if not path in self.dataPaths:
       self.dataPaths = [path] + self.dataPaths
@@ -105,47 +138,58 @@ class Resource(Task):
       self.dataPaths.remove(path)
 
   def fileName(self, *name, **args):
+    songPath = []
+    baseLibrary = Config.get("game", "base_library")
+    if baseLibrary and os.path.isdir(baseLibrary):
+      songPath = [baseLibrary]
+      
     if not args.get("writable", False):
-      for dataPath in self.dataPaths:
+      for dataPath in self.dataPaths + songPath:
         readOnlyPath = os.path.join(dataPath, *name)
         # If the requested file is in the read-write path and not in the
         # read-only path, use the existing read-write one.
         if os.path.isfile(readOnlyPath):
+          return readOnlyPath
+        elif os.path.isdir(readOnlyPath):
           return readOnlyPath
         readWritePath = os.path.join(getWritableResourcePath(), *name)
         if os.path.isfile(readWritePath):
           return readWritePath
       return readOnlyPath
     else:
-      readOnlyPath = os.path.join(self.dataPaths[-1], *name)
-      try:
-        # First see if we can write to the original file
-        if os.access(readOnlyPath, os.W_OK):
-          return readOnlyPath
-        # If the original file does not exist, see if we can write to its directory
-        if not os.path.isfile(readOnlyPath) and os.access(os.path.dirname(readOnlyPath), os.W_OK):
-          return readOnlyPath
-      except:
-        raise
-      
-      # If the resource exists in the read-only path, make a copy to the
-      # read-write path.
-      readWritePath = os.path.join(getWritableResourcePath(), *name)
-      if not os.path.isfile(readWritePath) and os.path.isfile(readOnlyPath):
-        Log.notice("Copying '%s' to writable data directory." % "/".join(name))
+      for dataPath in [self.dataPaths[-1]] + songPath:
+        readOnlyPath = os.path.join(dataPath, *name)
+        if not (os.path.isfile(readOnlyPath) or os.path.isdir(readOnlyPath)):
+          continue
         try:
-          os.makedirs(os.path.dirname(readWritePath))
+          # First see if we can write to the original file
+          if os.access(readOnlyPath, os.W_OK):
+            return readOnlyPath
+          # If the original file does not exist, see if we can write to its directory
+          if not os.path.isfile(readOnlyPath) and os.access(os.path.dirname(readOnlyPath), os.W_OK):
+            pass
+            #return readOnlyPath
         except:
-          pass
-        shutil.copy(readOnlyPath, readWritePath)
-        self.makeWritable(readWritePath)
-      # Create directories if needed
-      if not os.path.isdir(readWritePath) and os.path.isdir(readOnlyPath):
-        Log.notice("Creating writable directory '%s'." % "/".join(name))
-        os.makedirs(readWritePath)
-        self.makeWritable(readWritePath)
-      return readWritePath
-
+          raise
+        # If the resource exists in the read-only path, make a copy to the
+        # read-write path.
+        readWritePath = os.path.join(getWritableResourcePath(), *name)
+        if not os.path.isfile(readWritePath) and os.path.isfile(readOnlyPath):
+          Log.notice("Copying '%s' to writable data directory." % "/".join(name))
+          try:
+            os.makedirs(os.path.dirname(readWritePath))
+          except:
+            pass
+          shutil.copy(readOnlyPath, readWritePath)
+          self.makeWritable(readWritePath)
+        # Create directories if needed
+        if not os.path.isdir(readWritePath) and os.path.isdir(readOnlyPath):
+          Log.notice("Creating writable directory '%s'." % "/".join(name))
+          os.makedirs(readWritePath)
+          self.makeWritable(readWritePath)
+        return readWritePath
+      return readOnlyPath
+    
   def makeWritable(self, path):
     os.chmod(path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
   

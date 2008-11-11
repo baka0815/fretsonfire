@@ -29,7 +29,7 @@ import colorsys
 from View import Layer
 from Input import KeyListener
 from Song import loadSong, createSong, Note, difficulties, DEFAULT_LIBRARY
-from Guitar import Guitar, KEYS
+from Guitar import Guitar, PLAYER1KEYS, PLAYER2KEYS
 from Camera import Camera
 from Menu import Menu, Choice
 from Language import _
@@ -40,6 +40,8 @@ import Theme
 import Log
 import shutil, os, struct, wave, tempfile
 from struct import unpack
+
+KEYS = PLAYER1KEYS
 
 class Editor(Layer, KeyListener):
   """Song editor layer."""
@@ -61,6 +63,8 @@ class Editor(Layer, KeyListener):
     self.songName    = songName
     self.libraryName = libraryName
     self.heldFrets   = set()
+
+    self.spinnyDisabled   = self.engine.config.get("game", "disable_spinny")    
 
     mainMenu = [
       (_("Save Song"),                  self.save),
@@ -177,17 +181,17 @@ class Editor(Layer, KeyListener):
     if not self.song:
       return
 
-    if control == Player.UP:
+    if control in Player.UPS:
       self.guitar.selectPreviousString()
-    elif control == Player.DOWN:
+    elif control in Player.DOWNS:
       self.guitar.selectNextString()
-    elif control == Player.LEFT:
+    elif control in Player.LEFTS:
       self.pos = self.snapPos - self.song.period / 4
-    elif control == Player.RIGHT:
+    elif control in Player.RIGHTS:
       self.pos = self.snapPos + self.song.period / 4
     elif control in KEYS:
       self.heldFrets.add(KEYS.index(control))
-    elif control in [Player.ACTION1, Player.ACTION2]:
+    elif control in Player.ACTION1S + Player.ACTION2S:
       self.newNotePos = self.snapPos
       # Add notes for the frets that are held down or for the selected string.
       if self.heldFrets:
@@ -200,7 +204,7 @@ class Editor(Layer, KeyListener):
     if not self.song:
       return
 
-    if control in [Player.ACTION1, Player.ACTION2] and self.newNotes and not self.heldFrets:
+    if control in Player.ACTION1S + Player.ACTION2S and self.newNotes and not self.heldFrets:
       self.newNotes = []
     elif control in KEYS:
       self.heldFrets.remove(KEYS.index(control))
@@ -213,24 +217,24 @@ class Editor(Layer, KeyListener):
 
   def keyPressed(self, key, unicode):
     c = self.engine.input.controls.getMapping(key)
-    if c == Player.CANCEL:
+    if c in Player.CANCELS:
       self.engine.view.pushLayer(self.menu)
     elif key == pygame.K_PAGEDOWN and self.song:
-      d = self.song.difficulty
+      d = self.song.difficulty[0]
       v = difficulties.values()
-      self.song.difficulty = v[(v.index(d) + 1) % len(v)]
+      self.song.difficulty[0] = v[(v.index(d) + 1) % len(v)]
     elif key == pygame.K_PAGEUP and self.song:
-      d = self.song.difficulty
+      d = self.song.difficulty[0]
       v = difficulties.values()
-      self.song.difficulty = v[(v.index(d) - 1) % len(v)]
+      self.song.difficulty[0] = v[(v.index(d) - 1) % len(v)]
     elif key == pygame.K_DELETE and self.song:
       # gather up all events that intersect the cursor and delete the ones on the selected string
       t1 = self.snapPos
       t2 = self.snapPos + self.song.period / 4
-      e  = [(time, event) for time, event in self.song.track.getEvents(t1, t2) if isinstance(event, Note)]
+      e  = [(time, event) for time, event in self.song.track[0].getEvents(t1, t2) if isinstance(event, Note)]
       for time, event in e:
         if event.number == self.guitar.selectedString:
-          self.song.track.removeEvent(time, event)
+          self.song.track[0].removeEvent(time, event)
           self.modified = True
     elif key == pygame.K_SPACE and self.song:
       if self.song.isPlaying():
@@ -257,16 +261,16 @@ class Editor(Layer, KeyListener):
     self.guitar.run(ticks, self.scrollPos, self.controls)
 
     if not self.song.isPlaying():
-      if self.controls.getState(Player.RIGHT) and not self.controls.getState(Player.LEFT):
+      if (self.controls.getState(Player.RIGHT) or self.controls.getState(Player.PLAYER_2_RIGHT)) and not (self.controls.getState(Player.LEFT) or self.controls.getState(Player.PLAYER_2_LEFT)):
         self.pos += self.song.period * self.scrollSpeed
         self.scrollSpeed += ticks / 4096.0
-      elif self.controls.getState(Player.LEFT) and not self.controls.getState(Player.RIGHT):
+      elif (self.controls.getState(Player.LEFT) or self.controls.getState(Player.PLAYER_2_LEFT)) and not (self.controls.getState(Player.RIGHT) or self.controls.getState(Player.PLAYER_2_RIGHT)):
         self.pos -= self.song.period * self.scrollSpeed
         self.scrollSpeed += ticks / 4096.0
       else:
         self.scrollSpeed = 0
     else:
-      self.pos = self.song.getPosition() - self.song.info.delay
+      self.pos = self.song.getPosition()
 
     self.pos = max(0, self.pos)
 
@@ -278,17 +282,17 @@ class Editor(Layer, KeyListener):
       if self.snapPos < self.newNotePos:
         self.newNotes = []
       for note in self.newNotes:
-        self.song.track.removeEvent(self.newNotePos, note)
+        self.song.track[0].removeEvent(self.newNotePos, note)
         note.length = max(self.song.period / 4, self.snapPos - self.newNotePos)
         # remove all notes under the this new note
-        oldNotes = [(time, event) for time, event in self.song.track.getEvents(self.newNotePos, self.newNotePos + note.length) if isinstance(event, Note)]
+        oldNotes = [(time, event) for time, event in self.song.track[0].getEvents(self.newNotePos, self.newNotePos + note.length) if isinstance(event, Note)]
         for time, event in oldNotes:
           if event.number == note.number:
-            self.song.track.removeEvent(time, event)
+            self.song.track[0].removeEvent(time, event)
             if time < self.newNotePos:
               event.length = self.newNotePos - time
-              self.song.track.addEvent(time, event)
-        self.song.track.addEvent(self.newNotePos, note)
+              self.song.track[0].addEvent(time, event)
+        self.song.track[0].addEvent(self.newNotePos, note)
 
     if self.song.isPlaying():
       self.scrollPos = self.pos
@@ -305,10 +309,12 @@ class Editor(Layer, KeyListener):
     t = self.time / 100 + 34
     w, h, = self.engine.view.geometry[2:4]
     r = .5
-    self.background.transform.reset()
-    self.background.transform.translate(w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
-    self.background.transform.rotate(-t)
-    self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
+
+    if self.spinnyDisabled != True and Theme.spinnyEditorDisabled:    
+      self.background.transform.reset()
+      self.background.transform.translate(w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
+      self.background.transform.rotate(-t)
+      self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
     self.background.draw()
 
     self.camera.target = ( 2, 0, 5.5)
@@ -338,7 +344,7 @@ class Editor(Layer, KeyListener):
       t = "%d.%02d'%03d" % (self.pos / 60000, (self.pos % 60000) / 1000, self.pos % 1000)
       font.render(t, (.05, .05 - h / 2))
       font.render(status, (.05, .05 + h / 2))
-      font.render(unicode(self.song.difficulty), (.05, .05 + 3 * h / 2))
+      font.render(unicode(self.song.difficulty[0]), (.05, .05 + 3 * h / 2))
 
       Theme.setBaseColor()
       text = self.song.info.name + (self.modified and "*" or "")
@@ -590,12 +596,6 @@ class GHImporter(Layer):
     # Split the file into different tracks
     self.stageInfoText = _("Stage 1/8: Splitting VGS file")
 
-    # For debugging
-    #os.system("cp /tmp/foo.ogg " + outputSongOggFile)
-    #os.system("cp /tmp/foo.ogg " + outputGuitarOggFile)
-    #os.system("cp /tmp/foo.ogg " + outputRhythmOggFile)
-    #return
-
     f         = vgsFile
     blockSize = 16
 
@@ -685,25 +685,18 @@ class GHImporter(Layer):
       # Read the song map
       self.statusText = _("Reading the song list.")
       songMap = {}
-      vgsMap  = {}
-      library = DEFAULT_LIBRARY
+      vgsMap =  {}
       for line in open(self.engine.resource.fileName("ghmidimap.txt")):
-        fields = map(lambda s: s.strip(), line.strip().split(";"))
-        if fields[0] == "$library":
-          library = os.path.join(DEFAULT_LIBRARY, fields[1])
-        else:
-          songName, fullName, artist = fields
-          songMap[songName] = (library, fullName, artist)
+        songName, fullName, artist = map(lambda s: s.strip(), line.strip().split(";"))
+        songMap[songName] = (fullName, artist)
 
       self.statusText = _("Reading the archive index.")
       archive = ArkFile(headerPath, archivePath)
+      songPath = self.engine.resource.fileName("songs", writable = True)
       songs    = []
 
       # Filter out the songs that aren't in this archive
       for songName, data in songMap.items():
-        library, fullName, artist = data
-        songPath = self.engine.resource.fileName(library, songName, writable = True)
-
         vgsMap[songName] = "songs/%s/%s.vgs" % (songName, songName)
         if not vgsMap[songName] in archive.files:
           vgsMap[songName] = "songs/%s/%s_sp.vgs" % (songName, songName)
@@ -712,15 +705,13 @@ class GHImporter(Layer):
             del songMap[songName]
             continue
 
-        if os.path.exists(songPath):
+        if os.path.exists(os.path.join(songPath, songName)):
           Log.warn("Song '%s' already exists." % songName)
           del songMap[songName]
           continue
 
       for songName, data in songMap.items():
-        library, fullName, artist = data
-        songPath = self.engine.resource.fileName(library, songName, writable = True)
-        print songPath
+        fullName, artist = data
 
         Log.notice("Extracting song '%s'" % songName)
         self.statusText = _("Extracting %s by %s. %d of %d songs imported. Yeah, this is going to take forever.") % (fullName, artist, len(songs), len(songMap))
@@ -754,13 +745,13 @@ class GHImporter(Layer):
         if not os.path.isfile(rhythmOggFile):
           rhythmOggFile = None
 
-        song = createSong(self.engine, songName, guitarOggFile, songOggFile, rhythmOggFile, library = library)
+        song = createSong(self.engine, songName, guitarOggFile, songOggFile, rhythmOggFile)
         song.info.name   = fullName.strip()
         song.info.artist = artist.strip()
         song.save()
 
         # Grab the MIDI file
-        archive.extractFile(archiveMidiFile, os.path.join(songPath, "notes.mid"))
+        archive.extractFile(archiveMidiFile, os.path.join(songPath, songName, "notes.mid"))
 
         # Done with this song
         songs.append(songName)
@@ -804,7 +795,7 @@ class GHImporter(Layer):
 
     path = ""
     while True:
-      path = Dialogs.getText(self.engine, prompt = _("Enter the path to the mounted Guitar Hero (tm) I/II/Encore DVD"), text = path)
+      path = Dialogs.getText(self.engine, prompt = _("Enter the path to the mounted Guitar Hero (tm) DVD"), text = path)
 
       if not path:
         self.engine.view.popLayer(self)

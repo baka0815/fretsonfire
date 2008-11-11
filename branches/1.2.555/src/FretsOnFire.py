@@ -42,32 +42,76 @@ import Version
 import getopt
 import sys
 import os
+import codecs
+import Resource
 
 usage = """%(prog)s [options]
 Options:
-  --verbose, -v         Verbose messages
-  --play, -p [songName] Start playing the given song
+  --verbose, -v                     Verbose messages
+  --debug,   -d                     Write Debug file
+  --config=, -c [configfile]        Use this instead of fretsonfire.ini
+  --play=,   -p [SongDir]           Play a song from the commandline
+  --diff=,   -D [difficulty number] Use this difficulty
+  --part=,   -P [part number]       Use this part
 """ % {"prog": sys.argv[0] }
 
 if __name__ == "__main__":
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "vp:", ["verbose", "play="])
+    opts, args = getopt.getopt(sys.argv[1:], "vdc:p:D:P:", ["verbose", "debug", "config=", "play=", "diff=", "part="])
   except getopt.GetoptError:
     print usage
     sys.exit(1)
-
-  songName = None
+    
+  playing = None
+  configFile = None
+  debug = False
+  difficulty = 0
+  part = 0
   for opt, arg in opts:
     if opt in ["--verbose", "-v"]:
       Log.quiet = False
-    elif opt in ["--play", "-p"]:
-      songName = arg
-
+    if opt in ["--debug", "-d"]:
+      debug = True
+    if opt in ["--config", "-c"]:
+      configFile = arg
+    if opt in ["--play", "-p"]:
+      playing = arg
+    if opt in ["--diff", "-D"]:
+      difficulty = arg      
+    if opt in ["--part", "-P"]:
+      part = arg
+      
   while True:
-    config = Config.load(Version.appName() + ".ini", setAsDefault = True)
+    if configFile != None:
+      if configFile.lower() == "reset":
+        fileName = os.path.join(Resource.getWritableResourcePath(), Version.appName() + ".ini")
+        os.remove(fileName)
+        config = Config.load(Version.appName() + ".ini", setAsDefault = True)
+      else:
+        config = Config.load(configFile, setAsDefault = True)
+    else:
+      config = Config.load(Version.appName() + ".ini", setAsDefault = True)
     engine = GameEngine(config)
-    menu   = MainMenu(engine, songName = songName)
-    engine.setStartupLayer(menu)
+    engine.cmdPlay = 0
+    
+    if playing != None:
+      Config.set("game", "selected_library", "songs")
+      Config.set("game", "selected_song", playing)
+      engine.cmdPlay = 1
+      engine.cmdDiff = int(difficulty)
+      engine.cmdPart = int(part)
+
+    if debug == True:
+      engine.setDebugModeEnabled(not engine.isDebugModeEnabled())
+      engine.debugLayer.debugOut(engine)
+      engine.quit()
+      break
+      
+    encoding = Config.get("game", "encoding")
+    if encoding != None:
+      reload(sys)
+      sys.setdefaultencoding(encoding)
+    engine.setStartupLayer(MainMenu(engine))
 
     try:
       import psyco
@@ -80,10 +124,9 @@ if __name__ == "__main__":
         pass
     except KeyboardInterrupt:
         pass
-
     if engine.restartRequested:
       Log.notice("Restarting.")
-
+      engine.audio.close()
       try:
         # Determine whether were running from an exe or not
         if hasattr(sys, "frozen"):

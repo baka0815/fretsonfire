@@ -49,7 +49,7 @@ class BackgroundLayer(Layer):
     return True
 
 class View(Task):
-  def __init__(self, engine, geometry = None):
+  def __init__(self, engine, geometry = None, screens = 1):
     Task.__init__(self)
     self.layers = []
     self.incoming = []
@@ -98,7 +98,7 @@ class View(Task):
 
   def isTransitionInProgress(self):
     return self.incoming or self.outgoing
-  
+    
   def run(self, ticks):
     if not self.layers:
       return
@@ -136,18 +136,18 @@ class View(Task):
 
     viewport = glGetIntegerv(GL_VIEWPORT)
     if normalize:
-      w = viewport[2] - viewport[0]
-      h = viewport[3] - viewport[1]
+      w = viewport[2]
+      h = viewport[3]
       # aspect ratio correction
       h *= (float(w) / float(h)) / (4.0 / 3.0)
       viewport = [0, 0, 1, h / w]
   
     if yIsDown:
-      glOrtho(viewport[0], viewport[2] - viewport[0],
-              viewport[3] - viewport[1], viewport[1], -100, 100);
+      glOrtho(viewport[0], viewport[2],
+              viewport[3], viewport[1], -100, 100);
     else:
-      glOrtho(viewport[0], viewport[2] - viewport[0],
-              viewport[1], viewport[3] - viewport[1], -100, 100);
+      glOrtho(viewport[0], viewport[2],
+              viewport[3], viewport[1], -100, 100);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
@@ -158,16 +158,41 @@ class View(Task):
     glMatrixMode(GL_MODELVIEW)
     glPopMatrix()
 
-  def setGeometry(self, geometry):
+  def setGeometry(self, geometry, screens=1):
     viewport = glGetIntegerv(GL_VIEWPORT)
-    w = viewport[2] - viewport[0]
-    h = viewport[3] - viewport[1]
+    w = viewport[2]
+    h = viewport[3]
     s = (w, h, w, h)
 
-    geometry = tuple([(type(coord) == float) and int(s[i] * coord) or int(coord) for i, coord in enumerate(geometry)])
+    geometry = [(type(coord) == float) and int(s[i] * coord) or int(coord) for i, coord in enumerate(geometry)]
+    geometry[0] = int(geometry[0] / screens)
+    geometry[2] = int(geometry[2] / screens)
+    geometry = tuple(geometry)
     self.savedGeometry, self.geometry = viewport, geometry
     glViewport(*geometry)
     glScissor(*geometry)
+
+  def setViewport(self, screens=1, screen=0):
+    geometry = list(self.savedGeometry)
+    if screens != 1:
+      geometry[0] = (geometry[0]+((screen-0.2)*geometry[2]/screens))
+      geometry[2] = (geometry[2]*1.4/screens)
+    geometry = tuple(geometry)
+    self.geometry = geometry
+
+    glViewport(*geometry)
+    glScissor(*geometry)
+
+  def setViewportHalf(self, screens=1, screen=0):
+    geometry = list(self.savedGeometry)
+    if screens != 1:
+      geometry[0] = (geometry[0]+(screen*geometry[2]/screens))
+      geometry[2] = (geometry[2]/screens)
+    geometry = tuple(geometry)
+    self.geometry = geometry
+
+    glViewport(*geometry)
+    glScissor(*geometry)    
 
   def resetGeometry(self):
     assert self.savedGeometry

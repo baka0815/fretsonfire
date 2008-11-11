@@ -1,4 +1,5 @@
 #####################################################################
+#####################################################################
 # -*- coding: iso-8859-1 -*-                                        #
 #                                                                   #
 # Frets on Fire                                                     #
@@ -49,9 +50,9 @@ import Mod
 Config.define("engine", "tickrate",     float, 1.0)
 Config.define("engine", "highpriority", bool,  True)
 Config.define("game",   "uploadscores", bool,  False, text = _("Upload Highscores"),    options = {False: _("No"), True: _("Yes")})
-Config.define("game",   "uploadurl",    str,   "http://fretsonfire.sourceforge.net/play")
+Config.define("game",   "uploadurl",    str,   "http://www.prison.net/worldcharts/play")
 Config.define("game",   "leftymode",    bool,  False, text = _("Lefty mode"),           options = {False: _("No"), True: _("Yes")})
-Config.define("game",   "tapping",      bool,  True,  text = _("Tappable notes"),       options = {False: _("No"), True: _("Yes")})
+Config.define("game",   "tapping",      int,   0,  text = _("HO/PO"),       options = {0: _("Yes"), 1: _("No")})
 Config.define("video",  "fullscreen",   bool,  True,  text = _("Fullscreen Mode"),      options = {False: _("No"), True: _("Yes")})
 Config.define("video",  "multisamples", int,   4,     text = _("Antialiasing Quality"), options = {0: _("None"), 2: _("2x"), 4: _("4x"), 6: _("6x"), 8: _("8x")})
 Config.define("video",  "resolution",   str,   "640x480")
@@ -61,12 +62,38 @@ Config.define("audio",  "frequency",    int,   44100, text = _("Sample Frequency
 Config.define("audio",  "bits",         int,   16,    text = _("Sample Bits"), options = [16, 8])
 Config.define("audio",  "stereo",       bool,  True)
 Config.define("audio",  "buffersize",   int,   2048,  text = _("Buffer Size"), options = [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536])
-Config.define("audio",  "delay",        int,   100,   text = _("A/V delay"), options = dict([(n, n) for n in range(0, 301)]))
+Config.define("audio",  "delay",        int,   100,   text = _("A/V delay"), options = dict([(n, n) for n in range(0, 1001)]))
 Config.define("audio",  "screwupvol", float,   0.25,  text = _("Screw Up Sounds"), options = {0.0: _("Off"), .25: _("Quiet"), .5: _("Loud"), 1.0: _("Painful")})
 Config.define("audio",  "guitarvol",  float,    1.0,  text = _("Guitar Volume"),   options = dict([(n / 100.0, "%02d/10" % (n / 9)) for n in range(0, 110, 10)]))
 Config.define("audio",  "songvol",    float,    1.0,  text = _("Song Volume"),     options = dict([(n / 100.0, "%02d/10" % (n / 9)) for n in range(0, 110, 10)]))
 Config.define("audio",  "rhythmvol",  float,    1.0,  text = _("Rhythm Volume"),   options = dict([(n / 100.0, "%02d/10" % (n / 9)) for n in range(0, 110, 10)]))
 Config.define("video",  "fontscale",  float,    1.0,  text = _("Text scale"),      options = dict([(n / 100.0, "%3d%%" % n) for n in range(50, 260, 10)]))
+
+#RF-mod items
+Config.define("engine", "game_priority",       int,   2,      text = _("Priority"), options = {0: _("0 Idle"), 1: _("1 Low"), 2: _("2 Normal"), 3:_("3 Above Normal"), 4:_("4 High"), 5:_("5 Realtime")})
+Config.define("game",   "alt_keys",            bool,  False,  text = _("Alternate Controller"), options = {False: _("No"), True: _("Yes")})
+Config.define("game",   "margin",         int,   0,      text = _("Hit Margin"), options = {0: _("FoF"), 1: _("Capo")})
+Config.define("game",   "hopo_mark",           int,   1,      text = _("HO/PO Note Marks"), options = {0: _("FoF"), 1: _("RFmod")})
+Config.define("game",   "hopo_style",          int,   2,      text = _("HO/PO Key Style"), options = {0: _("FoF"), 1: _("RFmod"), 2: _("RFmod2")})
+Config.define("game",   "disable_vbpm",        bool,  False,  text = _("Disable Variable BPM"),  options = {False: _("No"), True: _("Yes")})
+Config.define("game",   "board_speed",          int,   0,      text = _("Board Speed"), options = {0: _("BPM based"), 1: _("Difficulty based")})
+Config.define("game",   "sort_order",          int,   0,      text = _("Sort Order"), options = {0: _("Title"), 1: _("Artist"), 2: _("Tag")})
+Config.define("game",   "pov",                 int,   0,      text = _("Point Of View"), options = {0: _("FoF"), 1: _("GH"), 2: _("Custom")})
+Config.define("game",   "players",             int,   1,      text = _("Number of players"),  options = {1: _("1"), 2: _("2")})
+Config.define("game",   "party_time",          int,   30,     text = _("Party Mode Timer"), options = dict([(n, n) for n in range(1, 99)]))
+Config.define("game",   "disable_libcount",    bool,  False,  text = _("Disable Library Count"),    options = {False: _("No"), True: _("Yes")})
+Config.define("game",   "disable_librotation", bool,  False,  text = _("Disable Library Rotation"),    options = {False: _("No"), True: _("Yes")})
+Config.define("video",  "disable_stats",       bool,  False,  text = _("Disable Stats"),    options = {False: _("No"), True: _("Yes")})
+Config.define("video",  "disable_notesfx",     bool,  False,  text = _("Disable Note SFX"),    options = {False: _("No"), True: _("Yes")})
+Config.define("video",  "disable_fretsfx",     bool,  False,  text = _("Disable Fret SFX"),    options = {False: _("No"), True: _("Yes")})
+Config.define("video",  "disable_flamesfx",    bool,  False,  text = _("Disable Flame SFX"),    options = {False: _("No"), True: _("Yes")})
+Config.define("game",   "disable_spinny",      bool,  False,  text = _("Disable Spinning BGs"),    options = {False: _("No"), True: _("Yes")})
+Config.define("audio",  "disable_preview",     bool,  False,  text = _("Disable Preview"),    options = {False: _("No"), True: _("Yes")})
+Config.define("audio",  "miss_volume",         float, 0.2,    text = _("Miss Volume"), options = dict([(n / 100.0, "%d%%" % n) for n in range(0, 100, 10)]))
+Config.define("player0","two_chord_max",       bool,  False,  text = _("Two Key Chords Only"),  options = {False: _("No"), True: _("Yes")})
+Config.define("player0","leftymode",           bool,  False,  text = _("Lefty mode"),           options = {False: _("No"), True: _("Yes")})
+Config.define("player1","two_chord_max",       bool,  False,  text = _("Two Key Chords Only"),  options = {False: _("No"), True: _("Yes")})
+Config.define("player1","leftymode",           bool,  False,  text = _("Lefty mode"),           options = {False: _("No"), True: _("Yes")})
 
 class FullScreenSwitcher(KeyListener):
   """
@@ -130,7 +157,7 @@ class GameEngine(Engine):
     tickrate     = self.config.get("engine", "tickrate")
     Engine.__init__(self, fps = fps, tickrate = tickrate)
     
-    pygame.init()
+    #pygame.init()
     
     self.title             = _("Frets on Fire")
     self.restartRequested  = False
@@ -145,9 +172,10 @@ class GameEngine(Engine):
     bufferSize   = self.config.get("audio", "buffersize")
     
     self.audio.pre_open(frequency = frequency, bits = bits, stereo = stereo, bufferSize = bufferSize)
-    pygame.init()
     self.audio.open(frequency = frequency, bits = bits, stereo = stereo, bufferSize = bufferSize)
-
+    
+    pygame.init()
+    
     Log.debug("Initializing video.")
     width, height = [int(s) for s in self.config.get("video", "resolution").split("x")]
     fullscreen    = self.config.get("video", "fullscreen")
@@ -165,7 +193,7 @@ class GameEngine(Engine):
     geometry = (0, 0, w, h)
     self.svg = SvgContext(geometry)
     self.svg.setRenderingQuality(self.config.get("opengl", "svgquality"))
-    glViewport(int(viewport[0]), int(viewport[1]), int(viewport[2]), int(viewport[3]))
+    glViewport(*viewport)
 
     self.input     = Input()
     self.view      = View(self, geometry)
@@ -175,16 +203,15 @@ class GameEngine(Engine):
     self.server    = None
     self.sessions  = []
     self.mainloop  = self.loading
+
+    # Load default theme
+    theme = Config.load(self.resource.fileName("theme.ini"))
+    self.theme = theme
+    Theme.open(self.theme)
     
     # Load game modifications
     Mod.init(self)
-    theme = Config.load(self.resource.fileName("theme.ini"))
-    Theme.open(theme)
-
-    # Make sure we are using the new upload URL
-    if self.config.get("game", "uploadurl").startswith("http://kempele.fi"):
-      self.config.set("game", "uploadurl", "http://fretsonfire.sourceforge.net/play")
-
+    
     self.addTask(self.input, synchronized = False)
     self.addTask(self.view)
     self.addTask(self.resource, synchronized = False)
@@ -196,7 +223,7 @@ class GameEngine(Engine):
     self.debugLayer         = None
     self.startupLayer       = None
     self.loadingScreenShown = False
-
+    
     Log.debug("Ready.")
 
   def setStartupLayer(self, startupLayer):

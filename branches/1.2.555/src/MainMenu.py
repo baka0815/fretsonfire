@@ -1,4 +1,4 @@
-#####################################################################
+####################################################################
 # -*- coding: iso-8859-1 -*-                                        #
 #                                                                   #
 # Frets on Fire                                                     #
@@ -35,14 +35,18 @@ import Dialogs
 import Config
 import Audio
 import Settings
+import datetime
+import sys
+import Theme
 
 class MainMenu(BackgroundLayer):
-  def __init__(self, engine, songName = None):
+  def __init__(self, engine):
     self.engine              = engine
     self.time                = 0.0
     self.nextLayer           = None
     self.visibility          = 0.0
-    self.songName            = songName
+
+    self.spinnyDisabled = self.engine.config.get("game", "disable_spinny")    
     
     self.engine.loadSvgDrawing(self, "background", "keyboard.svg")
     self.engine.loadSvgDrawing(self, "guy",        "pose.svg")
@@ -51,6 +55,13 @@ class MainMenu(BackgroundLayer):
     self.song.setVolume(self.engine.config.get("audio", "songvol"))
     self.song.play(-1)
 
+    expire = datetime.date(2007, 8, 15) 
+    today = datetime.date.today()
+    diff = today-expire
+    #if diff.days > 30:
+    #  print "Beta Expired"
+    #  sys.exit(2)
+      
     newMultiplayerMenu = [
       (_("Host Multiplayer Game"), self.hostMultiplayerGame),
       (_("Join Multiplayer Game"), self.joinMultiplayerGame),
@@ -66,9 +77,9 @@ class MainMenu(BackgroundLayer):
     
     mainMenu = [
       (_("Play Game"),   self.newSinglePlayerGame),
+      (_("Settings >"),  settingsMenu),
       (_("Tutorial"),    self.showTutorial),
       (_("Song Editor"), editorMenu),
-      (_("Settings >"),  settingsMenu),
       (_("Credits"),     self.showCredits),
       (_("Quit"),        self.quit),
     ]
@@ -77,9 +88,6 @@ class MainMenu(BackgroundLayer):
   def shown(self):
     self.engine.view.pushLayer(self.menu)
     self.engine.stopServer()
-
-    if self.songName:
-      self.newSinglePlayerGame(self.songName)
     
   def hidden(self):
     self.engine.view.popLayer(self.menu)
@@ -126,17 +134,17 @@ class MainMenu(BackgroundLayer):
     self.engine.resource.load(self, "session", lambda: self.engine.connect("127.0.0.1"), synch = True)
 
     if Dialogs.showLoadingScreen(self.engine, lambda: self.session and self.session.isConnected):
-      self.launchLayer(lambda: Lobby(self.engine, self.session, singlePlayer = True, songName = "tutorial"))
+      self.launchLayer(lambda: Lobby(self.engine, self.session, singlePlayer = True, tutorial = True))
   showTutorial = catchErrors(showTutorial)
 
-  def newSinglePlayerGame(self, songName = None):
+  def newSinglePlayerGame(self):
     if self.engine.isServerRunning():
       return
     self.engine.startServer()
     self.engine.resource.load(self, "session", lambda: self.engine.connect("127.0.0.1"), synch = True)
 
     if Dialogs.showLoadingScreen(self.engine, lambda: self.session and self.session.isConnected):
-      self.launchLayer(lambda: Lobby(self.engine, self.session, singlePlayer = True, songName = songName))
+      self.launchLayer(lambda: Lobby(self.engine, self.session, singlePlayer = True))
   newSinglePlayerGame = catchErrors(newSinglePlayerGame)
 
   def hostMultiplayerGame(self):
@@ -178,18 +186,25 @@ class MainMenu(BackgroundLayer):
 
   def run(self, ticks):
     self.time += ticks / 50.0
+    if self.engine.cmdPlay == 1:
+      self.newSinglePlayerGame()
+    elif self.engine.cmdPlay == 2:
+      self.quit()
     
   def render(self, visibility, topMost):
     self.visibility = visibility
     v = 1.0 - ((1 - visibility) ** 2)
+
       
     t = self.time / 100
     w, h, = self.engine.view.geometry[2:4]
     r = .5
     self.background.transform.reset()
-    self.background.transform.translate((1 - v) * 2 * w + w / 2 + math.cos(t / 2) * w / 2 * r, h / 2 + math.sin(t) * h / 2 * r)
-    self.background.transform.rotate(-t)
-    self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
+    
+    if self.spinnyDisabled != True and Theme.spinnyMenuDisabled != True:
+      self.background.transform.translate((1 - v) * 2 * w + w / 2 + math.cos(t / 2) * w / 2 * r, h / 2 + math.sin(t) * h / 2 * r)
+      self.background.transform.rotate(-t)
+      self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
     self.background.draw()
 
     self.logo.transform.reset()

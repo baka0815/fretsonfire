@@ -32,6 +32,8 @@ import MainMenu
 import Song
 import Version
 import Player
+import Config
+import Theme
 
 class Element:
   """A basic element in the credits scroller."""
@@ -91,8 +93,15 @@ class Credits(Layer, KeyListener):
     self.engine      = engine
     self.time        = 0.0
     self.offset      = 1.0
-    self.songLoader  = self.engine.resource.load(self, "song", lambda: Song.loadSong(self.engine, "defy", playbackOnly = True),
+    
+    Config.set("game", "selected_library", "songs")
+    credit_song  = Theme.creditSong
+    if credit_song == "None":
+      credit_song = "defy"
+      
+    self.songLoader  = self.engine.resource.load(self, "song", lambda: Song.loadSong(self.engine, credit_song, playbackOnly = True),
                                                  onLoad = self.songLoaded)
+
     self.engine.loadSvgDrawing(self, "background1", "editor.svg")
     self.engine.loadSvgDrawing(self, "background2", "keyboard.svg")
     self.engine.loadSvgDrawing(self, "background3", "cassette.svg")
@@ -125,6 +134,19 @@ class Credits(Layer, KeyListener):
       space,
       Text(nf, ns, c1, "left",   _("Graphics:")),
       Text(nf, ns, c2, "right",  "Joonas Kerttula"),
+      space,
+      Text(nf, ns, c1, "left",   _("RF-mod Programming:")),
+      Text(nf, ns, c2, "right",  "Rogue_F - Alex Samonte"),
+      space,
+      Text(nf, ns, c1, "left",   _("RF-mod Additions:")),
+      Text(nf, ns, c2, "right",  "Capo"),
+      Text(nf, ns, c2, "right",  "Pudding"),
+      Text(nf, ns, c2, "right",  "Raph666"),
+      Text(nf, ns, c2, "right",  "YMS"),
+      space,
+      Text(nf, ns, c1, "left",   _("RF-mod Graphics:")),
+      Text(nf, ns, c2, "right",  "FoZZ"),
+      Text(nf, ns, c2, "right",  "Kookoz"),
       space,
       Text(nf, ns, c1, "left",   _("Introducing:")),
       Text(nf, ns, c2, "right",  "Mikko Korkiakoski"),

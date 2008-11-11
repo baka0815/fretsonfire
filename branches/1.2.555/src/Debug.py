@@ -26,6 +26,12 @@ from View import Layer
 import gc
 import threading
 import Log
+import Version
+import os
+import datetime
+import zipfile
+import Theme
+import Stage
 
 class DebugLayer(Layer):
   """A layer for showing some debug information."""
@@ -113,3 +119,67 @@ class DebugLayer(Layer):
         pass
     f.close()
     Log.debug("Wrote a dump of %d GC garbage objects to %s." % (n, fn))
+
+  def debugOut(self, engine):
+    f = open("debug.txt", "w+")
+    version = Version.version()
+    currentDir = os.getcwd()
+    dataDir = Version.dataPath()
+    translationDir = dataDir + "/translations"
+    modsDir = dataDir + "/mods"
+
+    f.write("Date = %s\n" % datetime.datetime.now())   
+    f.write("\nVersion = %s\n" %  version)
+    f.write("\nOS = %s\n" % os.name)
+
+    f.write("\nCurrent Directory = %s\n" % currentDir)
+    self.directoryList(f, currentDir)
+
+    f.write("\nData Directory = %s\n" % dataDir)
+    self.directoryList(f, dataDir)
+
+    f.write("\nLibrary.zip\n")
+    zip = zipfile.ZipFile(dataDir + "/library.zip", 'r')
+    for info in zip.infolist():
+      fileName = info.filename
+      fileCSize = info.compress_size
+      fileSize = info.file_size
+      fileDate = datetime.datetime(*(info.date_time))
+      f.write("%s, %s, %s, %s\n" % (fileName, fileCSize, fileSize, fileDate))
+
+    
+    f.write("\nTranslation Directory = %s\n" % translationDir)
+    self.directoryList(f, translationDir)
+    
+    f.write("\nMods Directory = %s\n" % modsDir)
+    self.directoryList(f, modsDir)
+
+    mods = os.listdir(modsDir)
+
+    for mod in mods:
+      modDir = os.path.join(modsDir, mod)
+      if os.path.isdir(modDir):
+        f.write("\nMod Directory = %s\n" % modDir)
+        self.directoryList(f, modDir)
+
+    f.write("\nFretsonfire.ini\n")   
+    engine.config.config.write(f)
+
+    f.write("\nTheme.ini\n")   
+    Theme.write(f, engine.config)
+
+    f.write("\nStage.ini\n")
+    stage = Stage.Stage(self, self.engine.resource.fileName("stage.ini"))
+    stage.config.write(f)
+    f.close()
+
+  def directoryList(self, f, root):
+    files = os.listdir(root)
+    
+    for fileName in files:
+      fileSize = os.path.getsize(os.path.join(root, fileName))
+      mTime = datetime.datetime.utcfromtimestamp(os.path.getmtime(os.path.join(root, fileName)))
+      cTime = datetime.datetime.utcfromtimestamp(os.path.getctime(os.path.join(root, fileName)))
+      aTime = datetime.datetime.utcfromtimestamp(os.path.getatime(os.path.join(root, fileName)))
+
+      f.write("%s, %s, %s, %s, %s\n" % (fileName, fileSize, mTime, cTime, aTime))

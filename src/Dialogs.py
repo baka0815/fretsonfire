@@ -112,15 +112,68 @@ class GetText(Layer, KeyListener):
   def keyPressed(self, key, unicode):
     self.time = 0
     c = self.engine.input.controls.getMapping(key)
-    if (c in [Player.KEY1] or key == pygame.K_RETURN) and not self.accepted:
+    if (c in Player.KEY1S or key == pygame.K_RETURN) and not self.accepted:
       self.engine.view.popLayer(self)
       self.accepted = True
-    elif c in [Player.CANCEL, Player.KEY2] and not self.accepted:
+      if c in Player.KEY1S:
+        self.engine.data.acceptSound.play()
+    elif c in Player.CANCELS + Player.KEY2S and not self.accepted:
       self.text = None
       self.engine.view.popLayer(self)
       self.accepted = True
-    elif key == pygame.K_BACKSPACE and not self.accepted:
+      if c in Player.KEY2S:
+        self.engine.data.cancelSound.play()
+    elif (c in Player.KEY4S or key == pygame.K_BACKSPACE) and not self.accepted:
       self.text = self.text[:-1]
+      if c in Player.KEY4S:
+        self.engine.data.cancelSound.play()
+    elif c in Player.KEY3S and not self.accepted:
+      self.text += self.text[len(self.text) - 1]
+      self.engine.data.acceptSound.play()
+    elif c in Player.ACTION1S and not self.accepted:
+      if len(self.text) == 0:
+        self.text = "A"
+        return True
+      letter = self.text[len(self.text)-1]
+      letterNum = ord(letter)
+      if letterNum == ord('A'):
+        letterNum = ord(' ')
+      elif letterNum == ord(' '):
+        letterNum = ord('_')
+      elif letterNum == ord('_'):
+        letterNum = ord('-')
+      elif letterNum == ord('-'):
+        letterNum = ord('9')
+      elif letterNum == ord('0'):
+        letterNum = ord('z')
+      elif letterNum == ord('a'):
+        letterNum = ord('Z')        
+      else:
+        letterNum -= 1
+      self.text = self.text[:-1] + chr(letterNum)
+      self.engine.data.selectSound.play()
+    elif c in Player.ACTION2S and not self.accepted:
+      if len(self.text) == 0:
+        self.text = "A"
+        return True
+      letter = self.text[len(self.text)-1]
+      letterNum = ord(letter)
+      if letterNum == ord('Z'):
+        letterNum = ord('a')
+      elif letterNum == ord('z'):
+        letterNum = ord('0')
+      elif letterNum == ord('9'):
+        letterNum = ord('-')
+      elif letterNum == ord('-'):
+        letterNum = ord('_')
+      elif letterNum == ord('_'):
+        letterNum = ord(' ')
+      elif letterNum == ord(' '):
+        letterNum = ord('A')
+      else:
+        letterNum += 1
+      self.text = self.text[:-1] + chr(letterNum)
+      self.engine.data.selectSound.play()
     elif unicode and ord(unicode) > 31 and not self.accepted:
       self.text += unicode
     return True
@@ -171,7 +224,7 @@ class GetKey(Layer, KeyListener):
     
   def keyPressed(self, key, unicode):
     c = self.engine.input.controls.getMapping(key)
-    if c in [Player.CANCEL, Player.KEY2] and not self.accepted:
+    if c in Player.CANCELS + Player.KEY2S and not self.accepted:
       self.key = None
       self.engine.view.popLayer(self)
       self.accepted = True
@@ -220,7 +273,7 @@ class LoadingScreen(Layer, KeyListener):
 
   def keyPressed(self, key, unicode):
     c = self.engine.input.controls.getMapping(key)
-    if self.allowCancel and c == Player.CANCEL:
+    if self.allowCancel and c in Player.CANCELS:
       self.engine.view.popLayer(self)
     return True
     
@@ -279,7 +332,7 @@ class MessageScreen(Layer, KeyListener):
 
   def keyPressed(self, key, unicode):
     c = self.engine.input.controls.getMapping(key)
-    if c in [Player.KEY1, Player.KEY2, Player.CANCEL] or key == pygame.K_RETURN:
+    if c in Player.KEY1S + Player.KEY2S + Player.CANCELS or key == pygame.K_RETURN:
       self.engine.view.popLayer(self)
     return True
     
@@ -320,6 +373,7 @@ class SongChooser(Layer, KeyListener):
     self.prompt         = prompt
     self.engine         = engine
     self.time           = 0
+    self.lastTime       = 0
     self.accepted       = False
     self.selectedIndex  = 0
     self.camera         = Camera()
@@ -338,12 +392,27 @@ class SongChooser(Layer, KeyListener):
     self.initialItem    = selectedSong
     self.library        = selectedLibrary
     self.searchText     = ""
+    self.searching      = False
 
+    #RF-mod
+    self.previewDisabled  = self.engine.config.get("audio", "disable_preview")
+    self.sortOrder        = self.engine.config.get("game", "sort_order")
+    self.rotationDisabled = self.engine.config.get("game", "disable_librotation")
+    self.spinnyDisabled   = self.engine.config.get("game", "disable_spinny")
+
+    temp = self.engine.config.get("game", "search_key")
+    
+    if temp != "None":
+      self.searchKey = ord(temp[0])
+    else:
+      self.searchKey = ord('/')
+    
     # Use the default library if this one doesn't exist
     if not self.library or not os.path.isdir(self.engine.resource.fileName(self.library)):
       self.library = Song.DEFAULT_LIBRARY
 
     self.loadCollection()
+
     self.engine.resource.load(self, "cassette",     lambda: Mesh(self.engine.resource.fileName("cassette.dae")), synch = True)
     self.engine.resource.load(self, "label",        lambda: Mesh(self.engine.resource.fileName("label.dae")), synch = True)
     self.engine.resource.load(self, "libraryMesh",  lambda: Mesh(self.engine.resource.fileName("library.dae")), synch = True)
@@ -354,6 +423,7 @@ class SongChooser(Layer, KeyListener):
   def loadCollection(self):
     self.loaded = False
     self.engine.resource.load(self, "libraries", lambda: Song.getAvailableLibraries(self.engine, self.library), onLoad = self.libraryListLoaded)
+
     showLoadingScreen(self.engine, lambda: self.loaded, text = _("Browsing Collection..."))
 
   def libraryListLoaded(self, libraries):
@@ -368,6 +438,7 @@ class SongChooser(Layer, KeyListener):
     self.itemLabels    = [None] * len(self.items)
     self.loaded        = True
     self.searchText    = ""
+    self.searching     = False
     if self.initialItem is not None:
       for i, item in enumerate(self.items):
         if isinstance(item, Song.SongInfo) and self.initialItem == item.songName:
@@ -377,10 +448,12 @@ class SongChooser(Layer, KeyListener):
           self.selectedIndex =  i
           break
     # Load labels for libraries right away
-    for i, item in enumerate(self.items):
-      if isinstance(item, Song.LibraryInfo):
-        self.loadItemLabel(i)
-    self.updateSelection()
+    #RF-mod consider not
+    #for i, item in enumerate(self.items):
+    #  if isinstance(item, Song.LibraryInfo):
+    #    self.loadItemLabel(i)
+    if self.items != []:
+      self.updateSelection()
     
   def shown(self):
     self.engine.input.addKeyListener(self, priority = True)
@@ -402,6 +475,9 @@ class SongChooser(Layer, KeyListener):
   def getSelectedLibrary(self):
     return self.library
 
+  def getItems(self):
+    return self.items
+  
   def loadItemLabel(self, i):
     # Load the item label if it isn't yet loaded
     item = self.items[i]
@@ -417,14 +493,19 @@ class SongChooser(Layer, KeyListener):
   def updateSelection(self):
     self.selectedItem  = self.items[self.selectedIndex]
     self.songCountdown = 1024
+    if self.selectedIndex > 1:
+      self.loadItemLabel(self.selectedIndex - 1)
     self.loadItemLabel(self.selectedIndex)
+    if self.selectedIndex < len(self.items) - 1:
+      self.loadItemLabel(self.selectedIndex + 1)
     
   def keyPressed(self, key, unicode):
     if not self.items or self.accepted:
       return
 
+    self.lastTime = self.time
     c = self.engine.input.controls.getMapping(key)
-    if c in [Player.KEY1] or key == pygame.K_RETURN:
+    if c in Player.KEY1S or key == pygame.K_RETURN:
       if self.matchesSearch(self.selectedItem):
         if isinstance(self.selectedItem, Song.LibraryInfo):
           self.library     = self.selectedItem.libraryName
@@ -435,10 +516,13 @@ class SongChooser(Layer, KeyListener):
           self.accepted = True
         if not self.song:
           self.engine.data.acceptSound.play()
-    elif c in [Player.CANCEL, Player.KEY2]:
+    elif c in Player.CANCELS + Player.KEY2S:
       if self.library != Song.DEFAULT_LIBRARY:
         self.initialItem = self.library
         self.library     = os.path.dirname(self.library)
+        if self.song:
+          self.song.fadeout(1000)
+        self.selectedItem = None
         self.loadCollection()
       else:
         self.selectedItem = None
@@ -446,7 +530,7 @@ class SongChooser(Layer, KeyListener):
         self.accepted = True
       if not self.song:
         self.engine.data.cancelSound.play()
-    elif c in [Player.UP, Player.ACTION1]:
+    elif c in Player.UPS + Player.ACTION1S:
       if self.matchesSearch(self.items[self.selectedIndex]):
         while 1:
           self.selectedIndex = (self.selectedIndex - 1) % len(self.items)
@@ -455,7 +539,7 @@ class SongChooser(Layer, KeyListener):
       self.updateSelection()
       if not self.song:
         self.engine.data.selectSound.play()
-    elif c in [Player.DOWN, Player.ACTION2]:
+    elif c in Player.DOWNS + Player.ACTION2S:
       if self.matchesSearch(self.items[self.selectedIndex]):
         while 1:
           self.selectedIndex = (self.selectedIndex + 1) % len(self.items)
@@ -466,9 +550,37 @@ class SongChooser(Layer, KeyListener):
         self.engine.data.selectSound.play()
     elif key == pygame.K_BACKSPACE and not self.accepted:
       self.searchText = self.searchText[:-1]
-    elif unicode and ord(unicode) > 31 and not self.accepted:
+      if self.searchText == "":
+        self.searching = False
+    elif key == self.searchKey:
+      if self.searching == False:
+        self.searching = True
+      else:
+        self.searching == False
+    elif self.searching == True and unicode and ord(unicode) > 31 and not self.accepted:
       self.searchText += unicode
       self.doSearch()
+    elif self.searching == False and ((key >= ord('a') and key <= ord('z')) or (key >= ord('A') and key <= ord('Z')) or (key >= ord('0') and key <= ord('9'))):
+      k1 = unicode
+      k2 = k1.capitalize()
+      found = 0
+      
+      for i in range(len(self.items)):
+        if self.sortOrder == 1:
+          if not self.items[i].artist:
+            continue
+          if self.items[i].artist[0] == k1 or self.items[i].artist[0] == k2:
+            found = 1
+            break
+        else:
+          if not self.items[i].name:
+            continue
+          if self.items[i].name[0] == k1 or self.items[i].name[0] == k2:
+            found = 1
+            break
+      if found == 1 and self.selectedIndex != i:
+        self.selectedIndex = i
+        self.updateSelection() 
     return True
 
   def matchesSearch(self, item):
@@ -527,7 +639,7 @@ class SongChooser(Layer, KeyListener):
 
     if self.songCountdown > 0:
       self.songCountdown -= ticks
-      if self.songCountdown <= 0:
+      if self.songCountdown <= 0 and self.previewDisabled != True:
         self.playSelectedSong()
 
     d = self.cameraOffset - self.selectedOffset
@@ -600,10 +712,12 @@ class SongChooser(Layer, KeyListener):
     t = self.time / 100
     w, h, = self.engine.view.geometry[2:4]
     r = .5
-    self.background.transform.reset()
-    self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
-    self.background.transform.rotate(-t)
-    self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
+
+    if self.spinnyDisabled != True and Theme.spinnySongDisabled != True:
+      self.background.transform.reset()
+      self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
+      self.background.transform.rotate(-t)
+      self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
     self.background.draw()
       
     # render the item list
@@ -653,8 +767,8 @@ class SongChooser(Layer, KeyListener):
             self.renderCassette(item.cassetteColor, self.itemLabels[i])
           elif isinstance(item, Song.LibraryInfo):
             glRotate(-self.itemAngles[i], 0, 0, 1)
-            if i == self.selectedIndex:
-              glRotate(self.time * 4, 1, 0, 0)
+            if i == self.selectedIndex and self.rotationDisabled == False:
+              glRotate(((self.time - self.lastTime) * 4 % 360) - 90, 1, 0, 0)
             self.renderLibrary(item.color, self.itemLabels[i])
         glPopMatrix()
         
@@ -702,7 +816,16 @@ class SongChooser(Layer, KeyListener):
 
         if isinstance(item, Song.SongInfo):
           Theme.setBaseColor(1 - v)
-          wrapText(font, (x, pos[1] + font.getHeight() * 0.0016), item.artist, visibility = f, scale = 0.0016)
+          pos = wrapText(font, (x, pos[1] + font.getHeight() * 0.0016), item.artist, visibility = f, scale = 0.0016)
+
+          if item.count:
+            Theme.setSelectedColor(1 - v)
+            count = int(item.count)
+            if count == 1: 
+              text = "Played %d time" % (count)
+            else:
+              text = "Played %d times" % (count)
+            pos = wrapText(font, (x, pos[1] + font.getHeight() * 0.0016), text, visibility = f, scale = 0.001)
 
           Theme.setSelectedColor(1 - v)
           scale = 0.0011
@@ -712,16 +835,26 @@ class SongChooser(Layer, KeyListener):
           if len(item.difficulties) > 3:
             y = .42 + f / 2.0
             
+          #new
           for d in item.difficulties:
             scores = item.getHighscores(d)
             if scores:
-              score, stars, name = scores[0]
+              score, stars, name, scoreExt = scores[0]
+              notesHit, notesTotal, noteStreak, modVersion, modOptions1, modOptions2 = scoreExt
             else:
               score, stars, name = "---", 0, "---"
             Theme.setBaseColor(1 - v)
             font.render(unicode(d),     (x, y),           scale = scale)
-            font.render(unicode(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x, y + h), scale = scale * .9)
+            if stars == 6:
+              glColor3f(0, 1, 0)  
+              font.render(unicode(Data.STAR2 * (stars -1)), (x, y + h), scale = scale * .9)
+            else:
+              font.render(unicode(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x, y + h), scale = scale * .9)
             Theme.setSelectedColor(1 - v)
+            if scores and notesTotal != 0:
+              score = "%s %.1f%%" % (score, (float(notesHit) / notesTotal) * 100.0)
+            if scores and noteStreak != 0:
+              score = "%s %d" % (score, noteStreak)
             font.render(unicode(score), (x + .15, y),     scale = scale)
             font.render(name,       (x + .15, y + h),     scale = scale)
             y += 2 * h + f / 4.0
@@ -731,13 +864,14 @@ class SongChooser(Layer, KeyListener):
             songCount = _("One song in this library")
           else:
             songCount = _("%d songs in this library") % item.songCount
-          wrapText(font, (x, pos[1] + 3 * font.getHeight() * 0.0016), songCount, visibility = f, scale = 0.0016)
+          if item.songCount > 0:
+            wrapText(font, (x, pos[1] + 3 * font.getHeight() * 0.0016), songCount, visibility = f, scale = 0.0016)
     finally:
       self.engine.view.resetProjection()
 
 class FileChooser(BackgroundLayer, KeyListener):
   """File choosing layer."""
-  def __init__(self, engine, masks, path, prompt = ""):
+  def __init__(self, engine, masks, path, prompt = "", dirSelect = False):
     self.masks          = masks
     self.path           = path
     self.prompt         = prompt
@@ -747,8 +881,11 @@ class FileChooser(BackgroundLayer, KeyListener):
     self.time           = 0.0
     self.menu           = None
 
-    self.engine.loadSvgDrawing(self, "background", "editor.svg")
+    self.dirSelect      = dirSelect
+    self.spinnyDisabled = self.engine.config.get("game", "disable_spinny")
 
+    self.engine.loadSvgDrawing(self, "background", "editor.svg")
+    
   def _getFileCallback(self, fileName):
     return lambda: self.chooseFile(fileName)
 
@@ -756,6 +893,10 @@ class FileChooser(BackgroundLayer, KeyListener):
     f = os.path.join(self.path, fileName)
     if fileName == "..":
       return _("[Parent Folder]")
+    if self.dirSelect == True:
+      for mask in self.masks:
+        if fnmatch.fnmatch(fileName, mask):
+          return _("[Accept Folder]")
     if os.path.isdir(f):
       return _("%s [Folder]") % fileName
     return fileName
@@ -773,18 +914,52 @@ class FileChooser(BackgroundLayer, KeyListener):
           continue
       files.append(fn)
     files.sort()
+    if self.dirSelect == True and (fnmatch.fnmatch(self.path, self.masks[0])):
+      files.insert(0, self.path)
     return files
 
+  def getDisks(self):
+    import win32file, string
+    driveLetters=[]
+    for drive in string.letters[len(string.letters) / 2:]:
+      if win32file.GetDriveType(drive + ":") == win32file.DRIVE_FIXED:
+        driveLetters.append(drive + ":\\")
+    return driveLetters
+  
   def updateFiles(self):
     if self.menu:
       self.engine.view.popLayer(self.menu)
-    self.menu = Menu(self.engine, choices = [(self._getFileText(f), self._getFileCallback(f)) for f in self.getFiles()], onClose = self.close, onCancel = self.cancel)
+
+    if self.path == "toplevel" and os.name != "nt":
+      self.path = "/"
+      
+    if self.path == "toplevel":
+      self.menu = Menu(self.engine, choices = [(self._getFileText(f), self._getFileCallback(f)) for f in self.getDisks()], onClose = self.close, onCancel = self.cancel)
+    else:
+      self.menu = Menu(self.engine, choices = [(self._getFileText(f), self._getFileCallback(f)) for f in self.getFiles()], onClose = self.close, onCancel = self.cancel)
     self.engine.view.pushLayer(self.menu)
 
   def chooseFile(self, fileName):
+    if self.dirSelect == True:
+      for mask in self.masks:
+        if fnmatch.fnmatch(fileName, mask):
+          self.selectedFile = fileName
+          accepted = True
+          self.engine.view.popLayer(self.menu)
+          self.engine.view.popLayer(self)
+          self.menu = None
+          return
+
+    if self.path == "toplevel":
+      self.path = ""
     path = os.path.abspath(os.path.join(self.path, fileName))
+
     if os.path.isdir(path):
-      self.path = path
+
+      if path == self.path and fileName == "..":
+        self.path = "toplevel"
+      else:
+        self.path = path
       self.updateFiles()
       return
     self.selectedFile = path
@@ -814,14 +989,17 @@ class FileChooser(BackgroundLayer, KeyListener):
   def render(self, visibility, topMost):
     v = (1 - visibility) ** 2
 
-    # render the background    
+    # render the background
+
     t = self.time / 100
     w, h, = self.engine.view.geometry[2:4]
     r = .5
-    self.background.transform.reset()
-    self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
-    self.background.transform.rotate(-t)
-    self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
+
+    if self.spinnyDisabled != True and Theme.spinnyEditorDisabled != True:      
+      self.background.transform.reset()
+      self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
+      self.background.transform.rotate(-t)
+      self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
     self.background.draw()
       
     self.engine.view.setOrthogonalProjection(normalize = True)
@@ -845,6 +1023,8 @@ class ItemChooser(BackgroundLayer, KeyListener):
     self.selectedItem   = None
     self.time           = 0.0
     self.menu = Menu(self.engine, choices = [(c, self._callbackForItem(c)) for c in items], onClose = self.close, onCancel = self.cancel)
+    self.spinnyDisabled = self.engine.config.get("game", "disable_spinny")
+    
     if selected and selected in items:
       self.menu.selectItem(items.index(selected))
     self.engine.loadSvgDrawing(self, "background", "editor.svg")
@@ -880,14 +1060,16 @@ class ItemChooser(BackgroundLayer, KeyListener):
   def render(self, visibility, topMost):
     v = (1 - visibility) ** 2
 
-    # render the background    
+    # render the background
     t = self.time / 100
     w, h, = self.engine.view.geometry[2:4]
     r = .5
-    self.background.transform.reset()
-    self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
-    self.background.transform.rotate(-t)
-    self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
+    
+    if self.spinnyDisabled != True and Theme.spinnyEditorDisabled != True:
+      self.background.transform.reset()
+      self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
+      self.background.transform.rotate(-t)
+      self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
     self.background.draw()
       
     self.engine.view.setOrthogonalProjection(normalize = True)
@@ -933,11 +1115,11 @@ class BpmEstimator(Layer, KeyListener):
         diffs = [self.beats[i + 1] - self.beats[i] for i in range(len(self.beats) - 1)]
         self.bpm = 60000.0 / (sum(diffs) / float(len(diffs)))
         self.beats = self.beats[-12:]
-    elif c in [Player.CANCEL, Player.KEY2]:
+    elif c in Player.CANCELS + Player.KEY2S:
       self.engine.view.popLayer(self)
       self.accepted = True
       self.bpm      = None
-    elif c in [Player.KEY1] or key == pygame.K_RETURN:
+    elif c in Player.KEY1S or key == pygame.K_RETURN:
       self.engine.view.popLayer(self)
       self.accepted = True
       
@@ -989,7 +1171,7 @@ class KeyTester(Layer, KeyListener):
 
     self.controls.keyPressed(key)
     c = self.engine.input.controls.getMapping(key)
-    if c in [Player.CANCEL]:
+    if c in Player.CANCELS:
       self.engine.view.popLayer(self)
       self.accepted = True
     return True
@@ -1015,19 +1197,31 @@ class KeyTester(Layer, KeyListener):
       Theme.setBaseColor(1 - v)
       wrapText(font, (.1, .2 - v), self.prompt)
 
-      for n, c in enumerate(Guitar.KEYS):
+      for n, c in enumerate(Guitar.PLAYER1KEYS):
         if self.controls.getState(c):
-          glColor3f(*self.fretColors[n])
+          glColor3f(*self.fretColors[n%5])
         else:
           glColor3f(.4, .4, .4)
         font.render("#%d" % (n + 1), (.5 - .15 * (2 - n), .4 + v))
 
-      if self.controls.getState(Player.ACTION1) or \
-         self.controls.getState(Player.ACTION2):
+      for n, c in enumerate(Guitar.PLAYER2KEYS):
+        if self.controls.getState(c):
+          glColor3f(*self.fretColors[n%5])
+        else:
+          glColor3f(.4, .4, .4)
+        font.render("#%d" % (n + 1), (.5 - .15 * (2 - n), 0.15+.4 + v))          
+
+      if self.controls.getState(Player.ACTION1) or self.controls.getState(Player.ACTION2):
         Theme.setSelectedColor(1 - v)
       else:
         glColor3f(.4, .4, .4)
       font.render(_("Pick!"), (.45, .5 + v))
+
+      if self.controls.getState(Player.PLAYER_2_ACTION1) or self.controls.getState(Player.PLAYER_2_ACTION2):
+        Theme.setSelectedColor(1 - v)
+      else:
+        glColor3f(.4, .4, .4)
+      font.render(_("Pick!"), (.45, 0.6 + v))           
         
     finally:
       self.engine.view.resetProjection()
@@ -1078,10 +1272,14 @@ def chooseSong(engine, prompt = _("Choose a Song"), selectedSong = None, selecte
   @returns a (library, song) pair
   """
   d = SongChooser(engine, prompt, selectedLibrary = selectedLibrary, selectedSong = selectedSong)
-  _runDialog(engine, d)
+
+  if d.getItems() == []:
+    return (None, None)
+  else:
+    _runDialog(engine, d)
   return (d.getSelectedLibrary(), d.getSelectedSong())
   
-def chooseFile(engine, masks = ["*.*"], path = ".", prompt = _("Choose a File")):
+def chooseFile(engine, masks = ["*.*"], path = ".", prompt = _("Choose a File"), dirSelect = False):
   """
   Ask the user to select a file.
   
@@ -1090,7 +1288,7 @@ def chooseFile(engine, masks = ["*.*"], path = ".", prompt = _("Choose a File"))
   @param path:    Initial path
   @param prompt:  Prompt shown to the user
   """
-  d = FileChooser(engine, masks, path, prompt)
+  d = FileChooser(engine, masks, path, prompt, dirSelect)
   _runDialog(engine, d)
   return d.getSelectedFile()
   

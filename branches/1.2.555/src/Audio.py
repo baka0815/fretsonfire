@@ -91,7 +91,7 @@ class Music(object):
     pygame.mixer.music.unpause()
 
   def setVolume(self, volume):
-    print "audiomusic", volume
+    #print "audiomusic", volume
     pygame.mixer.music.set_volume(volume)
 
   def fadeout(self, time):
@@ -114,12 +114,15 @@ class Channel(object):
     self.channel.stop()
 
   def setVolume(self, volume):
-    print "audiochannel", volume
+    #print "audiochannel", volume
     self.channel.set_volume(volume)
 
   def fadeout(self, time):
     self.channel.fadeout(time)
-
+    
+  def isPlaying(self):
+    return self.channel.get_busy()
+  
 class Sound(object):
   def __init__(self, fileName):
     self.sound   = pygame.mixer.Sound(fileName)
@@ -198,7 +201,7 @@ if ogg:
       self._reset()
 
     def setVolume(self, volume):
-      print "streamingogg", volume
+      #print "streamingogg", volume
       self.volume = volume
 
     def fadeout(self, time):
@@ -251,7 +254,7 @@ if ogg:
       if not self.playing:
         return
 
-      print "audiorun", self.volume
+      #print "audiorun", self.volume
       self.channel.set_volume(self.volume)
 
       if len(self.buffersOut) < self.bufferCount:

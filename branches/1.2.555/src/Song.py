@@ -53,7 +53,8 @@ class SongInfo(object):
     self._difficulties = None
     self._parts        = None
     self._time         = None
-
+    self._noteNum      = None
+    
     try:
       self.info.read(infoFileName)
     except:
@@ -140,7 +141,7 @@ class SongInfo(object):
             self.addHighscore(difficulty, score, stars, name, part = Part.DRUM_PART)
           else:
             Log.warn("Weak hack attempt detected. Better luck next time.")
-            
+    
   def _set(self, attr, value):
     if not self.info.has_section("song"):
       self.info.add_section("song")
@@ -246,27 +247,7 @@ class SongInfo(object):
     self.cache.write(f)
     f.close()
 
-  def getDifficulties(self):
-    diffNum = []
-    partNum = []
-    diffTemp = [0,0,0,0]
-
-    # Tutorials only have the medium difficulty
-    if self.tutorial:
-      return [Difficulty.MEDIUM_DIFFICULTY]
-
-    if self._difficulties is not None:
-      return self._difficulties
-
-    # Read in song.ini cached difficulties
-    cache_diffs = self._cacheget("cache_diffs")
-    if cache_diffs is not "":
-      diffNums = Cerealizer.loads(binascii.unhexlify(cache_diffs))
-      self._difficulties = diffNums
-      return self._difficulties
-
-    # Otherwise do it the hard way
-    # See which difficulties are available
+  def noteInfo(self):
     try:
       noteFileName = os.path.join(os.path.dirname(self.fileName), "notes.mid")
       info = MidiInfoReader()
@@ -276,67 +257,91 @@ class SongInfo(object):
       except MidiInfoReader.Done:
         pass
 
-      #info reader now will get both difficulties and parts
+      #info reader now will get both difficulties, parts and notenum
       info.difficulties.sort()
       self._difficulties = info.difficulties
       info.parts.sort()
       self._parts = info.parts
+      self._noteNum = info.noteNum
+      self._time = info.find_time(info.lastTime)
     except:
       info.difficulties.sort()
       self._difficulties = info.difficulties
       info.parts.sort()
       self._parts = info.parts
+      self._noteNum = info.noteNum
+      self._time = info.find_time(info.lastTime)
+      
+    #Save values in cache.ini cache
+    self._cacheset("cache_diffs", binascii.hexlify(Cerealizer.dumps(self._difficulties)))
+    self._cacheset("cache_parts", binascii.hexlify(Cerealizer.dumps(self._parts)))
+    self._cacheset("cache_notenum", binascii.hexlify(Cerealizer.dumps(self._noteNum)))
+    self._cacheset("cache_endtime", binascii.hexlify(Cerealizer.dumps(self._time)))
 
-    #Save values in song.ini cache
-    self._cacheset("cache_diffs", binascii.hexlify(Cerealizer.dumps(info.difficulties)))
-    self._cacheset("cache_parts", binascii.hexlify(Cerealizer.dumps(info.parts)))
     self.cachesave()
+    
+  def getDifficulties(self):
+    # Tutorials only have the medium difficulty
+    if self.tutorial:
+      return [Difficulty.MEDIUM_DIFFICULTY]
+
+    if self._difficulties is not None:
+      return self._difficulties
+
+    # Read in song.ini cached info
+    cache_diffs = self._cacheget("cache_diffs")
+    if cache_diffs is not "":
+      diffNums = Cerealizer.loads(binascii.unhexlify(cache_diffs))
+      self._difficulties = diffNums
+
+    # Otherwise do it the hard way
+    else:
+      self.noteInfo()
     return self._difficulties
 
-  def getParts(self):
-    partTemp = []
-    
+  def getParts(self): 
     if self._parts is not None:
       return self._parts
 
+    # Read in song.ini cached info
     cache_parts = self._cacheget("cache_parts")
     if cache_parts is not "":
       partNums = Cerealizer.loads(binascii.unhexlify(cache_parts))
 
       self._parts = partNums
-      return self._parts
-    
-    # See which parts are available
-    try:
-      noteFileName = os.path.join(os.path.dirname(self.fileName), "notes.mid")
-      info = MidiPartsReader()
-
-      midiIn = midi.MidiInFile(info, noteFileName)
-      try:
-        midiIn.read()
-      except MidiPartsReader.Done:
-        pass
-      if info.parts == []:
-        part = Part.GUITAR_PART
-        info.parts.append(part)
-      info.parts.sort()
-      self._parts = info.parts
-    except:
-      self._parts = parts.values()
+    else:
+      # Otherwise do it the hard way
+      self.noteInfo()
     return self._parts
 
-  def getTime(self):
-    if self._time != None:
-      return self._time
-    
-    cache_time = self._cacheget("cache_time")
-    if cache_time is not "":
-      lastTime = Cerealizer.loads(binascii.unhexlify(cache_time))
-      self._time = lastTime
+  def getNoteNum(self):
+    if self._noteNum is not None:
+      return self._noteNum
+  
+    # Read in song.ini cached info
+    cache_notenum = self._cacheget("cache_notenum")
+    if cache_notenum is not "":
+      noteNums = Cerealizer.loads(binascii.unhexlify(cache_notenum))
+      self._noteNum = noteNums
     else:
-      self._time = 0.0
-    return self._time
-
+      # Otherwise do it the hard way
+      self.noteInfo()
+    return self._noteNum
+  
+  def getTime(self):
+    if self._time is not None:
+      return self._time
+  
+    # Read in song.ini cached info
+    cache_time = self._cacheget("cache_endtime")
+    if cache_time is not "":
+      timeNum = Cerealizer.loads(binascii.unhexlify(cache_time))
+      self._time = timeNum
+    else:
+      # Otherwise do it the hard way
+      self.noteInfo()
+    return self._noteNum
+  
   def getName(self):
     return self._get("name")
 
@@ -503,6 +508,7 @@ class SongInfo(object):
   cassetteColor = property(getCassetteColor, setCassetteColor)
   #New RF-mod Items
   parts         = property(getParts)
+  notenum       = property(getNoteNum)
   time          = property(getTime)
   frets         = property(getFrets, setFrets)
   version       = property(getVersion, setVersion)
@@ -1062,6 +1068,7 @@ class Song(object):
     self.missVolume    = self.engine.config.get("audio", "miss_volume")
     self.lastTime      = 0
 
+    self.hasMidiLyrics = False
     #RF-mod skip if folder (not needed anymore?)
     #if self.info.folder == True:
     #  return
@@ -1092,8 +1099,10 @@ class Song(object):
       midiIn.read()
       self.lastTime = note.lastTime
       #Duplicate in info for display purposes
-      self.info._cacheset("cache_time", binascii.hexlify(Cerealizer.dumps(self.lastTime)))
-      self.info.cachesave()
+      #self.info._time = self.lastTime
+      #print self.lastTime
+      #self.info._cacheset("cache_endtime", binascii.hexlify(Cerealizer.dumps(self.lastTime)))
+      #self.info.cachesave()
     # load the script
     if scriptFileName and os.path.isfile(scriptFileName):
       scriptReader = ScriptReader(self, open(scriptFileName))
@@ -1344,6 +1353,13 @@ class MidiReader(midi.MidiOutStream):
     self.partnumber = -1
     self.lastTime = 0
 
+    self.readTextAndLyricEvents = Config.get("game","rock_band_events")
+    #self.guitarSoloStartTime = 0
+    #self.guitarSoloNoteCount = [0,0,0,0]   #1 count for each of the 4 difficulties
+    self.guitarSoloIndex = 0
+    self.guitarSoloActive = False
+    self.guitarSoloSectionMarkers = False
+    
   def addEvent(self, track, event, time = None):
     if self.partnumber == -1:
       #Looks like notes have started appearing before any part information. Lets assume its part0
@@ -1407,6 +1423,8 @@ class MidiReader(midi.MidiOutStream):
   def sequence_name(self, text):
     #if self.get_current_track() == 0:
     self.partnumber = None
+    self.guitarSoloIndex = 0
+    self.guitarSoloActive = False
       
     if (text == "PART GUITAR" or text == "T1 GEMS" or text == "Click" or text == "MIDI out") and Part.GUITAR_PART in self.song.parts:
       self.partnumber = Part.GUITAR_PART
@@ -1439,32 +1457,202 @@ class MidiReader(midi.MidiOutStream):
         track, number = noteMap[note]
         self.addEvent(track, Note(number, endTime - startTime, special = self.velocity[note] == 127), time = startTime)
       else:
-        print "MIDI note 0x%x at %d does not map to any game note." % (note, self.abs_time())
+        print "MIDI note 0x%x (%d) at %d does not map to any game note." % (note, note, self.abs_time())
         #Log.warn("MIDI note 0x%x at %d does not map to any game note." % (note, self.abs_time()))
         pass
     except KeyError:
       Log.warn("MIDI note 0x%x on channel %d ending at %d was never started." % (note, channel, self.abs_time()))
-      
-class MidiInfoReader(midi.MidiOutStream):
+
+  #myfingershurt: adding MIDI text event access
+  #these events happen on their own track, and are processed after the note tracks.
+  #just mark the guitar solo sections ahead of time 
+  #and then write an iteration routine to go through whatever track / difficulty is being played in GuitarScene 
+  #to find these markers and count the notes and add a new text event containing each solo's note count
+  def btext(self, text):
+    print "text", text
+    if text.find("GNMIDI") < 0:   #to filter out the midi class illegal usage / trial timeout messages
+      #Log.debug(str(self.abs_time()) + "-MIDI Text: " + text)
+      if self.readTextAndLyricEvents > 0:
+        #myfingershurt: must move the guitar solo trigger detection logic here so we can also count the notes in the section
+        #self.guitarSoloStartTime = 0
+        #self.guitarSoloIndex = 0
+        #self.guitarSoloNoteCount = [0,0,0,0]
+        #self.guitarSoloActive = False
+        
+        #just find solo on/off triggers, normalize them (so simple guitarscene logic - special text events GSOLO ON1 and GSOLO OFF1)
+        #then set midireader global flag saying to count incoming note on's, store in another global, then when GSOLO OFF detected store note count
+        
+        #Will want to store GSOLO_ONx event time, so that we can add 1 tick to it and add the solo note count for this particular track/diff
+        #in the format of "GCOUNT100" (with 100 being the number of notes total in the gsolo section)
+
+
+        gSoloEvent = False
+        #also convert all underscores to spaces so it look better
+        text = text.replace("_"," ")
+        if text.lower().find("section") >= 0:
+          #Log.debug("Section event " + event.text + " found at time " + str(self.abs_time()) )
+          self.guitarSoloSectionMarkers = True      #GH1 dont use section markers... GH2+ do
+          #strip unnecessary text / chars:
+          text = text.replace("section","")
+          text = text.replace("[","")
+          text = text.replace("]","")
+          #also convert "gtr" to "Guitar"
+          text = text.replace("gtr","Guitar")
+          event = TextEvent("SEC: " + text, 250.0)
+          #event.length = 12000
+          if text.lower().find("solo") >= 0 and text.lower().find("drum") < 0 and text.lower().find("outro") < 0 and text.lower().find("organ") < 0 and text.lower().find("synth") < 0:
+            gSoloEvent = True
+            gSolo = True
+          elif text.lower().find("guitar") >= 0 and text.lower().find("lead") >= 0:    #Foreplay Long Time "[section_gtr_lead_1]"
+            gSoloEvent = True
+            gSolo = True
+          elif text.lower().find("guitar") >= 0 and text.lower().find("line") >= 0:   #support for REM Orange Crush style solos
+            gSoloEvent = True
+            gSolo = True
+          elif text.lower().find("guitar") >= 0 and text.lower().find("ostinato") >= 0:   #support for Pleasure solos "[section gtr_ostinato]"
+            gSoloEvent = True
+            gSolo = True
+          else: #this is the cue to end solos...
+            gSoloEvent = True
+            gSolo = False
+        elif text.lower().find("solo") >= 0 and text.find("[") < 0 and text.lower().find("drum") < 0 and text.lower().find("map") < 0 and text.lower().find("play") < 0 and not self.guitarSoloSectionMarkers:
+          event = TextEvent("SEC: " + text, 250.0)
+          gSoloEvent = True
+          if text.lower().find("off") >= 0:
+            gSolo = False
+          else:
+            gSolo = True
+        elif text.lower().find("verse") >= 0 and text.find("[") < 0 and not self.guitarSoloSectionMarkers:   #this is an alternate GH1-style solo end marker
+          event = TextEvent("SEC: " + text, 250.0)
+          gSoloEvent = True
+          gSolo = False
+        elif text.lower().find("gtr") >= 0 and text.lower().find("off") >= 0 and text.find("[") < 0 and not self.guitarSoloSectionMarkers:   #this is an alternate GH1-style solo end marker
+          #also convert "gtr" to "Guitar"
+          text = text.replace("gtr","Guitar")
+          event = TextEvent("SEC: " + text, 100.0)
+          gSoloEvent = True
+          gSolo = False
+        else:  #unused text event
+          event = TextEvent("TXT: " + text, 250.0)
+        #now, check for guitar solo status change:
+        soloSlop = 150.0   
+        if gSoloEvent:
+          if gSolo:
+            if not self.guitarSoloActive:
+              self.guitarSoloActive = True
+              #soloEvent = TextEvent("GSOLO" + str(self.guitarSoloIndex) + " ON", 250.0)
+              soloEvent = TextEvent("GSOLO ON", 250.0)
+              Log.debug("GSOLO ON event " + event.text + " found at time " + str(self.abs_time()) )
+              for track in self.song.tracks:
+                for t in track:
+                  t.addEvent(self.abs_time()-soloSlop, soloEvent)
+              #self.guitarSoloNoteCount = [0,0,0,0]
+              #self.guitarSoloStartTime = self.abs_time()
+          else: #this is the cue to end solos...
+            if self.guitarSoloActive:
+              self.guitarSoloActive = False
+              #soloEvent = TextEvent("GSOLO" + str(self.guitarSoloIndex) + " OFF", 250.0)
+              soloEvent = TextEvent("GSOLO OFF", 250.0)
+              Log.debug("GSOLO OFF event " + event.text + " found at time " + str(self.abs_time()) )
+              self.guitarSoloIndex += 1
+              for track in self.song.tracks:
+                for t in track:
+                  t.addEvent(self.abs_time()+soloSlop, soloEvent)
+              
+        for track in self.song.tracks:
+          for t in track:
+            t.addEvent(self.abs_time(), event)
+        
+
+
+  #myfingershurt: adding MIDI lyric event access
+  def blyric(self, text):
+    if text.find("GNMIDI") < 0:   #to filter out the midi class illegal usage / trial timeout messages
+      #Log.debug(str(self.abs_time()) + "-MIDI Lyric: " + text)
+      if self.readTextAndLyricEvents > 0:
+        print "lyric", text, self.abs_time()
+        event = TextEvent("LYR: " + text, 400.0)
+        self.song.hasMidiLyrics = True
+        for track in self.song.tracks:
+          for t in track:
+            t.addEvent(self.abs_time(), event)
+
+  
+  
+class MidiInfoReaderNoSections(midi.MidiOutStream):
   # We exit via this exception so that we don't need to read the whole file in
-  # Now we are reading the whole file in
   class Done: pass
   
   def __init__(self):
     midi.MidiOutStream.__init__(self)
     self.difficulties = []
-    self.diffTemp = [0,0,0,0]
+    Log.debug("MidiInfoReaderNoSections class init (song.py)...")
+
+    #MFH: practice section support:
+    self.ticksPerBeat = 480
+    self.sections = []
+    self.tempoMarkers = []
+    self.guitarSoloSectionMarkers = False
+    self.bpm = None
+
+  def note_on(self, channel, note, velocity):
+    try:
+      track, number = noteMap[note]
+      diff = difficulties[track]
+      if not diff in self.difficulties:
+        self.difficulties.append(diff)
+        #ASSUMES ALL parts (lead, rhythm, bass) have same difficulties of guitar part!
+        if len(self.difficulties) == len(difficulties):
+           raise Done
+    except KeyError:
+      pass
+
+
+      
+class MidiInfoReader(midi.MidiOutStream):
+  # We exit via this exception so that we don't need to read the whole file in
+  # Now we are reading the whole file in
+  #class Done: pass
+  
+  def __init__(self):
+    midi.MidiOutStream.__init__(self)
+    self.tempoMarkers = []
+    self.bpm = 0
+    self.ticksPerBeat = 480
+    self.difficulties = []
     self.parts = []
+    self.noteNum = [[0, 0, 0, 0],[0, 0, 0, 0],[0, 0, 0, 0],[0, 0, 0, 0],[0, 0, 0, 0],[0, 0, 0, 0]]
+    self.lastTime = 0
     self.curPart = Part.GUITAR_PART
-    
+
+  def find_time(self, currentTime):
+    def ticksToBeats(ticks, bpm):
+      return (60000.0 * ticks) / (bpm * self.ticksPerBeat)
+   
+    if self.bpm:
+#      currentTime = midi.MidiOutStream.abs_time(self)
+      # Find out the current scaled time.
+      # Yeah, this is reeally slow, but fast enough :)
+      scaledTime      = 0.0
+      tempoMarkerTime = 0.0
+      currentBpm      = self.bpm
+      for i, marker in enumerate(self.tempoMarkers):
+        time, bpm = marker
+        if time > currentTime:
+          break
+        scaledTime += ticksToBeats(time - tempoMarkerTime, currentBpm)
+        tempoMarkerTime, currentBpm = time, bpm
+      return scaledTime + ticksToBeats(currentTime - tempoMarkerTime, currentBpm)
+    return 0.0
+  
   def note_on(self, channel, note, velocity):
     try:
       diff, number = noteMap[note]
       #diff = Difficulty.difficulties[track]
+      self.noteNum[self.curPart][diff] += 1
+      #self.diffTemp[diff] += 1
 
-      self.diffTemp[diff] += 1
-
-      if self.diffTemp[diff] > 7:
+      if self.noteNum[self.curPart][diff] > 7:
           if not diff in self.difficulties:
             self.difficulties.append(diff)
           if not self.curPart in self.parts:
@@ -1473,13 +1661,19 @@ class MidiInfoReader(midi.MidiOutStream):
         #ASSUMES ALL parts (lead, rhythm, bass) have same difficulties of guitar part!
         #if len(self.difficulties) == len(difficulties):
         #  raise Done
-
     except KeyError:
       pass
 
-  def sequence_name(self, text):
-    self.diffTemp = [0,0,0,0]
+  def note_off(self, channel, note, velocity):
+      time = midi.MidiOutStream.abs_time(self)
+      if time > self.lastTime:
+        self.lastTime = time 
 
+  def tempo(self, value):
+    self.bpm = 60.0 * 10.0**6 / value
+    self.tempoMarkers.append((midi.MidiOutStream.abs_time(self), self.bpm))
+    
+  def sequence_name(self, text):
     try:
       if text == "PART GUITAR" or text == "T1 GEMS" or text == "Click":
         self.curPart = Part.GUITAR_PART
@@ -1493,40 +1687,6 @@ class MidiInfoReader(midi.MidiOutStream):
         self.curPart = Part.DRUM_PART
     except:
       pass
-
-class MidiPartsReader(midi.MidiOutStream):
-  # We exit via this exception so that we don't need to read the whole file in
-  class Done: pass
-  
-  def __init__(self):
-    midi.MidiOutStream.__init__(self)
-    self.parts = []
-
-  def sequence_name(self, text):
-    if text == "PART GUITAR" or text == "T1 GEMS" or text == "Click":
-      if not Part.GUITAR_PART in self.parts:
-        part = Part.GUITAR_PART
-        self.parts.append(part)
-
-    if text == "PART RHYTHM":
-      if not Part.RHYTHM_PART in self.parts:
-        part = PartRHYTHM_PART
-        self.parts.append(part)        
-     
-    if text == "PART BASS":
-      if not Part.BASS_PART in self.parts:
-        part = Part.BASS_PART
-        self.parts.append(part)
-
-    if text == "PART GUITAR COOP":
-      if not Part.LEAD_PART in self.parts:
-        part = Part.LEAD_PART
-        self.parts.append(part)
-
-    if text == "PART DRUMS" or text == "PART DRUM":
-      if not Part.DRUM_PART in self.parts:
-        part = Part.DRUM_PART
-        self.parts.append(part)
         
 def loadSong(engine, name, library = DEFAULT_LIBRARY, seekable = False, playbackOnly = False, notesOnly = False, part = [Part.GUITAR_PART]):
   #RF-mod (not needed?)

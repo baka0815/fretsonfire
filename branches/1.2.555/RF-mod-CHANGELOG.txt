@@ -1,15 +1,28 @@
+4.20
+   Preview play/stop using button 5
+   Fixes to audio preview fade out
+   song time cache logic changed to get immediate results
+   Added high score part switcher (hering)
+   Added text song list (hering)
+   Menu Restructure
+   New stage layers: sound
+   New stage effects: play, playrandom, rockwinner
+   New stage inis: stagescore, stagesound
+   
+
 4.19
-   New FoF Stage
+   New FoF Modular Stage
    New Example stages (GH3, RB)
    Fixed menu error when there are no items
-   New stage effects color, pulse, translate, text, textpulse
-   New stage triggers: mult, streak, timer, score
-   New stage variables: mod, modcap, start, stop, show, xfactor, yfactor, xend, yend
+   New stage effects color, pulse, translate, flash, text, textpulse, textfade
+   New stage triggers: mult, streak, timer, score, party
+   New stage variables: mod, modcap, start, stop, show, xfactor, yfactor, xend, yend, player, fontjustify
+   New 2 player stages
+   Added who is winning fail gauge (hering)
    Fixed bug in new part detection
    Made loadFont function call
    Fixed empty skin directory bug
-   
-
+   Fixed font position
 4.18
    Fixed 2nd player button press to get out of gameresults
    Removed chords from drums (you play notes individually)
@@ -44,8 +57,8 @@
    caching of song time
    display of (cached) song time on song selection
    Fixed held note not being counted in certain situations at end of song
-   Boardspeed adjustment
-   Boardspeed based upon difficulty
+   Boardspeed adjustment (hering)
+   Boardspeed based upon difficulty (hering)
    Themable multiplier colors
    Disable multiplier flash toggle
 

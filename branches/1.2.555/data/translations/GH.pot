@@ -1,0 +1,41 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2007-03-18 15:52+EET\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+#: Language.py:56
+msgid "Language"
+msgstr ""
+
+#: GuitarScene.py:365
+msgid "Get Ready to Rock"
+msgstr ""
+
+#: Song.py:58
+msgid "Supaeasy"
+msgstr ""
+
+#: Song.py:59
+msgid "Easy"
+msgstr ""
+
+#: Song.py:60
+msgid "Medium"
+msgstr ""
+
+#: Song.py:61
+msgid "Amazing"
+msgstr ""
+
+

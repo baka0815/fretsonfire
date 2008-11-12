@@ -232,17 +232,14 @@ class SettingsMenu(Menu.Menu):
     ]
     audioSettingsMenu = Menu.Menu(engine, audioSettings + applyItem)
 
-    rfModPlayer0Settings = [
+    rfModPlayerSettings = [
+      ConfigChoice(engine.config, "game",  "players", autoApply = True),
       ConfigChoice(engine.config, "player0",  "two_chord_max", autoApply = True),
       ConfigChoice(engine.config, "player0",  "leftymode", autoApply = True),
-    ]
-    rfModPlayer0SettingsMenu = Menu.Menu(engine, rfModPlayer0Settings)
-
-    rfModPlayer1Settings = [
       ConfigChoice(engine.config, "player1",  "two_chord_max", autoApply = True),
       ConfigChoice(engine.config, "player1",  "leftymode", autoApply = True),
     ]
-    rfModPlayer1SettingsMenu = Menu.Menu(engine, rfModPlayer1Settings)    
+    rfModPlayerSettingsMenu = Menu.Menu(engine, rfModPlayerSettings)    
 
     rfModHOPOSettings = [
       ConfigChoice(engine.config, "game",  "tapping", autoApply = True),
@@ -264,28 +261,47 @@ class SettingsMenu(Menu.Menu):
       ConfigChoice(engine.config, "audio", "miss_volume", autoApply = True),
     ]
     rfModGameSettingsMenu = Menu.Menu(engine, rfModGameSettings)
-    
-    rfModPerfSettings = [
-      ConfigChoice(engine.config, "engine",  "game_priority", autoApply = True),
-      ConfigChoice(engine.config, "audio", "disable_preview", autoApply = True),
+
+    rfModFailSettings = [ 
+      ConfigChoice(engine.config, "failing",  "failing", autoApply = True),
+      ConfigChoice(engine.config, "failing",  "difficulty", autoApply = True),
+      ConfigChoice(engine.config, "failing",  "jurgen", autoApply = True),
+      ConfigChoice(engine.config, "failing",  "jurgen_volume", autoApply = True),
+    ]
+    rfModFailSettingsMenu = Menu.Menu(engine, rfModFailSettings)
+
+    rfModPerfGameSettings = [
       ConfigChoice(engine.config, "video", "disable_stats", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_notesfx", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_notewavessfx", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_fretsfx", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_flamesfx", autoApply = True),
+    ]
+    rfModPerfGameSettingsMenu = Menu.Menu(engine, rfModPerfGameSettings)
+    
+    rfModPerfMenuSettings = [
+      ConfigChoice(engine.config, "game", "songlist_render", autoApply = True),
+      ConfigChoice(engine.config, "game", "songlist_items", autoApply = True),
+      ConfigChoice(engine.config, "audio", "disable_preview", autoApply = True),
       ConfigChoice(engine.config, "game", "disable_spinny", autoApply = True),
       ConfigChoice(engine.config, "game", "disable_libcount", autoApply = True),
       ConfigChoice(engine.config, "game", "disable_librotation", autoApply = True),
     ]
-    rfModPerfSettingsMenu = Menu.Menu(engine, rfModPerfSettings)
+    rfModPerfMenuSettingsMenu = Menu.Menu(engine, rfModPerfMenuSettings)
 
+    rfModPerfSettings = [
+      ConfigChoice(engine.config, "engine",  "game_priority", autoApply = True),
+      (_("Game Performance"), rfModPerfGameSettingsMenu),
+      (_("Menu Performance"), rfModPerfMenuSettingsMenu),      
+    ]
+    rfModPerfSettingsMenu = Menu.Menu(engine, rfModPerfSettings)
+    
     rfModSettings = [
-      ConfigChoice(engine.config, "game",  "players", autoApply = True),
       (_("Game settings"), rfModGameSettingsMenu),
       (_("HO/PO settings"), rfModHOPOSettingsMenu),
+      (_("Failing settings"), rfModFailSettingsMenu),
       (_("Performance settings"), rfModPerfSettingsMenu),
-      (_("Player 1 settings"), rfModPlayer0SettingsMenu),
-      (_("Player 2 settings"), rfModPlayer1SettingsMenu),
+      (_("Player settings"), rfModPlayerSettingsMenu),
     ]
     rfModSettingsMenu = Menu.Menu(engine, rfModSettings)
 

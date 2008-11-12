@@ -256,9 +256,13 @@ def setSelectedColor(alpha = 1.0):
 
 def setBaseColor(alpha = 1.0):
   glColor4f(*(baseColor + (alpha,)))
+
+def getSelectedColor(alpha = 1.0):
+  return(selectedColor + (alpha,))
+
+def getBaseColor(alpha = 1.0):
+  return(baseColor + (alpha,))
   
-
-
 def open(config):
   # Read in theme.ini specific variables
   

@@ -1,0 +1,37 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: GH Difficulties\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2007-08-03 01:21-0800\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: English\n"
+"X-Poedit-Country: UNITED STATES\n"
+
+#: Language.py:56
+msgid "Language"
+msgstr ""
+
+#: GuitarScene.py:365
+msgid "Get Ready to Rock"
+msgstr "Get Ready to Rock"
+
+#: Song.py:58
+msgid "Supaeasy"
+msgstr "Easy"
+
+#: Song.py:59
+msgid "Easy"
+msgstr "Medium"
+
+#: Song.py:60
+msgid "Medium"
+msgstr "Hard"
+
+#: Song.py:61
+msgid "Amazing"
+msgstr "Expert"
+

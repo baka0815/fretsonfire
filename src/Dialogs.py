@@ -401,7 +401,15 @@ class SongChooser(Layer, KeyListener):
     self.sortOrder        = self.engine.config.get("game", "sort_order")
     self.rotationDisabled = self.engine.config.get("game", "disable_librotation")
     self.spinnyDisabled   = self.engine.config.get("game", "disable_spinny")
+    self.displayedPart    = 0
+    self.displayedPartTime= 0.0
+    
+    self.songListRender   = self.engine.config.get("game", "songlist_render")
+    self.songListItems    = self.engine.config.get("game", "songlist_items") / 2
 
+    #self.songlistRender = False
+    #self.songlistItems = 4
+    
     temp = self.engine.config.get("game", "search_key")
     
     if temp != "None":
@@ -415,11 +423,12 @@ class SongChooser(Layer, KeyListener):
 
     self.loadCollection()
 
-    self.engine.resource.load(self, "cassette",     lambda: Mesh(self.engine.resource.fileName("cassette.dae")), synch = True)
-    self.engine.resource.load(self, "label",        lambda: Mesh(self.engine.resource.fileName("label.dae")), synch = True)
-    self.engine.resource.load(self, "libraryMesh",  lambda: Mesh(self.engine.resource.fileName("library.dae")), synch = True)
-    self.engine.resource.load(self, "libraryLabel", lambda: Mesh(self.engine.resource.fileName("library_label.dae")), synch = True)
-    
+    if self.songListRender == True:
+      self.engine.resource.load(self, "cassette",     lambda: Mesh(self.engine.resource.fileName("cassette.dae")), synch = True)
+      self.engine.resource.load(self, "label",        lambda: Mesh(self.engine.resource.fileName("label.dae")), synch = True)
+      self.engine.resource.load(self, "libraryMesh",  lambda: Mesh(self.engine.resource.fileName("library.dae")), synch = True)
+      self.engine.resource.load(self, "libraryLabel", lambda: Mesh(self.engine.resource.fileName("library_label.dae")), synch = True)      
+
     self.engine.loadSvgDrawing(self, "background", "cassette.svg")
 
   def loadCollection(self):
@@ -449,6 +458,15 @@ class SongChooser(Layer, KeyListener):
         elif isinstance(item, Song.LibraryInfo) and self.initialItem == item.libraryName:
           self.selectedIndex =  i
           break
+
+    if 1:
+      self.itemNames =[]
+      for i, item in enumerate(self.items):
+        if isinstance(item, Song.LibraryInfo):
+            self.itemNames.append("< %s >" % item.name)
+        else:
+            self.itemNames.append(item.artist + " - " + item.name)        
+    # Load labels for libraries right away
     # Load labels for libraries right away
     #RF-mod consider not
     #for i, item in enumerate(self.items):
@@ -481,6 +499,8 @@ class SongChooser(Layer, KeyListener):
     return self.items
   
   def loadItemLabel(self, i):
+    if self.songListRender == False:
+      return
     # Load the item label if it isn't yet loaded
     item = self.items[i]
     if self.itemLabels[i] is None:
@@ -495,6 +515,13 @@ class SongChooser(Layer, KeyListener):
   def updateSelection(self):
     self.selectedItem  = self.items[self.selectedIndex]
     self.songCountdown = 1024
+    self.displayedPart = 0
+    self.displayedPartTime = self.time
+
+    if self.song:
+      self.song.fadeout(1000)
+      self.song = None
+          
     if self.selectedIndex > 1:
       self.loadItemLabel(self.selectedIndex - 1)
     self.loadItemLabel(self.selectedIndex)
@@ -516,7 +543,7 @@ class SongChooser(Layer, KeyListener):
         else:
           self.engine.view.popLayer(self)
           self.accepted = True
-        if not self.song:
+        if not self.song or self.song._playing == False:
           self.engine.data.acceptSound.play()
     elif c in Player.CANCELS + Player.KEY2S:
       if self.library != Song.DEFAULT_LIBRARY:
@@ -524,6 +551,7 @@ class SongChooser(Layer, KeyListener):
         self.library     = os.path.dirname(self.library)
         if self.song:
           self.song.fadeout(1000)
+          self.song = None
         self.selectedItem = None
         self.loadCollection()
       else:
@@ -539,7 +567,7 @@ class SongChooser(Layer, KeyListener):
           if self.matchesSearch(self.items[self.selectedIndex]):
             break
       self.updateSelection()
-      if not self.song:
+      if not self.song or self.song._playing == False:
         self.engine.data.selectSound.play()
     elif c in Player.DOWNS + Player.ACTION2S:
       if self.matchesSearch(self.items[self.selectedIndex]):
@@ -548,8 +576,15 @@ class SongChooser(Layer, KeyListener):
           if self.matchesSearch(self.items[self.selectedIndex]):
             break
       self.updateSelection()
-      if not self.song:
+      if not self.song or self.song._playing == False:
         self.engine.data.selectSound.play()
+    elif c in Player.KEY5S and not self.accepted:
+      if self.song:
+        self.song.fadeout(500)
+        self.song = None
+      else:
+        self.playSelectedSong()
+          
     elif key == pygame.K_BACKSPACE and not self.accepted:
       self.searchText = self.searchText[:-1]
       if self.searchText == "":
@@ -640,6 +675,7 @@ class SongChooser(Layer, KeyListener):
 
     if self.song:
       self.song.fadeout(1000)
+      self.song = None
 
     self.songLoader = self.engine.resource.load(self, None, lambda: Song.loadSong(self.engine, song, playbackOnly = True, library = self.library),
                                                 onLoad = self.songLoaded)
@@ -714,23 +750,32 @@ class SongChooser(Layer, KeyListener):
       glMatrixMode(GL_MODELVIEW)
       glDisable(GL_TEXTURE_2D)
     glDisable(GL_NORMALIZE)
-  
-  def render(self, visibility, topMost):
+
+
+  def renderItems(self, visibility):
+    if self.songListRender == False:
+      #return
+      if self.songListRender == False:
+        self.engine.view.setOrthogonalProjection(normalize = True)
+        font = self.engine.data.font
+        selectedPos = 0.38
+        w, h = font.getStringSize("Random",  scale =  0.0008)  
+        for i, item in enumerate(self.items):
+          if not self.matchesSearch(item):
+            continue
+
+          if i < self.selectedIndex - self.songListItems or i > self.selectedIndex + self.songListItems:
+            continue
+          
+          if i == self.selectedIndex:          
+            Theme.setSelectedColor()
+          else:
+            Theme.setBaseColor()              
+          font.render(self.itemNames[i], (.05, selectedPos + (i - self.selectedIndex) * h * 2), scale = 0.0008)
+      self.engine.view.resetProjection()    
+      return
+                
     v = (1 - visibility) ** 2
-
-    # render the background
-    t = self.time / 100
-    w, h, = self.engine.view.geometry[2:4]
-    r = .5
-
-    if self.spinnyDisabled != True and Theme.spinnySongDisabled != True:
-      self.background.transform.reset()
-      self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
-      self.background.transform.rotate(-t)
-      self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
-    self.background.draw()
-      
-    # render the item list
     try:
       glMatrixMode(GL_PROJECTION)
       glPushMatrix()
@@ -752,7 +797,9 @@ class SongChooser(Layer, KeyListener):
       for i, item in enumerate(self.items):
         if not self.matchesSearch(item):
           continue
-        
+
+        if i < self.selectedIndex - self.songListItems or i > self.selectedIndex + self.songListItems:
+          continue
         c = math.sin(self.itemAngles[i] * math.pi / 180)
         
         if isinstance(item, Song.SongInfo):
@@ -792,11 +839,19 @@ class SongChooser(Layer, KeyListener):
       glMatrixMode(GL_PROJECTION)
       glPopMatrix()
       glMatrixMode(GL_MODELVIEW)
-    
-    # render the song info
+
+ 
+  def renderSongInfo(self, visibility):
+    #if self.songListRender == False:
+    #  return
+
+    #glMatrixMode(GL_PROJECTION)
+    #glPopMatrix()
+    #glMatrixMode(GL_MODELVIEW)    
     self.engine.view.setOrthogonalProjection(normalize = True)
     font = self.engine.data.font
-    
+
+    v = (1 - visibility) ** 2
     try:
       glEnable(GL_BLEND)
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -822,7 +877,6 @@ class SongChooser(Layer, KeyListener):
       if self.matchesSearch(item):
         angle = self.itemAngles[self.selectedIndex]
         f = ((90.0 - angle) / 90.0) ** 2
-        #line = "foo" + item.name
         line = ""
         packname = item.findTag("pack")
         if packname != "False":
@@ -841,7 +895,6 @@ class SongChooser(Layer, KeyListener):
         if isinstance(item, Song.SongInfo) and item.version:
           line += " - v%s" % (item.version)
 
-        #line = "%s %s.%s - %s" % (packname, setnum, songnum, item.name)
         pos = wrapText(font, (x, y), line, visibility = f, scale = 0.0016)
 
         if isinstance(item, Song.SongInfo):
@@ -875,10 +928,19 @@ class SongChooser(Layer, KeyListener):
           y = .5 + f / 2.0
           if len(item.difficulties) > 3:
             y = .42 + f / 2.0
-            
-          #new
+             
+          if self.time > self.displayedPartTime + 100.0:
+            self.displayedPartTime = self.time
+            self.displayedPart += 1
+            if self.displayedPart >= len(item.parts):
+              self.displayedPart = 0
+
+          part = "%s" % (Part.parts[item.parts[self.displayedPart]])
+          glRotate(90, 0, 0, 1)
+          font.render(part,       (y, x - 1.19),     scale = scale)
+          glRotate(-90, 0, 0, 1)
           for d in item.difficulties:
-            scores = item.getHighscores(d)
+            scores = item.getHighscores(d, part = Part.parts[item.parts[self.displayedPart]])
             if scores:
               score, stars, name, scoreExt = scores[0]
               notesHit, notesTotal, noteStreak, modVersion, modOptions1, modOptions2 = scoreExt
@@ -908,8 +970,28 @@ class SongChooser(Layer, KeyListener):
           if item.songCount > 0:
             wrapText(font, (x, pos[1] + 3 * font.getHeight() * 0.0016), songCount, visibility = f, scale = 0.0016)
     finally:
-      self.engine.view.resetProjection()
+      self.engine.view.resetProjection()      
+  def render(self, visibility, topMost):
+    v = (1 - visibility) ** 2
 
+    # render the background
+    t = self.time / 100
+    w, h, = self.engine.view.geometry[2:4]
+    r = .5
+
+    if self.spinnyDisabled != True and Theme.spinnySongDisabled != True:
+      self.background.transform.reset()
+      self.background.transform.translate(v * 2 * w + w / 2 + math.sin(t / 2) * w / 2 * r, h / 2 + math.cos(t) * h / 2 * r)
+      self.background.transform.rotate(-t)
+      self.background.transform.scale(math.sin(t / 8) + 2, math.sin(t / 8) + 2)
+    self.background.draw()
+      
+    # render the item list
+    self.renderItems(visibility)
+
+    # render the song info
+    self.renderSongInfo(visibility)
+    
 class FileChooser(BackgroundLayer, KeyListener):
   """File choosing layer."""
   def __init__(self, engine, masks, path, prompt = "", dirSelect = False):
@@ -1144,7 +1226,7 @@ class BpmEstimator(Layer, KeyListener):
   def hidden(self):
     self.engine.input.removeKeyListener(self)
     self.song.fadeout(1000)
-    
+    self.song = None
   def keyPressed(self, key, unicode):
     if self.accepted:
       return True

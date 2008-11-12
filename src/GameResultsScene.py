@@ -75,21 +75,22 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
     ]
     self.menu = Menu(self.engine, items, onCancel = self.quit, pos = (.2, .5))
       
-    self.engine.resource.load(self, "song", lambda: Song.loadSong(self.engine, songName, library = self.libraryName, notesOnly = True, part = [player.part for player in self.playerList]), onLoad = self.songLoaded)
+    #self.engine.resource.load(self, "song", lambda: Song.loadSong(self.engine, songName, library = self.libraryName, notesOnly = True, part = [player.part for player in self.playerList]), onLoad = self.songLoaded)
+    self.engine.resource.load(self, "info", lambda: Song.loadSongInfo(self.engine, self.songName, library = self.libraryName), onLoad = self.infoLoaded)
     self.engine.loadSvgDrawing(self, "background", "gameresults.svg")
 
     phrase = random.choice(Theme.resultsPhrase.split(","))
     if phrase == "None":
       phrase = _("Chilling...")
-    Dialogs.showLoadingScreen(self.engine, lambda: self.song, text = phrase)
+    Dialogs.showLoadingScreen(self.engine, lambda: self.info, text = phrase)
     
   def keyPressed(self, key, unicode):
     ret = SceneClient.keyPressed(self, key, unicode)
 
     c = self.controls.keyPressed(key)
-    if self.song and (c in Player.KEY1S + Player.KEY2S + Player.CANCELS +Player.ACTION1S + Player.ACTION2S or key == pygame.K_RETURN):
+    if self.info and (c in Player.KEY1S + Player.KEY2S + Player.CANCELS +Player.ACTION1S + Player.ACTION2S or key == pygame.K_RETURN):
       for i,player in enumerate(self.playerList):
-        scores = self.song.info.getHighscores(player.difficulty, part = player.part)
+        scores = self.info.getHighscores(player.difficulty, part = player.part)
         if not scores or player.score > scores[-1][0] or len(scores) < 5:
           if player.cheating:
             Dialogs.showMessage(self.engine, _("No highscores for cheaters!"))
@@ -97,33 +98,33 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
             name = Dialogs.getText(self.engine, _("%d points is a new high score! Player " + str(i+1) + " enter your name") % player.score, player.name)
             if name:
               player.name = name
-            notesTotal = len([1 for time, event in self.song.track[i].getAllEvents() if isinstance(event, Song.Note)])
+            notesTotal = self.info.notenum[player.part][player.difficulty]
 
-            if self.song.info.hopo8th == "1":
+            if self.info.hopo8th == "1":
               hopo8th = 1
             else:
               hopo8th = 0
             modOptions1 = self.engine.config.getModOptions1(player.twoChord, hopo8th)
             modOptions2 = self.engine.config.getModOptions2()
             scoreExt = (player.notesHit, notesTotal, player.longestStreak, Version.branchVersion(), modOptions1, modOptions2)
-            self.highscoreIndex[i] = self.song.info.addHighscore(player.difficulty, player.score, self.stars[i], player.name, part = player.part, scoreExt = scoreExt)
-            self.song.info.save()
+            self.highscoreIndex[i] = self.info.addHighscore(player.difficulty, player.score, self.stars[i], player.name, part = player.part, scoreExt = scoreExt)
+            self.info.save()
           
             if self.engine.config.get("game", "uploadscores"):
               self.uploadingScores = True
-              fn = lambda: self.song.info.uploadHighscores(self.engine.config.get("game", "uploadurl"), self.song.getHash(), part = player.part)
+              fn = lambda: self.info.uploadHighscores(self.engine.config.get("game", "uploadurl"), self.info.getHash(), part = player.part)
               self.engine.resource.load(self, "uploadResult", fn)
 
       if len(self.playerList) > 1 and self.playerList[0].part == self.playerList[1].part and self.playerList[0].difficulty == self.playerList[1].difficulty and self.highscoreIndex[0] != None and self.highscoreIndex[1] != None and self.highscoreIndex[1] <= self.highscoreIndex[0]:
         self.highscoreIndex[0] += 1
       
-      if self.song.info.count:
-        count = int(self.song.info.count)
+      if self.info.count:
+        count = int(self.info.count)
       else:
         count = 0
       count += 1
-      self.song.info.count = "%d" % count
-      self.song.info.save()
+      self.info.count = "%d" % count
+      self.info.save()
       self.showHighscores = True
       self.engine.view.pushLayer(self.menu)
       return True
@@ -136,28 +137,27 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
     
   def quit(self):
     self.background = None
-    self.song = None
+    self.info = None
     self.engine.view.popLayer(self.menu)
     self.session.world.finishGame()
     
   def replay(self):
     self.background = None
-    self.song = None
+    self.info = None
     self.engine.view.popLayer(self.menu)
     self.session.world.deleteScene(self)
     self.nextScene = lambda: self.session.world.createScene("GuitarScene", libraryName = self.libraryName, songName = self.songName, Players = len(self.playerList))
   
   def changeSong(self):
     self.background = None
-    self.song = None
+    self.info = None
     self.engine.view.popLayer(self.menu)
     self.session.world.deleteScene(self)
     self.nextScene = lambda: self.session.world.createScene("SongChoosingScene")
    
-  def songLoaded(self, song):
+  def infoLoaded(self, info):
     for i,player in enumerate(self.playerList):
-      song.difficulty[i] = player.difficulty
-      notes = len([1 for time, event in song.track[i].getAllEvents() if isinstance(event, Song.Note)])
+      notes = self.info.notenum[player.part][player.difficulty]
     
       if notes:
         # 5 stars at 95%, 4 stars at 75%
@@ -190,8 +190,8 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
       return
     
     found = 0  
-    for part in self.song.info.parts:
-      for difficulty in self.song.info.difficulties:
+    for part in self.info.parts:
+      for difficulty in self.info.difficulties:
         if found == 1:
           self.scoreDifficulty = difficulty
           self.scorePart = part
@@ -200,8 +200,8 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
         if self.scoreDifficulty == difficulty and self.scorePart == part:
           found = 1
 
-    self.scoreDifficulty = self.song.info.difficulties[0]
-    self.scorePart = self.song.info.parts[0]
+    self.scoreDifficulty = self.info.difficulties[0]
+    self.scorePart = self.info.parts[0]
         
   def run(self, ticks):
     SceneClient.run(self, ticks)
@@ -278,9 +278,9 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
           x = .01
           y = .16 + v
           
-        if self.song:
+        if self.info:
           i = -1
-          for i, scores in enumerate(self.song.info.getHighscores(self.scoreDifficulty, part = self.scorePart)):
+          for i, scores in enumerate(self.info.getHighscores(self.scoreDifficulty, part = self.scorePart)):
             score, stars, name, scores_ext = scores
             notesHit, notesTotal, noteStreak, modVersion, modOptions1, modOptions2 = scores_ext
             if stars == 6:
@@ -334,12 +334,12 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
    
       Theme.setBaseColor(1 - v)
       if self.playerList[0].cheating:
-        text = _("%s Cheated!" % self.song.info.name)
+        text = _("%s Cheated!" % self.info.name)
 
       elif self.failed != None:
-        text = _("%s Failed @ %.1f%%!" % (self.song.info.name, self.failed))
+        text = _("%s Failed @ %.1f%%!" % (self.info.name, self.failed))
       else:
-        text = _("%s Finished!" % self.song.info.name)
+        text = _("%s Finished!" % self.info.name)
       w, h = font.getStringSize(text)
       Dialogs.wrapText(font, (.05, .05 - v), text)
         

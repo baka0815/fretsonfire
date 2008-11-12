@@ -1,6 +1,11 @@
 TODO Items/Bugs
 ---------------
 
+Move many computational/file access items from render and put in somewhere else.
+
+countdown trigger (can do countdown audio)
+audio play effect
+
 Add audio delay calibrator (3 notes going by 1 faster than audio_delay, 1 same as audio delay, one slower) ask them to choose which seems correct and then do it again until they can't tell the difference
 
 Investigate multi channel ogg
@@ -20,13 +25,11 @@ add song name to pause menu
 
 fix funny hopo in pride and joy (expert)
 
-make a second background to load if playing 2 player split screen
 
 Allow 2nd neck.svg/png for player 2
 
 Somehow disable windows screensaver when game is running (needs ctypes)
 
-less distracting multiplier toggle
 
 maybe need a HOPO restart fudge? (in progress)
 
@@ -171,3 +174,5 @@ add scores_ext to bass/rhythm, etc...duh (DONE)
 improved drum hit detection for chords (allow individual notes to be played, culminating in a chord, but only during hit window) (DONE)
 add drums (DONE)
 add mod directories (DONE)
+make a second background to load if playing 2 player split screen (DONE)
+less distracting multiplier toggle (DONE)

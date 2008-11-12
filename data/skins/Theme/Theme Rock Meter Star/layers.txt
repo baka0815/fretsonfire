@@ -1,0 +1,20 @@
+10-20 pie p1
+21-24 mult p1
+25-26 jurgen p1
+27 score p1
+28 streak p1
+29 miss p1
+
+30-40
+41-44
+45-46
+47
+48
+49
+
+
+25-27 rock
+28 rock p1
+29 rock p2
+
+41 timer

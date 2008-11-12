@@ -215,6 +215,11 @@ class Effect(object):
       return 0.0
     return self.stage.lastRockValue[player]
 
+  def triggerJurgen(self, player = 0):        
+    if not self.stage.lastJurgenValue[player]:
+      return 0.0
+    return self.stage.lastJurgenValue[player]
+  
   def triggerMult(self, player = 0):
     if not self.stage.lastMultValue[player]:
       return 0
@@ -981,6 +986,7 @@ class Stage(object):
     self.averageNotes       = [[0.0], [0.0]]
     self.beatPeriod         = 0.0
     self.lastRockValue      = [0.5, 0.5]
+    self.lastJurgenValue    = [0.0, 0.0]
     self.lastMultValue      = [1, 1]
     self.lastStreakValue    = [0, 0]
     self.lastTimerValue     = 0
@@ -996,6 +1002,9 @@ class Stage(object):
   def triggerRock(self, value, player = 0):
     self.lastRockValue[player] = value
 
+  def triggerJurgen(self, value, player = 0):
+    self.lastJurgenValue[player] = value
+    
   def triggerMult(self, value, player = 0):
     self.lastMultValue[player] = value
 

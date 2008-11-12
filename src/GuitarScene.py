@@ -73,6 +73,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         self.guitars.append(Drum(self.engine, False, i))
       else:
         self.guitars.append(Guitar(self.engine, False, i))
+      self.guitars[i].players = Players
     
 
     
@@ -285,10 +286,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 #failing
     for guitar in self.guitars:
       guitar.rockMeter        = self.rockMax / 2
-      guitar.jurgenPower = 0
-      guitar.jurgenStarted = False
-      guitar.jurgenMultiplier = 1
-      guitar.jurgenTimeLeft = 0
+      guitar.jpValue = 0
+      guitar.jpStarted = False
+      guitar.jpMultiplier = 1
+      guitar.jpTimeLeft = 0
 
     self.engine.view.popLayer(self.menu)
     self.freeResources()
@@ -301,10 +302,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 #failing
     for guitar in self.guitars:
       guitar.rockMeter        = self.rockMax / 2
-      guitar.jurgenPower = 0
-      guitar.jurgenStarted = False
-      guitar.jurgenMultiplier = 1
-      guitar.jurgenTimeLeft = 0      
+      guitar.jpValue = 0
+      guitar.jpStarted = False
+      guitar.jpMultiplier = 1
+      guitar.jpTimeLeft = 0      
     self.engine.view.popLayer(self.menu)
     self.session.world.deleteScene(self)
     self.session.world.createScene("SongChoosingScene")
@@ -326,10 +327,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 #failing
     for guitar in self.guitars:
       guitar.rockMeter        = self.rockMax / 2
-      guitar.jurgenPower = 0
-      guitar.jurgenStarted = False
-      guitar.jurgenMultiplier = 1
-      guitar.jurgenTimeLeft = 0      
+      guitar.jpValue = 0
+      guitar.jpStarted = False
+      guitar.jpMultiplier = 1
+      guitar.jpTimeLeft = 0      
       
     if self.partyMode == True:
       self.guitars[0].keys = PLAYER1KEYS
@@ -352,6 +353,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
     for i, guitar in enumerate(self.guitars):
       self.song.track[i].markBars()
+      print self.song.hasJP
+      if self.song.hasJP < 8:
+        print "markJP", self.song.hasJP
+        self.song.track[i].markJP()
       if self.playerList[i].part != Part.DRUM_PART and (self.hopoDisabled == 0 or self.song.info.hopo == "on"):
         if self.hopoMark == 0:
           self.song.track[i].markTappable();
@@ -373,7 +378,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         self.goToResults(failed = True, winner = abs(num-1))
 
   def failRockDrop(self, guitar):
-    removeFromRock = self.rockDrop / guitar.jurgenMultiplier    
+    removeFromRock = self.rockDrop / guitar.jpMultiplier    
     for i, guitar2 in enumerate(self.guitars):
       if self.vsMode and guitar != guitar2:
         continue
@@ -385,7 +390,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.stage.triggerRock(guitar2.rockMeter / float(self.rockMax), i)
 
   def failRockGain(self, guitar):
-    addToRock = self.rockGain * guitar.jurgenMultiplier
+    addToRock = self.rockGain * guitar.jpMultiplier
     if self.rockMultiply:
       addToRock = addToRock * self.player.getScoreMultiplier()
     for i, guitar2 in enumerate(self.guitars):
@@ -395,9 +400,9 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       if guitar2.rockMeter > self.rockMax:
         guitar2.rockMeter = self.rockMax
           
-      guitar2.jurgenPower += 1.0 / self.rockJGain
-      if guitar2.jurgenPower > self.rockJMax:
-        guitar2.jurgenPower = self.rockJMax
+      guitar2.jpValue += 1.0 / self.rockJGain
+      if guitar2.jpValue > self.rockJMax:
+        guitar2.jpValue = self.rockJMax
       self.stage.triggerRock(guitar2.rockMeter / float(self.rockMax), i)
         
   def run(self, ticks):
@@ -484,6 +489,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         self.stage.triggerMult(1, i)
         guitar.hopoLast = -1
         self.song.setInstrumentVolume(0.0, self.players[i].part)
+        self.guitars[i].resetJPSection()
         if not guitar.playedNotes:
           guitar.hopoActive = False
 #failing
@@ -504,7 +510,22 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             self.doPick3(i)
           else:
             self.doPick(i)
-          
+            
+      #print pos, self.guitars[i].jpSectionCount, self.guitars[i].jpSectionStart, self.guitars[i].jpSectionEnd , self.guitars[i].jpSectionEnd < pos, self.guitars[i].jpSectionStart > pos
+      if self.guitars[i].jpSectionEnd < pos:
+        self.guitars[i].resetJPSection()
+      elif self.guitars[i].jpSectionStart < pos:
+        if self.guitars[i].jpSectionCount != 0:
+          print self.guitars[i].jpSectionCount
+        if self.guitars[i].jpSectionCount != 0 and self.guitars[i].jpSectionCount == self.guitars[i].jpSectionMax:
+          print "JP2!"
+          self.guitars[i].jpValue += 1.0 / self.rockJGain
+          if self.guitars[i].jpValue > self.rockJMax:
+            self.guitars[i].jpValue = self.rockJMax
+          self.stage.triggerJurgen(self.guitars[i].jpValue / float(self.rockJMax), i)
+          self.guitars[i].resetJPSection()
+
+      
   def endPick(self, num):
     score = self.getExtraScoreForCurrentlyPlayedNotes(num)
     if not self.guitars[num].endPick(self.song.getPosition()):
@@ -707,10 +728,10 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       for i, guitar in enumerate(self.guitars):
         self.playerList[i].twoChord = guitar.twoChord
         guitar.rockMeter = self.rockMax / 2
-        guitar.jurgenPower = 0
-        guitar.jurgenStarted = False
-        guitar.jurgenMultiplier = 1
-        guitar.jurgenTimeLeft = 0
+        guitar.jpValue = 0
+        guitar.jpStarted = False
+        guitar.jpMultiplier = 1
+        guitar.jpTimeLeft = 0
       self.session.world.createScene("GameResultsScene", libraryName = self.libraryName, songName = self.songName, players = self.playerList, failed = failed)
 
   def keyPressed(self, key, unicode, control = None):
@@ -1232,7 +1253,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             picture.transform.scale(1, -1)
             picture.draw()
           elif isinstance(event, TextEvent):
-            print event.text, time, event.length, self.lastLyricEvent
+            #print event.text, time, event.length, self.lastLyricEvent
             if pos >= time and pos <= time + event.length:
               if self.song.info.tutorial:
                 text = _(event.text)

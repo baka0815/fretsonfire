@@ -21,7 +21,7 @@
 #####################################################################
 
 import Player
-from Song import Note, Tempo, Bars
+from Song import Note, Tempo, Bars, JPEvent, PlayerEvent
 from Mesh import Mesh
 import Theme
 
@@ -66,17 +66,30 @@ class Guitar:
     self.hopoLast       = -1
     self.hopoColor      = (0, .5, .5)
     self.player         = player
+    self.players        = -1
     self.scoreMultiplier = 1
     self.boardspeedMultiplier = 1.0
+
+    self.jpSectionStart = 0
+    self.jpSectionEnd = 0
+    self.jpSectionCount = 0
+    self.jpSectionMax = 0
+
+    self.jpValue = 0    
     
-    if player == 0:
+    if self.player == 0:
       self.keys = PLAYER1KEYS
       self.actions = PLAYER1ACTIONS
     else:
       self.keys = PLAYER2KEYS
       self.actions = PLAYER2ACTIONS  
+
+    self.playerSectionStart = 0
+    self.playerSectionEnd = 0
+    self.playerSection = -1
     
     engine.resource.load(self,  "noteMesh", lambda: Mesh(engine.resource.fileName("note.dae")))
+    engine.resource.load(self,  "noteJPMesh", lambda: Mesh(engine.resource.fileName("notejp.dae")))
     engine.resource.load(self,  "keyMesh",  lambda: Mesh(engine.resource.fileName("key.dae")))
     engine.loadSvgDrawing(self, "glowDrawing", "glow.svg",  textureSize = (128, 128))
     engine.loadSvgDrawing(self, "neckDrawing", "neck.svg",  textureSize = (256, 256))
@@ -169,6 +182,35 @@ class Guitar:
       
   def setMultiplier(self, multiplier):
     self.scoreMultiplier = multiplier
+
+  def resetJPSection(self):
+    self.jpSectionStart = 0
+    self.jpSectionEnd = 0
+    self.jpSectionCount = 0
+    self.jpSectionMax = 0
+
+  def isJPSection(self, time):
+    if self.jpSectionStart < time and self.jpSectionEnd > time:
+      return True
+    else:
+      return False
+
+  def resetPlayerSection(self):
+    self.playerSectionStart = 0
+    self.playerSectionEnd = 0
+    self.playerSection = -1
+
+    
+  def isPlayerSection(self, time):
+
+    if self.playerSectionStart + self.earlyMargin < time and self.playerSectionEnd > time:
+      if self.player == 1:
+        print time, self.playerSectionStart, self.playerSectionEnd, self.player, self.playerSection, self.earlyMargin
+      return self.playerSection
+    else:
+      if self.player == 1:
+        print time, self.playerSectionStart, self.playerSectionEnd, self.player, -2, self.earlyMargin
+      return -1
     
   def renderNeck(self, visibility, song, pos):
     if not song:
@@ -430,8 +472,12 @@ class Guitar:
     glDepthMask(0)
     glPopMatrix()
 
-  def renderNote2(self, visibility, f, length, sustain, color, colortail, tailOnly = False, playedstart = False, playedcontinue = False, isTappable = False):
-    if not self.noteMesh:
+  def renderNote2(self, visibility, f, length, sustain, color, colortail, tailOnly = False, playedstart = False, playedcontinue = False, isTappable = False, isJPNote = False):
+    if isJPNote == True:
+      displayMesh = self.noteJPMesh
+    else:
+      displayMesh = self.noteMesh
+    if not displayMesh:
       return
 
     if playedstart == True and playedcontinue == False:
@@ -457,25 +503,27 @@ class Guitar:
     #mesh_003 = hopo bump (hopo color)
 
     glColor4f(*color)
+    if isJPNote == True:
+      glColor3f(self.hopoColor[0], self.hopoColor[1], self.hopoColor[2])
     
     glPushMatrix()
     glEnable(GL_DEPTH_TEST)
     glDepthMask(1)
     glShadeModel(GL_SMOOTH)
 
-    self.noteMesh.render("Mesh_001")
+    displayMesh.render("Mesh_001")
     glColor3f(self.spotColor[0], self.spotColor[1], self.spotColor[2])
     if isTappable:
       if self.hopoColor[0] == -2:
         glColor4f(*color)
       else:
         glColor3f(self.hopoColor[0], self.hopoColor[1], self.hopoColor[2])
-      if(self.noteMesh.find("Mesh_003")) == True:
-        self.noteMesh.render("Mesh_003")
+      if(displayMesh.find("Mesh_003")) == True:
+        displayMesh.render("Mesh_003")
         glColor3f(self.spotColor[0], self.spotColor[1], self.spotColor[2])
-    self.noteMesh.render("Mesh_002")
+    displayMesh.render("Mesh_002")
     glColor3f(0, 0, 0)
-    self.noteMesh.render("Mesh")
+    displayMesh.render("Mesh")
 
     glDepthMask(0)
     glPopMatrix()
@@ -485,8 +533,7 @@ class Guitar:
       return
 
     # Update dynamic period
-    self.currentPeriod = round(60000.0 / (self.currentBpm * self.boardspeedMultiplier), 4)
-      
+    self.currentPeriod = round(60000.0 / (self.currentBpm * self.boardspeedMultiplier), 4)  
     beatsPerUnit = self.beatsPerBoard / self.boardLength
     w = self.boardWidth / self.strings
     track = song.track[self.player]
@@ -502,8 +549,18 @@ class Guitar:
           self.lastBpmChange     = time
           #self.setDynamicBPM(self.targetBpm)
         continue
-      
+      if isinstance(event, JPEvent):
+        if event.triggered == False:
+          event.triggered = True
+          self.jpSectionStart = time
+          self.jpSectionEnd = time + event.length
+          self.jpSectionCount = 0
+          print "JP", pos, time, time + event.length, event.length
+        continue
+      elif isinstance(event, PlayerEvent):
+        print "player", pos, pos + PlayerEvent.length, PlayerEvent.length
       if not isinstance(event, Note):
+        print event
         continue
         
       c = self.fretColors[event.number]
@@ -598,6 +655,7 @@ class Guitar:
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
   def renderNoteBody(self, time, pos, visibility, event):
+    
     beatsPerUnit = self.beatsPerBoard / self.boardLength
     w = self.boardWidth / self.strings
     c = self.fretColors[event.number]
@@ -607,6 +665,13 @@ class Guitar:
     z  = ((time - pos) / self.currentPeriod) / beatsPerUnit
     z2 = ((time + event.length - pos) / self.currentPeriod) / beatsPerUnit
 
+    doJPNote = self.isJPSection(time)
+    
+    if doJPNote == True:
+      if event.jp == False:
+        event.jp = True
+        self.jpSectionMax += 1
+    
     if z > self.boardLength * .8:
       f = (self.boardLength - z) / (self.boardLength * .2)
     elif z < 0:
@@ -648,8 +713,9 @@ class Guitar:
           playedcontinue = True        
     
     glPushMatrix()
+
     glTranslatef(x, (1.0 - visibility) ** (e + 1), z)
-    self.renderNote2(visibility, f, length, sustain = sustain, color = color, colortail = colortail, tailOnly = tailOnly, playedstart = playedstart, playedcontinue = playedcontinue, isTappable = isTappable)
+    self.renderNote2(visibility, f, length, sustain = sustain, color = color, colortail = colortail, tailOnly = tailOnly, playedstart = playedstart, playedcontinue = playedcontinue, isTappable = isTappable, isJPNote = doJPNote)
     glPopMatrix()
     return 1
 
@@ -680,12 +746,19 @@ class Guitar:
     
     glPushMatrix()
     glTranslatef(x, 0, z)
+
+    doJPNote = self.isJPSection(time)
+    if doJPNote == True:
+      if event.jp == False:
+        event.jp = True
+        self.jpSectionMax += 1
+        
     for x in range(10):
       glScalef(1.05, 1, 1)
       glTranslatef(0, .005, 0)
       f = 1.0 - (x / 10.0)
       color = (f * c[0], f * c[1], f * c[2], 1)
-      self.renderNote2(visibility, f, length, sustain, color = color, colortail = color, tailOnly = tailOnly)
+      self.renderNote2(visibility, f, length, sustain, color = color, colortail = color, tailOnly = tailOnly, isJPNote = doJPNote )
     glPopMatrix()
 
   def renderNoteWave(self, time, pos, visibility, event):
@@ -742,7 +815,7 @@ class Guitar:
     beatsPerUnit = self.beatsPerBoard / self.boardLength
     w = self.boardWidth / self.strings
     track = song.track[self.player]
-
+    
     for time, event in track.getEvents(pos - self.currentPeriod * 2, pos + self.currentPeriod * self.beatsPerBoard):
       if isinstance(event, Tempo):
         if self.boardSpeed == 1 or (self.lastBpmChange > 0 and self.disableVBPM == True):
@@ -756,12 +829,51 @@ class Guitar:
           #self.setDynamicBPM(self.targetBpm)
         continue
       
+      if isinstance(event, JPEvent):
+        if event.triggered == False:
+          event.triggered = True
+          self.jpSectionStart = time
+          self.jpSectionEnd = time + event.length
+          self.jpSectionCount = 0
+          print "JP", pos, time, time + event.length, event.length
+        continue
+      elif isinstance(event, PlayerEvent):
+        if event.player != self.player:
+          continue
+        event2 = Note(4, event.length, False)
+        event2.noteBpm = self.tempoBpm
+        self.renderNoteBody(time, pos, visibility, event2)
+        #self.renderNoteWave(time, pos, visibility, event2)        
+        if event.triggered == False:
+          if pos < self.playerSectionEnd:
+           continue
+          print pos, time, self.playerSectionStart, self.playerSectionEnd, self.playerSection, self.player
+          event.triggered = True
+          self.playerSectionStart = time
+          self.playerSectionEnd = time + event.length  
+          self.playerSection = event.player
+          print "player", pos, time, self.playerSectionStart, self.playerSectionEnd, event.player, self.playerSection, self.player
+          event = event2
+        continue
+    
       if not isinstance(event, Note):
+        #print event
         continue
 
       if (event.noteBpm == 0.0):
         event.noteBpm = self.tempoBpm      
 
+      #if time < 46800 or time > 47000:
+      #  continue
+      if self.players == 2:
+        doPlayerNote = self.isPlayerSection(time)
+
+        #print self.player, doPlayerNote
+        if doPlayerNote != self.player and doPlayerNote != -2:
+          #print self.player, doPlayerNote
+          event.skipped = True
+          continue
+      
       if (self.renderNoteBody(time, pos, visibility, event) == -1):
         continue
 
@@ -984,9 +1096,7 @@ class Guitar:
     flameColor = self.flameColors[self.scoreMultiplier - 1][string]
     if flameColor[0] == -2:
       flameColor = self.fretColors[string]
-
-    #print "one", x, y, ff, ms, self.fretWeight[string], self.fretActivity[string], flameCount, flameSize  
-    #print "two", 0.25 + 0.6 * ms * ff, flameCount/6.0 + 0.6 * ms * ff, flameCount / 6.0 + 0.6 * ms * ff          
+      
     glColor3f(flameColor[0], flameColor[1], flameColor[2])
     glEnable(GL_TEXTURE_2D)
     self.hitflames2Drawing.texture.bind()    
@@ -1079,10 +1189,7 @@ class Guitar:
     flameSize = self.flameSizes[self.scoreMultiplier - 1][string]        
     flameColor = self.flameColors[self.scoreMultiplier - 1][string]
     if flameColor[0] == -2:
-      flameColor = self.fretColors[string]
-
-    #print "one", x, y, ff, ms, self.fretWeight[string], self.fretActivity[string], flameCount, flameSize  
-    #print "two", 0.25 + 0.6 * ms * ff, flameCount/6.0 + 0.6 * ms * ff, flameCount / 6.0 + 0.6 * ms * ff          
+      flameColor = self.fretColors[string]  
    
     flameColorMod0 = 0.1 * (self.flameLimit - flameCount)
     flameColorMod1 = 0.1 * (self.flameLimit - flameCount)
@@ -1502,6 +1609,8 @@ class Guitar:
     if catchup == True:
       for time, event in notes:
         event.skipped = True
+        if self.isJPSection(time):
+          self.resetJPSection()
 
     return sorted(notes, key=lambda x: x[1].number)        
     #return notes
@@ -1843,8 +1952,15 @@ class Guitar:
         self.hopoActive = 0
       self.hopoLast     = note.number
       self.playedNotes.append([time, note])
+
+      if self.isJPSection(time):
+        print "jp++"
+        self.jpSectionCount += 1
+        
     if len(self.playedNotes) != 0:
       return True
+    if self.isJPSection(pos):
+      self.resetJPSection()
     return False
 
   def endPick(self, pos):

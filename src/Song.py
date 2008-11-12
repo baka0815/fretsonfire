@@ -624,6 +624,9 @@ class Note(Event):
     self.skipped = False
     self.flameCount = 0
     self.noteBpm = 0.0
+    self.jp      = False
+    self.player1 = False
+    self.player2 = False
     
   def __repr__(self):
     return "<#%d>" % self.number
@@ -648,6 +651,17 @@ class PictureEvent(Event):
   def __init__(self, fileName, length):
     Event.__init__(self, length)
     self.fileName = fileName
+
+class JPEvent(Event):
+  def __init__(self, length):
+    Event.__init__(self, length)
+    self.triggered = False
+
+class PlayerEvent(Event):
+  def __init__(self, player, length):
+    Event.__init__(self, length)
+    self.triggered = False
+    self.player = player
     
 class Track:
   granularity = 50
@@ -968,6 +982,80 @@ class Track:
       if not isinstance(event, Note):
         continue
 
+  def markEvents(self, jp = True, player = True):
+    #If already processed abort   
+    if self.marked == True:
+      return
+    
+    for time, event in self.allEvents:
+      if isinstance(event, JPEvent) and jp == True:
+        for time, event in self.getEvents(time, time + event.length):
+          if isinstance(event, Note):
+            event.jp = True
+      elif isinstance(event, PlayerEvent) and player == True:
+        for time, event in self.getEvents(time, time + event.length):
+          if isinstance(event, Note):
+            if event.player == 0:
+              event.player1 = True
+            elif event.player == 1:
+              event.player2 = True 
+                  
+  def markEventsAuto(self, jp = True, player = True):
+    tempoTime = []
+    tempoBpm = []
+    lastTime = 0
+
+    print "Mark JP"
+    #get all the bpm changes and their times
+    for time, event in self.allEvents:
+      if isinstance(event, Tempo):
+        tempoTime.append(time)
+        tempoBpm.append(event.bpm)
+        endBpm = event.bpm
+        #Just in case there's no end event
+        endTime = time + 30000
+        continue
+      if isinstance(event, Note):
+        endTime = time + event.length + 30000
+        continue
+    tempoTime.append(endTime)
+    tempoBpm.append(endBpm)
+
+    #calculate and add the measures/beats/half-beats
+    passes = 1  
+    limit = len(tempoTime)
+    time = tempoTime[0]
+    THnote = 256.0 #256th note
+    jurgenMeasure = False
+    i = 0
+    while i < (limit - 1):
+      msTotal = tempoTime[i+1] - time
+      if msTotal == 0:
+        i += 1
+        continue
+      tempbpm = tempoBpm[i]
+      nbars = (msTotal * (tempbpm / (240.0 / THnote) )) / 1000.0 
+      inc = msTotal / nbars
+
+      while time < tempoTime[i+1]:
+        if jurgenMeasure == True:
+          if (passes % (15 * THnote / 1.0) == 0.0): #2560/1
+            self.addEvent(time, JPEvent((time - lastTime) / 10.0))
+            #event = Bars(2) #measure
+            #self.addEvent(time, event)
+            lastTime = time
+          
+          passes = passes + 1
+  
+        time = time + inc
+        jurgenMeasure = True
+
+      if time > tempoTime[i+1]:
+        time = time - inc
+        jurgenMeasure = False
+        
+      i += 1
+      
   def markBars(self):
     tempoTime = []
     tempoBpm = []
@@ -1050,17 +1138,17 @@ class Bars(Event):
 class Song(object):
   def __init__(self, engine, infoFileName, songTrackName, guitarTrackName, rhythmTrackName, noteFileName, scriptFileName = None, part = [Part.GUITAR_PART]):
     self.engine        = engine
-    self.info         = SongInfo(infoFileName)
-    self.tracks       = [[Track() for t in range(len(Difficulty.difficulties))] for i in range(len(part))]
-    self.difficulty   = [Difficulty.AMAZING_DIFFICULTY for i in part]
-    self._playing     = False
-    self.start        = 0.0
-    self.noteFileName = noteFileName
-    self.bpm          = None
-    self.period       = 0
-    self.parts        = part
-    self.delay        = self.engine.config.get("audio", "delay")
-    self.delay        += self.info.delay
+    self.info          = SongInfo(infoFileName)
+    self.tracks        = [[Track() for t in range(len(Difficulty.difficulties))] for i in range(len(part))]
+    self.difficulty    = [Difficulty.AMAZING_DIFFICULTY for i in part]
+    self._playing      = False
+    self.start         = 0.0
+    self.noteFileName  = noteFileName
+    self.bpm           = None
+    self.period        = 0
+    self.parts         = part
+    self.delay         = self.engine.config.get("audio", "delay")
+    self.delay         += self.info.delay
     self.guitarVolume  = self.engine.config.get("audio", "guitarvol")
     self.songVolume    = self.engine.config.get("audio", "songvol")
     self.rhythmVolume  = self.engine.config.get("audio", "rhythmvol")
@@ -1069,6 +1157,8 @@ class Song(object):
     self.lastTime      = 0
 
     self.hasMidiLyrics = False
+    self.hasJP         = 0
+    self.hasPlayers    = 0
     #RF-mod skip if folder (not needed anymore?)
     #if self.info.folder == True:
     #  return
@@ -1240,31 +1330,60 @@ class Song(object):
     return [self.tracks[i][self.difficulty[i]] for i in range(len(self.difficulty))]
 
   track = property(getTrack)
-
 noteMap = {     # difficulty, note
-  0x60: (Difficulty.AMAZING_DIFFICULTY,  0),
-  0x61: (Difficulty.AMAZING_DIFFICULTY,  1),
-  0x62: (Difficulty.AMAZING_DIFFICULTY,  2),
-  0x63: (Difficulty.AMAZING_DIFFICULTY,  3),
-  0x64: (Difficulty.AMAZING_DIFFICULTY,  4),
-  0x54: (Difficulty.MEDIUM_DIFFICULTY,   0),
-  0x55: (Difficulty.MEDIUM_DIFFICULTY,   1),
-  0x56: (Difficulty.MEDIUM_DIFFICULTY,   2),
-  0x57: (Difficulty.MEDIUM_DIFFICULTY,   3),
-  0x58: (Difficulty.MEDIUM_DIFFICULTY,   4),
-  0x48: (Difficulty.EASY_DIFFICULTY,     0),
-  0x49: (Difficulty.EASY_DIFFICULTY,     1),
-  0x4a: (Difficulty.EASY_DIFFICULTY,     2),
-  0x4b: (Difficulty.EASY_DIFFICULTY,     3),
-  0x4c: (Difficulty.EASY_DIFFICULTY,     4),
   0x3c: (Difficulty.SUPAEASY_DIFFICULTY, 0),
   0x3d: (Difficulty.SUPAEASY_DIFFICULTY, 1),
   0x3e: (Difficulty.SUPAEASY_DIFFICULTY, 2),
   0x3f: (Difficulty.SUPAEASY_DIFFICULTY, 3),
   0x40: (Difficulty.SUPAEASY_DIFFICULTY, 4),
+  0x48: (Difficulty.EASY_DIFFICULTY,     0),
+  0x49: (Difficulty.EASY_DIFFICULTY,     1),
+  0x4a: (Difficulty.EASY_DIFFICULTY,     2),
+  0x4b: (Difficulty.EASY_DIFFICULTY,     3),
+  0x4c: (Difficulty.EASY_DIFFICULTY,     4),       
+  0x54: (Difficulty.MEDIUM_DIFFICULTY,   0),
+  0x55: (Difficulty.MEDIUM_DIFFICULTY,   1),
+  0x56: (Difficulty.MEDIUM_DIFFICULTY,   2),
+  0x57: (Difficulty.MEDIUM_DIFFICULTY,   3),
+  0x58: (Difficulty.MEDIUM_DIFFICULTY,   4),  
+  0x60: (Difficulty.AMAZING_DIFFICULTY,  0),
+  0x61: (Difficulty.AMAZING_DIFFICULTY,  1),
+  0x62: (Difficulty.AMAZING_DIFFICULTY,  2),
+  0x63: (Difficulty.AMAZING_DIFFICULTY,  3),
+  0x64: (Difficulty.AMAZING_DIFFICULTY,  4), 
+}
+reverseNoteMap = dict([(v, k) for k, v in noteMap.items()])
+
+eventMap = {     # difficulty, event
+  #JP supaeasy
+  0x43: (Difficulty.SUPAEASY_DIFFICULTY, 0),
+  #P1 start supaeasy
+  0x45: (Difficulty.SUPAEASY_DIFFICULTY, 1),
+  #P2 start supaeasy
+  0x46: (Difficulty.SUPAEASY_DIFFICULTY, 2),    
+  #JP easy
+  0x4F: (Difficulty.EASY_DIFFICULTY,     0),
+  #P1 start easy
+  0x51: (Difficulty.EASY_DIFFICULTY,     1),
+  #P2 start easy
+  0x52: (Difficulty.EASY_DIFFICULTY,     2), 
+  #JP medium
+  0x5b: (Difficulty.MEDIUM_DIFFICULTY,   0),
+  #P1 start medium
+  0x5d: (Difficulty.MEDIUM_DIFFICULTY,   1),
+  #P2 start medium
+  0x5e: (Difficulty.MEDIUM_DIFFICULTY,   2),  
+  #JP amazing
+  0x67: (Difficulty.AMAZING_DIFFICULTY,  0),
+  #P1 start amazing
+  0x69: (Difficulty.AMAZING_DIFFICULTY,  1),
+  #P2 start amazing
+  0x6a: (Difficulty.AMAZING_DIFFICULTY,  2),
+  #Vocals
+  0x6c: (Difficulty.AMAZING_DIFFICULTY,  9),
 }
 
-reverseNoteMap = dict([(v, k) for k, v in noteMap.items()])
+reverseEventMap = dict([(v, k) for k, v in eventMap.items()])
 
 class MidiWriter:
   def __init__(self, song, out):
@@ -1456,6 +1575,20 @@ class MidiReader(midi.MidiOutStream):
       if note in noteMap:
         track, number = noteMap[note]
         self.addEvent(track, Note(number, endTime - startTime, special = self.velocity[note] == 127), time = startTime)
+      elif note in eventMap:
+        track, number = eventMap[note]
+        if number == 0:
+          print "Adding JP", startTime, endTime, endTime - startTime
+          self.addEvent(track, JPEvent(endTime - startTime), time = startTime)
+          self.song.hasJP += 1
+        elif number == 1:
+          print "adding playerEvent 0", startTime, endTime, endTime - startTime
+          self.addEvent(track, PlayerEvent(0, endTime - startTime), time = startTime)
+          self.song.hasPlayers += 1
+        elif number == 2:
+          print "adding playerEvent 1", startTime, endTime, endTime - startTime
+          self.addEvent(track, PlayerEvent(1, endTime - startTime), time = startTime)
+          self.song.hasPlayers += 1
       else:
         print "MIDI note 0x%x (%d) at %d does not map to any game note." % (note, note, self.abs_time())
         #Log.warn("MIDI note 0x%x at %d does not map to any game note." % (note, self.abs_time()))

@@ -1,3 +1,12 @@
+4.21
+   Added reading of GH star power events
+   Added readong of GH face off player sections
+   Added automatic generation of JP events when there are none
+   Display JP note mesh
+   Add to JP meter when JP section is finished
+   Added jp trigger
+   Removed screwup sounds
+   Reworked themes
 4.20
    Preview play/stop using button 5
    Fixes to audio preview fade out

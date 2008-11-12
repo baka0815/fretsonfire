@@ -74,8 +74,6 @@ class Data(object):
 
     # load sounds
     volume   = Config.get("audio", "screwupvol")
-    resource.load(self, "screwUpSounds", self.loadScrewUpSounds)
-    resource.load(self, "screwUpSoundsBass", self.loadScrewUpSoundsBass)
     #self.loadSyncSounds(self, "syncSounds")
     self.loadSoundEffect(self, "acceptSound",  "in.ogg")
     self.loadSoundEffect(self, "cancelSound",  "out.ogg")

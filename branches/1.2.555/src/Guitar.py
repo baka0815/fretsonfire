@@ -84,9 +84,7 @@ class Guitar:
       self.keys = PLAYER2KEYS
       self.actions = PLAYER2ACTIONS  
 
-    self.playerSectionStart = 0
-    self.playerSectionEnd = 0
-    self.playerSection = -1
+    self.doFaceOff = False
     
     engine.resource.load(self,  "noteMesh", lambda: Mesh(engine.resource.fileName("note.dae")))
     engine.resource.load(self,  "noteJPMesh", lambda: Mesh(engine.resource.fileName("notejp.dae")))
@@ -184,33 +182,11 @@ class Guitar:
     self.scoreMultiplier = multiplier
 
   def resetJPSection(self):
+    print "JP reset"
     self.jpSectionStart = 0
     self.jpSectionEnd = 0
     self.jpSectionCount = 0
     self.jpSectionMax = 0
-
-  def isJPSection(self, time):
-    if self.jpSectionStart < time and self.jpSectionEnd > time:
-      return True
-    else:
-      return False
-
-  def resetPlayerSection(self):
-    self.playerSectionStart = 0
-    self.playerSectionEnd = 0
-    self.playerSection = -1
-
-    
-  def isPlayerSection(self, time):
-
-    if self.playerSectionStart + self.earlyMargin < time and self.playerSectionEnd > time:
-      if self.player == 1:
-        print time, self.playerSectionStart, self.playerSectionEnd, self.player, self.playerSection, self.earlyMargin
-      return self.playerSection
-    else:
-      if self.player == 1:
-        print time, self.playerSectionStart, self.playerSectionEnd, self.player, -2, self.earlyMargin
-      return -1
     
   def renderNeck(self, visibility, song, pos):
     if not song:
@@ -551,14 +527,22 @@ class Guitar:
         continue
       if isinstance(event, JPEvent):
         if event.triggered == False:
+          self.jpSectionCount = 0
+          self.jpSectionMax = 0
+          for time2, event2 in track.getEvents(time, time + event.length):
+            if isinstance(event2, Note):
+              self.jpSectionMax += 1
           event.triggered = True
           self.jpSectionStart = time
           self.jpSectionEnd = time + event.length
-          self.jpSectionCount = 0
-          print "JP", pos, time, time + event.length, event.length
+          print "JP", pos, time, time + event.length, event.length, self.jpSectionMax
         continue
       elif isinstance(event, PlayerEvent):
-        print "player", pos, pos + PlayerEvent.length, PlayerEvent.length
+        if event.triggered == False:
+          event.triggered = True
+          print "player", pos, pos + PlayerEvent.length, PlayerEvent.length
+        continue
+      
       if not isinstance(event, Note):
         print event
         continue
@@ -665,13 +649,21 @@ class Guitar:
     z  = ((time - pos) / self.currentPeriod) / beatsPerUnit
     z2 = ((time + event.length - pos) / self.currentPeriod) / beatsPerUnit
 
-    doJPNote = self.isJPSection(time)
-    
-    if doJPNote == True:
-      if event.jp == False:
-        event.jp = True
-        self.jpSectionMax += 1
-    
+    doJPNote = False
+    if event.jp == True:
+      #print self.jpSectionMax, self.jpSectionStart
+      if self.jpSectionMax == 0 and self.jpSectionStart == 0:
+        doJPNote = True
+      if self.jpSectionMax > 0 and pos < self.jpSectionEnd:
+        doJPNote = True
+      #print doJPNote        
+        
+    if self.doFaceOff == True:
+      if self.player == 0 and event.player1 == False:
+        return
+      if self.player == 1 and event.player2 == False:
+        return
+
     if z > self.boardLength * .8:
       f = (self.boardLength - z) / (self.boardLength * .2)
     elif z < 0:
@@ -747,18 +739,19 @@ class Guitar:
     glPushMatrix()
     glTranslatef(x, 0, z)
 
-    doJPNote = self.isJPSection(time)
-    if doJPNote == True:
-      if event.jp == False:
-        event.jp = True
-        self.jpSectionMax += 1
+    doJPNote = event.jp
+    #doJPNote = self.isJPSection(time)
+    #if doJPNote == True:
+    #  if event.jp == False:
+    #    event.jp = True
+    #    self.jpSectionMax += 1
         
     for x in range(10):
       glScalef(1.05, 1, 1)
       glTranslatef(0, .005, 0)
       f = 1.0 - (x / 10.0)
       color = (f * c[0], f * c[1], f * c[2], 1)
-      self.renderNote2(visibility, f, length, sustain, color = color, colortail = color, tailOnly = tailOnly, isJPNote = doJPNote )
+      self.renderNote2(visibility, f, length, sustain, color = color, colortail = color, tailOnly = tailOnly, isJPNote = doJPNote)
     glPopMatrix()
 
   def renderNoteWave(self, time, pos, visibility, event):
@@ -828,51 +821,35 @@ class Guitar:
           self.lastBpmChange     = time
           #self.setDynamicBPM(self.targetBpm)
         continue
-      
+
       if isinstance(event, JPEvent):
-        if event.triggered == False:
+        if event.triggered == False and pos > time:
+          self.jpSectionCount = 0
+          self.jpSectionMax = 0
+          for time2, event2 in track.getEvents(time, time + event.length):
+            if isinstance(event2, Note):
+              self.jpSectionMax += 1
           event.triggered = True
           self.jpSectionStart = time
           self.jpSectionEnd = time + event.length
-          self.jpSectionCount = 0
-          print "JP", pos, time, time + event.length, event.length
+          print "JP", pos, time, time + event.length, event.length, self.jpSectionMax
         continue
       elif isinstance(event, PlayerEvent):
-        if event.player != self.player:
-          continue
-        event2 = Note(4, event.length, False)
-        event2.noteBpm = self.tempoBpm
-        self.renderNoteBody(time, pos, visibility, event2)
-        #self.renderNoteWave(time, pos, visibility, event2)        
         if event.triggered == False:
-          if pos < self.playerSectionEnd:
-           continue
-          print pos, time, self.playerSectionStart, self.playerSectionEnd, self.playerSection, self.player
           event.triggered = True
-          self.playerSectionStart = time
-          self.playerSectionEnd = time + event.length  
-          self.playerSection = event.player
-          print "player", pos, time, self.playerSectionStart, self.playerSectionEnd, event.player, self.playerSection, self.player
-          event = event2
+          print "player", pos, pos + event.length, event.length
         continue
-    
+      
       if not isinstance(event, Note):
         #print event
         continue
 
+      if self.jpSectionEnd != 0 and pos > self.jpSectionEnd:
+        print "reset JP"
+        self.resetJPSection()
+        
       if (event.noteBpm == 0.0):
         event.noteBpm = self.tempoBpm      
-
-      #if time < 46800 or time > 47000:
-      #  continue
-      if self.players == 2:
-        doPlayerNote = self.isPlayerSection(time)
-
-        #print self.player, doPlayerNote
-        if doPlayerNote != self.player and doPlayerNote != -2:
-          #print self.player, doPlayerNote
-          event.skipped = True
-          continue
       
       if (self.renderNoteBody(time, pos, visibility, event) == -1):
         continue
@@ -1609,8 +1586,6 @@ class Guitar:
     if catchup == True:
       for time, event in notes:
         event.skipped = True
-        if self.isJPSection(time):
-          self.resetJPSection()
 
     return sorted(notes, key=lambda x: x[1].number)        
     #return notes
@@ -1953,14 +1928,19 @@ class Guitar:
       self.hopoLast     = note.number
       self.playedNotes.append([time, note])
 
-      if self.isJPSection(time):
-        print "jp++"
-        self.jpSectionCount += 1
+      if note.jp:
+        print self.jpSectionMax
+        if  self.jpSectionMax != 0:
+          print "jp++"
+          self.jpSectionCount += 1
         
     if len(self.playedNotes) != 0:
       return True
-    if self.isJPSection(pos):
-      self.resetJPSection()
+    if self.jpSectionMax != 0:
+      print "jp fail"
+      self.jpSectionMax = -1
+      self.jpSectionCount = 0
+      #self.resetJPSection()
     return False
 
   def endPick(self, pos):

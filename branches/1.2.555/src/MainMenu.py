@@ -55,9 +55,9 @@ class MainMenu(BackgroundLayer):
     self.song.setVolume(self.engine.config.get("audio", "songvol"))
     self.song.play(-1)
 
-    expire = datetime.date(2007, 8, 15) 
-    today = datetime.date.today()
-    diff = today-expire
+    #expire = datetime.date(2007, 8, 15) 
+    #today = datetime.date.today()
+    #diff = today-expire
     #if diff.days > 30:
     #  print "Beta Expired"
     #  sys.exit(2)
@@ -76,7 +76,8 @@ class MainMenu(BackgroundLayer):
     settingsMenu = Settings.SettingsMenu(self.engine)
     
     mainMenu = [
-      (_("Play Game"),   self.newSinglePlayerGame),
+      (_("Play Solo Game"),   self.newSinglePlayerGame),
+      (_("Play Band Game"),   self.newMultiPlayerGame),
       (_("Settings >"),  settingsMenu),
       (_("Tutorial"),    self.showTutorial),
       (_("Song Editor"), editorMenu),
@@ -134,7 +135,7 @@ class MainMenu(BackgroundLayer):
     self.engine.resource.load(self, "session", lambda: self.engine.connect("127.0.0.1"), synch = True)
 
     if Dialogs.showLoadingScreen(self.engine, lambda: self.session and self.session.isConnected):
-      self.launchLayer(lambda: Lobby(self.engine, self.session, singlePlayer = True, tutorial = True))
+      self.launchLayer(lambda: Lobby(self.engine, self.session, numPlayers = 1, tutorial = True))
   showTutorial = catchErrors(showTutorial)
 
   def newSinglePlayerGame(self):
@@ -144,9 +145,19 @@ class MainMenu(BackgroundLayer):
     self.engine.resource.load(self, "session", lambda: self.engine.connect("127.0.0.1"), synch = True)
 
     if Dialogs.showLoadingScreen(self.engine, lambda: self.session and self.session.isConnected):
-      self.launchLayer(lambda: Lobby(self.engine, self.session, singlePlayer = True))
+      self.launchLayer(lambda: Lobby(self.engine, self.session, numPlayers = 1))
   newSinglePlayerGame = catchErrors(newSinglePlayerGame)
 
+  def newMultiPlayerGame(self):
+    if self.engine.isServerRunning():
+      return
+    self.engine.startServer()
+    self.engine.resource.load(self, "session", lambda: self.engine.connect("127.0.0.1"), synch = True)
+
+    if Dialogs.showLoadingScreen(self.engine, lambda: self.session and self.session.isConnected):
+      self.launchLayer(lambda: Lobby(self.engine, self.session, numPlayers = 2))
+  newSinglePlayerGame = catchErrors(newSinglePlayerGame)
+  
   def hostMultiplayerGame(self):
     self.engine.startServer()
     self.engine.resource.load(self, "session", lambda: self.engine.connect("127.0.0.1"))

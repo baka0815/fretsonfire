@@ -347,16 +347,27 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       
     self.countdown    = 8.0
     self.partySwitch = 0
-    for i,guitar in enumerate(self.guitars):
+    for i, guitar in enumerate(self.guitars):
       guitar.endPick(i)
     self.song.stop()
 
+    self.doJP = True
+    if guitar.players == 2:
+      self.doFaceOff = True
+    else:
+      self.doFaceOff = False
+      
     for i, guitar in enumerate(self.guitars):
       self.song.track[i].markBars()
       print self.song.hasJP
-      if self.song.hasJP < 8:
+      if self.song.hasJP < 8 or self.song.hasPlayers < 8:
         print "markJP", self.song.hasJP
-        self.song.track[i].markJP()
+        self.song.track[i].markEventsAuto(jp = self.doJP, player = self.doFaceOff)
+      else:
+        self.song.track[i].markEvents(jp = self.doJP, player = self.doFaceOff)
+      if self.doFaceOff == True:
+        guitar.doFaceOff = True
+        
       if self.playerList[i].part != Part.DRUM_PART and (self.hopoDisabled == 0 or self.song.info.hopo == "on"):
         if self.hopoMark == 0:
           self.song.track[i].markTappable();
@@ -489,7 +500,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
         self.stage.triggerMult(1, i)
         guitar.hopoLast = -1
         self.song.setInstrumentVolume(0.0, self.players[i].part)
-        self.guitars[i].resetJPSection()
+        #self.guitars[i].resetJPSection()
         if not guitar.playedNotes:
           guitar.hopoActive = False
 #failing
@@ -512,18 +523,18 @@ class GuitarSceneClient(GuitarScene, SceneClient):
             self.doPick(i)
             
       #print pos, self.guitars[i].jpSectionCount, self.guitars[i].jpSectionStart, self.guitars[i].jpSectionEnd , self.guitars[i].jpSectionEnd < pos, self.guitars[i].jpSectionStart > pos
-      if self.guitars[i].jpSectionEnd < pos:
+      #if self.guitars[i].jpSectionEnd < pos:
+      #  self.guitars[i].resetJPSection()
+      #elif self.guitars[i].jpSectionStart < pos:
+      #  if self.guitars[i].jpSectionCount != 0:
+      #    print self.guitars[i].jpSectionCount
+      if self.guitars[i].jpSectionCount != 0 and self.guitars[i].jpSectionCount == self.guitars[i].jpSectionMax:
+        print "JP2!"
+        self.guitars[i].jpValue += 1.0 / self.rockJGain
+        if self.guitars[i].jpValue > self.rockJMax:
+          self.guitars[i].jpValue = self.rockJMax
+        self.stage.triggerJurgen(self.guitars[i].jpValue / float(self.rockJMax), i)
         self.guitars[i].resetJPSection()
-      elif self.guitars[i].jpSectionStart < pos:
-        if self.guitars[i].jpSectionCount != 0:
-          print self.guitars[i].jpSectionCount
-        if self.guitars[i].jpSectionCount != 0 and self.guitars[i].jpSectionCount == self.guitars[i].jpSectionMax:
-          print "JP2!"
-          self.guitars[i].jpValue += 1.0 / self.rockJGain
-          if self.guitars[i].jpValue > self.rockJMax:
-            self.guitars[i].jpValue = self.rockJMax
-          self.stage.triggerJurgen(self.guitars[i].jpValue / float(self.rockJMax), i)
-          self.guitars[i].resetJPSection()
 
       
   def endPick(self, num):

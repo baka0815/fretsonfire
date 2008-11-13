@@ -40,11 +40,12 @@ class SongChoosingScene:
 class SongChoosingSceneServer(SongChoosingScene, SceneServer):
   pass
 
-class SongChoosingSceneClient(SongChoosingScene, SceneClient):
-  def createClient(self, libraryName = None, songName = None):
+class SongChoosingSceneClient(SongChoosingScene, SceneClient):  
+  def createClient(self, libraryName = None, songName = None, numPlayers = 1):
     self.wizardStarted = False
     self.libraryName   = libraryName
     self.songName      = songName
+    self.numPlayers    = numPlayers
 
   def freeResources(self):
     self.songs = None
@@ -56,7 +57,6 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
     
   def run(self, ticks):
     SceneClient.run(self, ticks)
-    players = 1
 
     if not self.wizardStarted:
       self.wizardStarted = True
@@ -141,14 +141,14 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
 
               while not finished:
                 p2Part = None
-                if self.engine.config.get("game", "players") > 1:               
+                print self.numPlayers
+                if self.numPlayers > 1:               
                   choice = Dialogs.chooseItem(self.engine, partList + [Part.parts.get(Part.PARTY_PART)] + [Part.parts.get(Part.NO_PART)], "%s \n %s" % (info.name, _("Player 2 Choose a part:")), selected = self.player2.part)
                   escape = False
-                  print choice
  
                   if choice == Part.parts.get(Part.NO_PART):
                     p2Part = Part.NO_PART
-                    players = 1
+                    self.numPlayers -= 1
                     self.player2.part = p2Part
                   elif choice == Part.parts.get(Part.PARTY_PART):
                     p2Part = Part.PARTY_PART
@@ -156,7 +156,6 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
                     selected = True
                     self.player2.part = p2Part
                   elif choice != None and choice != Part.parts.get(Part.NO_PART) and choice != Part.parts.get(Part.PARTY_PART):
-                    players = 2
                     for part in info.parts:
                       if Part.parts.get(part) == choice:
                         p2Part = part
@@ -204,8 +203,8 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
       print "player1 diff", self.player.difficulty
       print "player1 part", self.player.part
 
-      print "player2 diff", self.player2.difficulty
-      print "player2 part", self.player2.part
+      #print "player2 diff", self.player2.difficulty
+      #print "player2 part", self.player2.part
 
       print "info part", info.parts      
       
@@ -215,16 +214,17 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
       if not self.player.part in info.parts:
         self.player.part = info.parts[0]
 
-      if not self.player2.difficulty in info.difficulties:
-        self.player2.difficulty = info.difficulties[0]
-      if not self.player2.part in info.parts:
-        self.player2.part = info.parts[0]   
+      if self.numPlayers > 1:
+        if not self.player2.difficulty in info.difficulties:
+          self.player2.difficulty = info.difficulties[0]
+        if not self.player2.part in info.parts:
+          self.player2.part = info.parts[0]   
 
       print "player1 diff", self.player.difficulty
       print "player1 part", self.player.part
 
-      print "player2 diff", self.player2.difficulty
-      print "player2 part", self.player2.part
+      #print "player2 diff", self.player2.difficulty
+      #print "player2 part", self.player2.part
       
       self.session.world.deleteScene(self)
-      self.session.world.createScene("GuitarScene", libraryName = self.libraryName, songName = self.songName, Players = players)
+      self.session.world.createScene("GuitarScene", libraryName = self.libraryName, songName = self.songName, Players = self.numPlayers)

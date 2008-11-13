@@ -37,26 +37,34 @@ import Song
 import Config
 
 class Lobby(Layer, KeyListener, MessageHandler):
-  def __init__(self, engine, session, singlePlayer = False, tutorial = False):
+  def __init__(self, engine, session, numPlayers = 1, tutorial = False):
     self.engine       = engine
     self.session      = session
     self.time         = 0.0
     self.gameStarted  = False
-    self.singlePlayer = singlePlayer
+    self.numPlayers   = numPlayers
     self.tutorial     = tutorial
     self.session.broker.addMessageHandler(self)
 
   def shown(self):
     self.engine.input.addKeyListener(self)
 
-    if self.singlePlayer:
+    if self.numPlayers == 1:
       self.session.world.createPlayer(_("Player"))
       self.session.world.createPlayer(_("Player2"))
       if self.tutorial:
         Config.set("game", "selected_library", "songs")
-        self.session.world.startGame(libraryName = Song.DEFAULT_LIBRARY, songName = "tutorial")
+        self.session.world.startGame(libraryName = Song.DEFAULT_LIBRARY, songName = "tutorial", numPlayers = self.numPlayers)
       else:
-        self.session.world.startGame()
+        self.session.world.startGame(numPlayers = self.numPlayers)
+    elif self.numPlayers == 2:
+      self.session.world.createPlayer(_("Player"))
+      self.session.world.createPlayer(_("Player2"))
+      if self.tutorial:
+        Config.set("game", "selected_library", "songs")
+        self.session.world.startGame(libraryName = Song.DEFAULT_LIBRARY, songName = "tutorial", numPlayers = self.numPlayers)
+      else:
+        self.session.world.startGame(numPlayers = self.numPlayers)        
     else:
       n = self.session.id or 1
       name = Dialogs.getText(self.engine, _("Enter your name:"), _("Player #%d") % n)
@@ -96,7 +104,7 @@ class Lobby(Layer, KeyListener, MessageHandler):
     return len(self.session.world.players) > 1 and self.session.isPrimary() and not self.gameStarted
   
   def render(self, visibility, topMost):
-    if self.singlePlayer:
+    if self.numPlayers == 1:
       return
     
     self.engine.view.setOrthogonalProjection(normalize = True)

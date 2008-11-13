@@ -323,14 +323,21 @@ class GameResultsSceneClient(GameResultsScene, SceneClient):
             self.nextHighScore()
             endScroll = -0.14
           
-        if self.uploadingScores and self.uploadResult is None:
+        if self.uploadingScores:
           Theme.setBaseColor(1 - v)
-          font.render(_("Uploading Scores..."), (.05, .7 + v), scale = 0.001)
-        #self.engine.view.setViewport(1,0)
+          if self.uploadResult is None:
+            text = _("Uploading Scores...")
+          else:
+            success, ordinal = self.uploadResult
+            if success:
+              if ordinal > 0:
+                text = _("You're #%d on the world charts!") % ordinal
+              else:
+                text = ""
+            else:
+              text = _("Score upload failed")
+          font.render(text, (.05, .7 + v), scale = 0.001)
         return
-
-
-
    
       Theme.setBaseColor(1 - v)
       if self.playerList[0].cheating:

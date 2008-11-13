@@ -55,7 +55,7 @@ def getAvailableSkins(engine, dir=None):
     subSkinPath = os.path.join(skinPath, m)
     if os.path.isdir(subSkinPath) and not m.startswith("."):
       for n in os.listdir(subSkinPath):
-        if os.path.isdir(os.path.join(subSkinPath, n)):
+        if not n.startswith(".") and os.path.isdir(os.path.join(subSkinPath, n)):
           break;
       else:
         if os.listdir(subSkinPath) != []:         
@@ -72,7 +72,7 @@ def getAvailableSkinDirs(engine, dir=None):
     subSkinPath = os.path.join(skinPath, m)
     if os.path.isdir(subSkinPath) and not m.startswith("."):
       for n in os.listdir(subSkinPath):
-        if os.path.isfile(os.path.join(subSkinPath, n)):
+        if not n.startswith(".") and os.path.isfile(os.path.join(subSkinPath, n)):
           break;
       else:
         #if os.listdir(subSkinPath) != []:         

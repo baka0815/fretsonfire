@@ -28,7 +28,7 @@ import colorsys
 
 from View import Layer
 from Input import KeyListener
-from Song import loadSong, createSong, Note,DEFAULT_LIBRARY
+from Song import loadSong, createSong, Note, DEFAULT_LIBRARY
 from Guitar import Guitar, PLAYER1KEYS, PLAYER2KEYS
 from Camera import Camera
 from Menu import Menu, Choice
@@ -701,18 +701,25 @@ class GHImporter(Layer):
       # Read the song map
       self.statusText = _("Reading the song list.")
       songMap = {}
-      vgsMap =  {}
+      vgsMap  = {}
+      library = DEFAULT_LIBRARY
       for line in open(self.engine.resource.fileName("ghmidimap.txt")):
-        songName, fullName, artist = map(lambda s: s.strip(), line.strip().split(";"))
-        songMap[songName] = (fullName, artist)
+        fields = map(lambda s: s.strip(), line.strip().split(";"))
+        if fields[0] == "$library":
+          library = os.path.join(DEFAULT_LIBRARY, fields[1])
+        else:
+          songName, fullName, artist = fields
+          songMap[songName] = (library, fullName, artist)
 
       self.statusText = _("Reading the archive index.")
       archive = ArkFile(headerPath, archivePath)
-      songPath = self.engine.resource.fileName("songs", writable = True)
       songs    = []
 
       # Filter out the songs that aren't in this archive
       for songName, data in songMap.items():
+        library, fullName, artist = data
+        songPath = self.engine.resource.fileName(library, songName, writable = True)
+
         vgsMap[songName] = "songs/%s/%s.vgs" % (songName, songName)
         if not vgsMap[songName] in archive.files:
           vgsMap[songName] = "songs/%s/%s_sp.vgs" % (songName, songName)

@@ -28,19 +28,19 @@ def appName():
   return "fretsonfire"
 
 def revision():
-  return int("$LastChangedRevision: 001 $".split(" ")[1])
+  return int("$LastChangedRevision: 555 $".split(" ")[1])
 
 def branch():
   return "RF-mod"
 
 def branchrevision():
-  return 4.20
+  return 4.22
 
 def branchVersion():
-  return "%s-%.2f" % (branch(), branchrevision())
+  return "-%s-%.2f" % (branch(), branchrevision())
 
 def version():
-  return "%s.%d-%s" % (VERSION, revision(), branchVersion())
+  return "%s.%d%s" % (VERSION, revision(), branchVersion())
 
 def dataPath():
   # Determine whether were running from an exe or not

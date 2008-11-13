@@ -986,19 +986,25 @@ class Track:
     #If already processed abort   
     if self.marked == True:
       return
+
+    if jp == False and player == False:
+      return
     
     for time, event in self.allEvents:
       if isinstance(event, JPEvent) and jp == True:
-        for time, event in self.getEvents(time, time + event.length):
-          if isinstance(event, Note):
-            event.jp = True
+        print "Marking jp"
+        for time2, event2 in self.getEvents(time, time + event.length):
+          if isinstance(event2, Note):
+            event2.jp = True
       elif isinstance(event, PlayerEvent) and player == True:
-        for time, event in self.getEvents(time, time + event.length):
-          if isinstance(event, Note):
+        print "Marking player", event.player
+        for time2, event2 in self.getEvents(time, time + event.length):
+          if isinstance(event2, Note):
+            event.skipped = True
             if event.player == 0:
-              event.player1 = True
+              event2.player1 = True
             elif event.player == 1:
-              event.player2 = True 
+              event2.player2 = True 
                   
   def markEventsAuto(self, jp = True, player = True):
     tempoTime = []
@@ -1006,6 +1012,10 @@ class Track:
     lastTime = 0
 
     print "Mark JP"
+
+    if jp == False and player == False:
+      return
+    
     #get all the bpm changes and their times
     for time, event in self.allEvents:
       if isinstance(event, Tempo):

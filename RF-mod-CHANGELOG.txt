@@ -1,3 +1,9 @@
+4.22
+   Redid all the JP and face off code (still broken though)
+   Fixed problems with .svn directories in skin directories
+   More 1.2.512 ports and updates
+   Updated new themes with some of the 
+   JP Notes
 4.21
    Added reading of GH star power events
    Added readong of GH face off player sections
@@ -17,8 +23,6 @@
    New stage layers: sound
    New stage effects: play, playrandom, rockwinner
    New stage inis: stagescore, stagesound
-   
-
 4.19
    New FoF Modular Stage
    New Example stages (GH3, RB)
@@ -43,7 +47,6 @@
    Changed 'mod' to 'skin'
    Changed 'cheater' to 'autoplay'
    Fixed part/difficulty detection to handle more than 2 notes
-
 4.17
    Redid difficulty and parts code
    Redid song selection code
@@ -54,8 +57,6 @@
    Added drum rendering code
    Added drum track reading
    Added drum no strum
-
-
 4.16
    Parsing of pack,set,song tags for packs.
    Displaying of pack, set, song tags
@@ -70,7 +71,6 @@
    Boardspeed based upon difficulty (hering)
    Themable multiplier colors
    Disable multiplier flash toggle
-
 4.15
    Fixed color of bars bug
    Rereleased because I released 4.14 as 4.15
@@ -91,7 +91,6 @@
    Fixed volume setting with 2 players
    Updated worldcharts URL
    Made RFmod2 keystyle default
-
 4.13
    Made cheater splash less in the way
    Added glow_color theme variable (also can turn key shaped glow off)
@@ -109,8 +108,6 @@
    Added debug dump to debug.txt (neat)
    Added theme and stage to debug.txt
    Added Disk selection at top level (windows only)
-
-   
 4.12
    Started HOPO streak fix (awesome)
    Base_library selector (awesome)
@@ -126,7 +123,6 @@
    Added party mode timer configuration in settings
    Changed Default keys for player 2
    Fixed volume lowering if you miss under certain circumstances
-
 4.11
    Fixed jumpy neck
    Fixed cmd line start, also added difficulty and part options
@@ -137,7 +133,6 @@
    Fixed HOPO fudge bug
    Fixed HOPO after last note bug
    Added song title to part/difficulty selection
-
 4.10
    changed 'fret' and 'off' handling in theme.py
    added individual variables for spinnys available in theme.ini (for gh theme)
@@ -163,7 +158,6 @@
    Fixed N+-1 loading of folder labels
    Fixed Doublehopo counting again
    Added more cheating stuff
-
 4.08
    Pretty ConfigParser
    Fixed tutorial
@@ -228,16 +222,13 @@
    Ported party mode
    Ported fretted by
    Ported timer
-
 4.0
    Added base_library
    Fixed config_get to turn ints into ints
    Switch to 1.2.451 base
-
 3.5
    General cleanup for release
-
-3,4
+3.4
    Made 2note chord and lefty a per player option
    added part play to results screen
    refixed HOPOfudge
@@ -249,19 +240,16 @@
    Fixed HOPO held notes
    Fixed HOPO following stream of same notes 
    Fixed HOPO detection at <= 161
-
 3.2
    fixed lag problem from loading all tracks
    Added new HOPO logic for HOPO restart in the middle
    Fixed VBPM usage for HOPO (freebird and others)
-
 3.1
    redid HOPO detection logic AGAIN
    fixed held down hammer ons
    fixed unheld down pull offs
    fixed trill HOPO
    fixed non trill held down hammer ons
-
 3.00
    cleaned up for release
    Updated README.txt
@@ -271,12 +259,10 @@
    fixed string index out of range for missing song= and artist=
    fixed missing base_library=
    fixed HOPO disable after missed notes
-
 2.99
    fixed a few HOPO changes Pudding made
    added some new HOPO changes (from Pudding)
    added base_library= to .ini to allow you to move song directory wherever you want
-
 2.98
    chord note sorting fix (Contributed by Pudding)
    fixed tutorial because of splitscreen mods (Contributed by Pudding)
@@ -286,7 +272,6 @@
    added count of times played to song chooser
    changed custom fret colors from 1-5 to 0-4
 2.97
-
    if song.ogg and guitar.ogg are the same, dont load both and just treat it as song.ogg only
    some more volume adjustments
    fixed corner case of if there are no HOPO notes at all
@@ -302,31 +287,25 @@
    Fixed scrolling high score list to work with split screen
    Fixed HOPO to work with split screen
    Merged Pudding's splitscreen with 2.9 branch
-
 2.95
    Should no longer skip high score entry if a key other than return is pressed.
    Song editor should now work.
-
 2.94
    Attempted to fix some of the problems with key settings. Now
    Movement keys of player 2 should work just the same as player 1
    Buttons of either players controller should move through the menu as in RF-mod
    Changed the flashes to only affect the appropriate player's screen. 
-
 2.93
    Fixed bug where songs with tracks with unusual names don't get any notes added. Now if a track is unrecognised, as long as it has track number of less than 2 it will be taken as the Lead Guitar part.
    It no longer asks Player one which track to play if there's only one track
    Escape works to take you to the previous menu 
-
 2.92
    Fixed error in key settings menu
    When both players are playing the same part and difficulty, it is now possible for both players to hit a note at the same time
    Disable Note effects option now works
-
 2.91
    initial split screen support by Pudding
    Changed HOPO timing to 161 ticks
-
 2.8
    added counter to number of times a song is played
    added keys 0-9 to the jumpkey list
@@ -339,7 +318,6 @@
    miss when no song.ogg will just lower guitar.ogg volume by config amount 
    Made hopo processing happen based on toggle and/or song.ini
    made hopo separate function 
-
 2.7
    party multiplayer mode!
    added hopo fudge factor for strumming if hopo occurs
@@ -351,20 +329,17 @@
    turn off hopo when miss or at end
    added hopo start and end notes
    Added hopo logic to not get first note after pause between hopo sections
-
 2.5
    Added hopo logic to not include chords as a hopo
    Added hopo logic for when to start hopo sections
    Added hopo argument to note render for different look
    Added hopo values to current track
    Allowed for playing hopo style without picking
-
 2.4
    added new toggle for disable noteSFX to disable rendering of sfx for played notes to improve performance 
    changed disable noteSFX to disable fretSFX 
    start scrolling high scores visible so you dont have to wait
    pause for a few seconds before scroll starts
-
 2.3 
    only penalize if any 3 note chords are converted
    penalize for using the 2 note down converter
@@ -373,25 +348,21 @@
    scrolling high scores for all parts
    scrolling high scores for all difficulties
    scrolling high scores
-
 2.2
    if playing a bass track, load the bass screwup sounds (bfiba[1-7].ogg)
    When loading labels also load N+1 label as well (because its visible)
    If song.ogg is not present, when you miss set volume to .2 instead of 0
    moved delay calculation into song.py so getPostition() never needs to be adjusted
-
 2.1
    Fix for some songs with weird track names (anything with 2 tracks uses track 1)
    Priority setting
    Separate menu for all mod items
-
 2.0
    Clean up and release
    Cleaned up some os.path code for folders
    Update CHANGELOG
    Update TODO
    Update README
-
 1.9
    Pause and unpause when playing
    GHII score saving for different parts
@@ -400,7 +371,6 @@
    Configurable credit song location
    Timer toggle
    Small optimization in missing notes 
-
 1.8
    Preview.ogg support
    GHII rhythm/bass/coop track support
@@ -408,20 +378,15 @@
    If there's only 1 difficulty, or track, automatically select it
    Flames now Animated/Static/Disabled
    Pressing a-z will jump to the first song/artist with that letter
-
 1.7
    Performance investigation
-
 1.6
-
    VBPM adjustment
    VBPM toggle
    NoteSFX toggle
    Say if someone cheated
-
 1.5
    Clean up and release
-
 1.4
    volume zero for miss sounds does not play them
    new folder
@@ -429,15 +394,12 @@
    folder labels
    frets/version/tag
    folder flicker fix
-
 1.2
    Fixes for disable preview
    100% green stars
    3->2 chord down converter
    show 2 chord option on results screen
    Configurable fret colors
-
-
 1.1
    Make tutorial work with folders
    Make editor work with folders
@@ -450,15 +412,12 @@
    Song timer color fixed
    Do not show tutorial on songlist
    Alternate key support
-   
-1.0
+   1.0
    clean up and release
    Toggle to disable preview
    Do not play preview for folder
    New key mesh   
    Memory optimization Loading notes should not need to load songs
-
-   
 0.2
    Toggle to disable flames
    Memory improvements releasing song memory

@@ -111,7 +111,10 @@ if __name__ == "__main__":
     if encoding != None:
       reload(sys)
       sys.setdefaultencoding(encoding)
-    engine.setStartupLayer(MainMenu(engine))
+
+    menu   = MainMenu(engine, songName = playing)
+    engine.setStartupLayer(menu)
+
 
     try:
       import psyco

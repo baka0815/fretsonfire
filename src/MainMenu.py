@@ -40,11 +40,12 @@ import sys
 import Theme
 
 class MainMenu(BackgroundLayer):
-  def __init__(self, engine):
+  def __init__(self, engine, songName = None):
     self.engine              = engine
     self.time                = 0.0
     self.nextLayer           = None
     self.visibility          = 0.0
+    self.songName           = songName
 
     self.spinnyDisabled = self.engine.config.get("game", "disable_spinny")    
     
@@ -89,7 +90,13 @@ class MainMenu(BackgroundLayer):
   def shown(self):
     self.engine.view.pushLayer(self.menu)
     self.engine.stopServer()
-    
+
+    if self.songName:
+      self.newSinglePlayerGame(self.songName)
+
+      if self.engine.cmdPlay == 2:
+        self.quit()
+        
   def hidden(self):
     self.engine.view.popLayer(self.menu)
 
@@ -135,17 +142,17 @@ class MainMenu(BackgroundLayer):
     self.engine.resource.load(self, "session", lambda: self.engine.connect("127.0.0.1"), synch = True)
 
     if Dialogs.showLoadingScreen(self.engine, lambda: self.session and self.session.isConnected):
-      self.launchLayer(lambda: Lobby(self.engine, self.session, numPlayers = 1, tutorial = True))
+      self.launchLayer(lambda: Lobby(self.engine, self.session, numPlayers = 1, songName = "tutorial"))
   showTutorial = catchErrors(showTutorial)
 
-  def newSinglePlayerGame(self):
+  def newSinglePlayerGame(self, songName = None):
     if self.engine.isServerRunning():
       return
     self.engine.startServer()
     self.engine.resource.load(self, "session", lambda: self.engine.connect("127.0.0.1"), synch = True)
 
     if Dialogs.showLoadingScreen(self.engine, lambda: self.session and self.session.isConnected):
-      self.launchLayer(lambda: Lobby(self.engine, self.session, numPlayers = 1))
+      self.launchLayer(lambda: Lobby(self.engine, self.session, numPlayers = 1, songName = songName))
   newSinglePlayerGame = catchErrors(newSinglePlayerGame)
 
   def newMultiPlayerGame(self):
@@ -197,10 +204,6 @@ class MainMenu(BackgroundLayer):
 
   def run(self, ticks):
     self.time += ticks / 50.0
-    if self.engine.cmdPlay == 1:
-      self.newSinglePlayerGame()
-    elif self.engine.cmdPlay == 2:
-      self.quit()
     
   def render(self, visibility, topMost):
     self.visibility = visibility

@@ -60,7 +60,7 @@ class Lobby(Layer, KeyListener, MessageHandler):
     elif self.numPlayers == 2:
       self.session.world.createPlayer(_("Player"))
       self.session.world.createPlayer(_("Player2"))
-      if self.tutorial:
+      if self.songName == "tutorial":
         Config.set("game", "selected_library", "songs")
         self.session.world.startGame(libraryName = Song.DEFAULT_LIBRARY, songName = "tutorial", numPlayers = self.numPlayers)
       else:

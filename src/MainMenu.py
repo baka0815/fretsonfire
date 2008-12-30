@@ -91,11 +91,10 @@ class MainMenu(BackgroundLayer):
     self.engine.view.pushLayer(self.menu)
     self.engine.stopServer()
 
-    if self.songName:
-      self.newSinglePlayerGame(self.songName)
-
-      if self.engine.cmdPlay == 2:
-        self.quit()
+    if self.songName and self.engine.cmdPlay[1][1] == -1:
+      self.newSinglePlayerGame(self.songName)      
+    elif self.songName and self.engine.cmdPlay[1][1] != -1:
+      self.newMultiPlayerGame(self.songName)
         
   def hidden(self):
     self.engine.view.popLayer(self.menu)
@@ -155,14 +154,14 @@ class MainMenu(BackgroundLayer):
       self.launchLayer(lambda: Lobby(self.engine, self.session, numPlayers = 1, songName = songName))
   newSinglePlayerGame = catchErrors(newSinglePlayerGame)
 
-  def newMultiPlayerGame(self):
+  def newMultiPlayerGame(self, songName = None):
     if self.engine.isServerRunning():
       return
     self.engine.startServer()
     self.engine.resource.load(self, "session", lambda: self.engine.connect("127.0.0.1"), synch = True)
 
     if Dialogs.showLoadingScreen(self.engine, lambda: self.session and self.session.isConnected):
-      self.launchLayer(lambda: Lobby(self.engine, self.session, numPlayers = 2))
+      self.launchLayer(lambda: Lobby(self.engine, self.session, numPlayers = 2, songName = songName))
   newSinglePlayerGame = catchErrors(newSinglePlayerGame)
   
   def hostMultiplayerGame(self):
@@ -204,7 +203,9 @@ class MainMenu(BackgroundLayer):
 
   def run(self, ticks):
     self.time += ticks / 50.0
-    
+    if self.engine.cmdPlay != 0:
+      self.quit()
+        
   def render(self, visibility, topMost):
     self.visibility = visibility
     v = 1.0 - ((1 - visibility) ** 2)

@@ -1,3 +1,8 @@
+4.23
+   More 1.2.512 ports and updates
+   Added 2nd player difficulty/part for cmdline
+   Reddid playing from the commandline
+
 4.22
    Redid all the JP and face off code (still broken though)
    Fixed problems with .svn directories in skin directories

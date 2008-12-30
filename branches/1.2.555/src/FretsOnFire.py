@@ -41,8 +41,7 @@ import Version
 
 import getopt
 import sys
-import os
-import codecs
+import os 
 import Resource
 
 usage = """%(prog)s [options]
@@ -53,11 +52,13 @@ Options:
   --play=,   -p [SongDir]           Play a song from the commandline
   --diff=,   -D [difficulty number] Use this difficulty
   --part=,   -P [part number]       Use this part
+  --diff2=,  -E [difficulty number] Use this difficulty for player 2
+  --part2=,  -Q [part number]       Use this part for player 2  
 """ % {"prog": sys.argv[0] }
 
 if __name__ == "__main__":
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "vdc:p:D:P:", ["verbose", "debug", "config=", "play=", "diff=", "part="])
+    opts, args = getopt.getopt(sys.argv[1:], "vdc:p:D:P:E:Q:", ["verbose", "debug", "config=", "play=", "diff=", "part=", "diff2=", "part2="])
   except getopt.GetoptError:
     print usage
     sys.exit(1)
@@ -65,8 +66,11 @@ if __name__ == "__main__":
   playing = None
   configFile = None
   debug = False
-  difficulty = 0
-  part = 0
+  diff1 = 0
+  part1 = 0
+  diff2 = -1
+  part2 = -1
+  
   for opt, arg in opts:
     if opt in ["--verbose", "-v"]:
       Log.quiet = False
@@ -77,9 +81,13 @@ if __name__ == "__main__":
     if opt in ["--play", "-p"]:
       playing = arg
     if opt in ["--diff", "-D"]:
-      difficulty = arg      
+      diff1 = arg      
     if opt in ["--part", "-P"]:
-      part = arg
+      part1 = arg
+    if opt in ["--diff2", "-E"]:
+      diff2 = arg      
+    if opt in ["--part2", "-Q"]:
+      part2 = arg
       
   while True:
     if configFile != None:
@@ -98,9 +106,10 @@ if __name__ == "__main__":
       Config.set("game", "selected_library", "songs")
       Config.set("game", "selected_song", playing)
       engine.cmdPlay = 1
-      engine.cmdDiff = int(difficulty)
-      engine.cmdPart = int(part)
-
+      #engine.cmdDiff = int(difficulty)
+      #engine.cmdPart = int(part)
+      engine.cmdPlay = (playing, [int(diff1), int(diff2)], [int(part1), int(part2)])
+                        
     if debug == True:
       engine.setDebugModeEnabled(not engine.isDebugModeEnabled())
       engine.debugLayer.debugOut(engine)

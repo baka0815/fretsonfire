@@ -62,10 +62,9 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
       self.wizardStarted = True
 
 
-      if self.engine.cmdPlay == 1:
-        self.songName = Config.get("game", "selected_song")
+      if self.engine.cmdPlay != 0:
+        self.songName = self.engine.cmdPlay[0]
         self.libraryName = Config.get("game", "selected_library")
-        self.engine.cmdPlay = 2
         
       if not self.songName:
         finished = False
@@ -193,12 +192,22 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
 
       else:
         info = Song.loadSongInfo(self.engine, self.songName, library = self.libraryName)
+
+      thisPlayer = 0
+      if self.engine.cmdPlay != 0:
+        if len(info.difficulties) - 1 >= self.engine.cmdPlay[1][thisPlayer]:
+          self.player.difficulty = info.difficulties[self.engine.cmdPlay[1][thisPlayer]]
+        if len(info.parts) - 1 >= self.engine.cmdPlay[2][thisPlayer]:
+          print self.engine.cmdPlay[2][thisPlayer], len(info.parts)
+          self.player.part = info.parts[self.engine.cmdPlay[2][thisPlayer]] 
+
+      thisPlayer = 1
+      if self.engine.cmdPlay != 0 and self.engine.cmdPlay[1][thisPlayer] != -1 and self.engine.cmdPlay[2][thisPlayer] != -1:
+        if len(info.difficulties) -1 >= self.engine.cmdPlay[1][thisPlayer]:
+          self.player.difficulty = info.difficulties[self.engine.cmdPlay[1][thisPlayer]]
+        if len(info.parts) - 1 >= self.engine.cmdPlay[2][thisPlayer]:
+          self.player.part = info.parts[self.engine.cmdPlay[2][thisPlayer]]
     
-      if self.engine.cmdPlay == 2:
-        if len(info.difficulties) >= self.engine.cmdDiff:
-          self.player.difficulty = info.difficulties[self.engine.cmdDiff]
-        if len(info.parts) >= self.engine.cmdPart:
-          self.player.part = info.parts[self.engine.cmdPart]
 
       print "player1 diff", self.player.difficulty
       print "player1 part", self.player.part

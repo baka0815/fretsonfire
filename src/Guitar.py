@@ -28,12 +28,10 @@ import Theme
 from OpenGL.GL import *
 import math
 
-#KEYS = [Player.KEY1, Player.KEY2, Player.KEY3, Player.KEY4, Player.KEY5]
-PLAYER1KEYS    = [Player.KEY1, Player.KEY2, Player.KEY3, Player.KEY4, Player.KEY5]
-PLAYER1ACTIONS = [Player.ACTION1, Player.ACTION2]
-PLAYER2KEYS    = [Player.PLAYER_2_KEY1, Player.PLAYER_2_KEY2, Player.PLAYER_2_KEY3, Player.PLAYER_2_KEY4, Player.PLAYER_2_KEY5]
-PLAYER2ACTIONS = [Player.PLAYER_2_ACTION1, Player.PLAYER_2_ACTION2]
-
+PLAYER1KEYS    = Player.PLAYER_1_KEYS
+PLAYER1ACTIONS = Player.PLAYER_1_ACTIONS
+PLAYER2KEYS    = Player.PLAYER_2_KEYS
+PLAYER2ACTIONS = Player.PLAYER_2_ACTIONS
 
 class Guitar:
   def __init__(self, engine, editorMode = False, player = 0):

@@ -41,6 +41,7 @@ from Language import _
 import Network
 import Log
 import Config
+import Profile
 import Dialogs
 import Theme
 import Version
@@ -95,10 +96,10 @@ Config.define("video",  "disable_fretsfx",     bool,  False,  text = _("Disable 
 Config.define("video",  "disable_flamesfx",    bool,  False,  text = _("Disable Flame SFX"),    options = {False: _("No"), True: _("Yes")})
 Config.define("audio",  "disable_preview",     bool,  False,  text = _("Disable Preview"),    options = {False: _("No"), True: _("Yes")})
 Config.define("audio",  "miss_volume",         float, 0.2,    text = _("Miss Volume"), options = dict([(n / 100.0, "%d%%" % n) for n in range(0, 100, 10)]))
-Config.define("player0","two_chord_max",       bool,  False,  text = _("P1 Two Key Chord helper"),  options = {False: _("No"), True: _("Yes")})
-Config.define("player0","leftymode",           bool,  False,  text = _("P2 Lefty mode"),           options = {False: _("No"), True: _("Yes")})
-Config.define("player1","two_chord_max",       bool,  False,  text = _("P2 Two Key Chord helper"),  options = {False: _("No"), True: _("Yes")})
-Config.define("player1","leftymode",           bool,  False,  text = _("P2 Lefty mode"),           options = {False: _("No"), True: _("Yes")})
+#Config.define("player0","two_chord_max",       bool,  False,  text = _("P1 Two Key Chord helper"),  options = {False: _("No"), True: _("Yes")})
+#Config.define("player0","leftymode",           bool,  False,  text = _("P2 Lefty mode"),           options = {False: _("No"), True: _("Yes")})
+#Config.define("player1","two_chord_max",       bool,  False,  text = _("P2 Two Key Chord helper"),  options = {False: _("No"), True: _("Yes")})
+#Config.define("player1","leftymode",           bool,  False,  text = _("P2 Lefty mode"),           options = {False: _("No"), True: _("Yes")})
 
 Config.define("failing",  "failing",           bool,  True,   text = _("Failing"), options = {False: _("No"), True: _("Yes")})
 Config.define("failing",  "difficulty",        int,   1,      text = _("Failing Difficulty"), options = {1: _("Easy"), 2: _("Medium"), 3: _("Amazing"), 4: _("Custom")})
@@ -119,7 +120,8 @@ Config.define("failing", "jgain",              int,   15,  text = _("Notes for 1
 Config.define("failing", "jmultiplier",        int,   4,  text = _("Jurgen multiplier"),  options = dict([(n, n) for n in range (2, 11)]))
 Config.define("failing", "jmax",               int,   15,  text = _("Maximum Jurgen points"),  options = dict([(n, n) for n in range (1, 50)]))
 
-
+Profile.define("instrument","two_chord_max",       bool,  False,  text = _("Two Key Chord helper"),  options = {False: _("No"), True: _("Yes")})
+Profile.define("instrument","leftymode",           bool,  False,  text = _("Lefty mode"),           options = {False: _("No"), True: _("Yes")})
 
 class FullScreenSwitcher(KeyListener):
   """
@@ -178,6 +180,18 @@ class GameEngine(Engine):
       config = Config.load()
       
     self.config  = config
+
+    profile = self.config.get("game", "player1profile")
+    if profile == "None":
+      self.player1profile = Profile.load("player1-profile.ini")
+    else:
+      self.player1profile = Profile.load("%s-profile.ini" % profile)
+      
+    profile = self.config.get("game", "player2profile")
+    if profile == "None":
+      self.player2profile = Profile.load("player2-profile.ini")
+    else:
+      self.player2profile = Profile.load("%s-profile.ini" % profile)      
     
     fps          = self.config.get("video", "fps")
     tickrate     = self.config.get("engine", "tickrate")
@@ -221,7 +235,7 @@ class GameEngine(Engine):
     self.svg.setRenderingQuality(self.config.get("opengl", "svgquality"))
     glViewport(*viewport)
 
-    self.input     = Input()
+    self.input     = Input(self)
     self.view      = View(self, geometry)
     self.resizeScreen(w, h)
 

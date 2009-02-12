@@ -1,3 +1,15 @@
+4.24
+   Some changes to FileChooser to allow for profile selection
+   Fixed bug in library selection related to FileChooser
+   Localized some configuration of the controls
+   Reverted font.py because of some rendering issues for multiple fonts
+   Added support for individual profiles
+   Load correct profile for each player
+   Removed Alt key support
+   Added support for multiple instruments per profile with their own key configurations
+   Moved some configuration from main fretsonfire.ini to profiles
+   Reworked the key press configuration sequence
+   Dynamic menu generation for instrument selection
 4.23
    More 1.2.512 ports and updates
    Added 2nd player difficulty/part for cmdline

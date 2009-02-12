@@ -93,7 +93,7 @@ class SceneClient(Scene, KeyListener):
     self.session = session
     self.player = self.session.world.getLocalPlayer()
     self.player2 = self.session.world.getPlayer2()
-    self.controls = Player.Controls()
+    self.controls = Player.Controls(engine)
     self.createClient(**args)
 
   def createClient(self, **args):

@@ -68,14 +68,15 @@ except:
     return seq
 
 class Input(Task):
-  def __init__(self):
+  def __init__(self, engine):
     Task.__init__(self)
     self.mouse                = pygame.mouse
     self.mouseListeners       = []
     self.keyListeners         = []
     self.systemListeners      = []
     self.priorityKeyListeners = []
-    self.controls             = Controls()
+    self.engine               = engine
+    self.controls             = Controls(self.engine)
     self.disableKeyRepeat()
 
     # Initialize joysticks
@@ -98,7 +99,7 @@ class Input(Task):
     pygame.key.name       = self.getKeyName
 
   def reloadControls(self):
-    self.controls = Controls()
+    self.controls = Controls(self.engine)
 
   def disableKeyRepeat(self):
     pygame.key.set_repeat(0, 0)

@@ -91,29 +91,6 @@ class Font:
     s = .75 * self.getHeight() / float(texture.pixelSize[0])
     self.glyphSizeCache[character] = (texture.pixelSize[0] * s, texture.pixelSize[1] * s)
 
-  def _renderString(self, text, pos, direction, scale):
-    if not text:
-      return
-
-    glPushMatrix()    
-    for ch in text:
-      g = self.getGlyph(ch)
-      w, h = self.getStringSize(ch, scale = scale)
-      tw, th = g.size
-
-      glVertexPointerf([(0.0, 0.0, 0.0), (w, 0.0, 0.0), (0.0, h, 0.0), (w, h, 0.0)])
-      glTexCoordPointerf([(0.0, th), (tw, th), (0.0, 0.0), (tw, 0.0)])
-
-      g.bind()
-      glDrawElementsui(GL_TRIANGLE_STRIP, [0, 1, 2, 3])
-
-      glTranslatef(w * direction[0],
-                   w * direction[1],
-                   w * direction[2])
-
-    glPopMatrix()
-    
-
   def render(self, text, pos = (0, 0), direction = (1, 0, 0), scale = 0.002):
     """
     Draw some text.
@@ -128,18 +105,16 @@ class Font:
     glEnableClientState(GL_TEXTURE_COORD_ARRAY)
 
     scale *= self.scale
-    #glPushMatrix()
+    glPushMatrix()
     glTranslatef(pos[0], pos[1], 0)
     
     if self.reversed:
       text = "".join(reversed(text))
 
-    """
     if self.outline:
       glPushAttrib(GL_CURRENT_BIT)
       glPushMatrix()
       glColor4f(0, 0, 0, .25 * glGetDoublev(GL_CURRENT_COLOR)[3])
-      #glColor4f(0, 0, 0, glGetFloatv(GL_CURRENT_COLOR)[3])
       for ch in text:
         g = self.getGlyph(ch)
         w, h = self.getStringSize(ch, scale = scale)
@@ -163,15 +138,23 @@ class Font:
 
       glPopAttrib()
       glPopMatrix()
-      """
-      
-    if self.outline:
-      glPushAttrib(GL_CURRENT_BIT)
-      glColor4f(0, 0, 0, glGetFloatv(GL_CURRENT_COLOR)[3])
-      self._renderString(text, (pos[0] + 0.000, pos[1] + 0.000), direction, scale * 1.02)
-      glPopAttrib()
 
-    self._renderString(text, pos, direction, scale)
+    for ch in text:
+      g = self.getGlyph(ch)
+      w, h = self.getStringSize(ch, scale = scale)
+      tw, th = g.size
+
+      glVertexPointerf([(0.0, 0.0, 0.0), (w, 0.0, 0.0), (0.0, h, 0.0), (w, h, 0.0)])
+      glTexCoordPointerf([(0.0, th), (tw, th), (0.0, 0.0), (tw, 0.0)])
+
+      g.bind()
+      glDrawElementsui(GL_TRIANGLE_STRIP, [0, 1, 2, 3])
+
+      glTranslatef(w * direction[0],
+                   w * direction[1],
+                   w * direction[2])
+
+    glPopMatrix()
 
     glDisableClientState(GL_VERTEX_ARRAY)
     glDisableClientState(GL_TEXTURE_COORD_ARRAY)

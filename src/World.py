@@ -57,7 +57,7 @@ class World(MessageHandler):
     self.scenes = []
 
   def handlePlayerJoined(self, sender, id, owner, name):
-    player = Player(owner, name, len(self.players))
+    player = Player(self.engine, owner, name, len(self.players))
     self.players.append(player)
     self.objects[id] = player
 

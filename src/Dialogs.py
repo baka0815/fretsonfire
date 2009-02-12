@@ -41,7 +41,6 @@ import Log
 import Song
 import Data
 import Player
-import Guitar
 import Difficulty
 import Part
 
@@ -994,7 +993,7 @@ class SongChooser(Layer, KeyListener):
     
 class FileChooser(BackgroundLayer, KeyListener):
   """File choosing layer."""
-  def __init__(self, engine, masks, path, prompt = "", dirSelect = False):
+  def __init__(self, engine, masks, path, prompt = "", extraItem = ""):
     self.masks          = masks
     self.path           = path
     self.prompt         = prompt
@@ -1004,7 +1003,8 @@ class FileChooser(BackgroundLayer, KeyListener):
     self.time           = 0.0
     self.menu           = None
 
-    self.dirSelect      = dirSelect
+    self.extraItem      = extraItem
+    
     self.spinnyDisabled = self.engine.config.get("game", "disable_spinny")
 
     self.engine.loadSvgDrawing(self, "background", "editor.svg")
@@ -1016,10 +1016,9 @@ class FileChooser(BackgroundLayer, KeyListener):
     f = os.path.join(self.path, fileName)
     if fileName == "..":
       return _("[Parent Folder]")
-    if self.dirSelect == True:
-      for mask in self.masks:
-        if fnmatch.fnmatch(fileName, mask):
-          return _("[Accept Folder]")
+    if self.extraItem != "":
+      if fileName == "ExtraMenuChoice":
+        return _(self.extraItem)
     if os.path.isdir(f):
       return _("%s [Folder]") % fileName
     return fileName
@@ -1037,8 +1036,8 @@ class FileChooser(BackgroundLayer, KeyListener):
           continue
       files.append(fn)
     files.sort()
-    if self.dirSelect == True and (fnmatch.fnmatch(self.path, self.masks[0])):
-      files.insert(0, self.path)
+    if self.extraItem != "":
+      files.insert(0, "ExtraMenuChoice")
     return files
 
   def getDisks(self):
@@ -1063,7 +1062,7 @@ class FileChooser(BackgroundLayer, KeyListener):
     self.engine.view.pushLayer(self.menu)
 
   def chooseFile(self, fileName):
-    if self.dirSelect == True:
+    if self.extraItem != "":
       for mask in self.masks:
         if fnmatch.fnmatch(fileName, mask):
           self.selectedFile = fileName
@@ -1279,7 +1278,7 @@ class KeyTester(Layer, KeyListener):
     self.engine         = engine
     self.accepted       = False
     self.time           = 0.0
-    self.controls       = Player.Controls()
+    self.controls       = Player.Controls(engine)
     self.fretColors     = Theme.fretColors
     
   def shown(self):
@@ -1320,31 +1319,32 @@ class KeyTester(Layer, KeyListener):
       Theme.setBaseColor(1 - v)
       wrapText(font, (.1, .2 - v), self.prompt)
 
-      for n, c in enumerate(Guitar.PLAYER1KEYS):
+  
+      for n, c in enumerate(Player.PLAYER_1_KEYS):
         if self.controls.getState(c):
           glColor3f(*self.fretColors[n%5])
         else:
           glColor3f(.4, .4, .4)
-        font.render("#%d" % (n + 1), (.5 - .15 * (2 - n), .4 + v))
+        font.render("#%d" % (n + 1), (0.5 - 0.15 * (2 - n), 0.38 + v))
 
-      for n, c in enumerate(Guitar.PLAYER2KEYS):
+      for n, c in enumerate(Player.PLAYER_2_KEYS):
         if self.controls.getState(c):
           glColor3f(*self.fretColors[n%5])
         else:
           glColor3f(.4, .4, .4)
-        font.render("#%d" % (n + 1), (.5 - .15 * (2 - n), 0.15+.4 + v))          
+        font.render("#%d" % (n + 1), (0.5 - 0.15 * (2 - n), 0.55 + v))          
 
-      if self.controls.getState(Player.ACTION1) or self.controls.getState(Player.ACTION2):
+      if self.controls.getState(Player.PLAYER_1_ACTION1) or self.controls.getState(Player.PLAYER_1_ACTION2):
         Theme.setSelectedColor(1 - v)
       else:
         glColor3f(.4, .4, .4)
-      font.render(_("Pick!"), (.45, .5 + v))
+      font.render(_("Pick!"), (0.45, 0.43 + v))
 
       if self.controls.getState(Player.PLAYER_2_ACTION1) or self.controls.getState(Player.PLAYER_2_ACTION2):
         Theme.setSelectedColor(1 - v)
       else:
         glColor3f(.4, .4, .4)
-      font.render(_("Pick!"), (.45, 0.6 + v))           
+      font.render(_("Pick!"), (0.45, 0.6 + v))           
         
     finally:
       self.engine.view.resetProjection()
@@ -1402,7 +1402,7 @@ def chooseSong(engine, prompt = _("Choose a Song"), selectedSong = None, selecte
     _runDialog(engine, d)
   return (d.getSelectedLibrary(), d.getSelectedSong())
   
-def chooseFile(engine, masks = ["*.*"], path = ".", prompt = _("Choose a File"), dirSelect = False):
+def chooseFile(engine, masks = ["*.*"], path = ".", prompt = _("Choose a File"), extraItem = ""):
   """
   Ask the user to select a file.
   
@@ -1411,7 +1411,7 @@ def chooseFile(engine, masks = ["*.*"], path = ".", prompt = _("Choose a File"),
   @param path:    Initial path
   @param prompt:  Prompt shown to the user
   """
-  d = FileChooser(engine, masks, path, prompt, dirSelect)
+  d = FileChooser(engine, masks, path, prompt, extraItem)
   _runDialog(engine, d)
   return d.getSelectedFile()
   

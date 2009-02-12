@@ -27,6 +27,8 @@ import Song
 import Config
 import Difficulty
 import Part
+import Settings
+
 from Language import _
 
 import os
@@ -76,11 +78,8 @@ class SongChoosingSceneClient(SongChoosingScene, SceneClient):
                                selectedSong    = Config.get("game", "selected_song"))
 
           if self.libraryName == None:
-            newPath = Dialogs.chooseFile(self.engine, masks = ["*/songs"], prompt = _("Choose a new songs directory."), dirSelect = True)
-            if newPath != None:
-              Config.set("game", "base_library", os.path.dirname(newPath))
-              Config.set("game", "selected_library", "songs")
-              Config.set("game", "selected_song", "")
+            settingsMenu = Settings.SettingsMenu(self.engine)
+            settingsMenu.baseLibrarySelect()
             
           if not self.songName:
             self.session.world.finishGame()

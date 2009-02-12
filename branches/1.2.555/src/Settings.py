@@ -87,22 +87,32 @@ class VolumeConfigChoice(ConfigChoice):
     sound.setVolume(self.value)
     sound.play()
 
-class KeyConfigChoice(Menu.Choice):
-  def __init__(self, engine, config, section, option):
+class ProfileChoice(ConfigChoice):
+  def __init__(self, engine, player, section, option, autoApply = False):
+    self.engine = engine
+    if player == 1:
+      self.config = self.engine.player1profile
+    elif player == 2:
+      self.config = self.engine.player2profile
+    ConfigChoice.__init__(self, self.config, section, option, autoApply)
+
+class InstrumentProfileChoice(ProfileChoice):
+  def change(self, value):
+    ProfileChoice.change(self, value)
+    self.engine.input.reloadControls()
+      
+class NavProfileChoice(Menu.Choice):
+  def __init__(self, engine, player, section, option, autoApply = False):
     self.engine  = engine
-    self.config  = config
     self.section = section
     self.option  = option
     self.changed = False
     self.value   = None
-
-    #Load alternate keyset
-    useAltKeySet = self.engine.config.get("game", "alt_keys")                   
-    if not useAltKeySet == True:
-       self.option = self.option
-    else:
-      self.option = "a%s" % (self.option)
-      
+    if player == 1:
+      self.config = self.engine.player1profile
+    elif player == 2:
+      self.config = self.engine.player2profile
+  
     Menu.Choice.__init__(self, text = "", callback = self.change)
 
   def getText(self, selected):
@@ -133,6 +143,48 @@ class KeyConfigChoice(Menu.Choice):
   def apply(self):
     pass
 
+class KeyProfileChoice(NavProfileChoice):
+  def __init__(self, engine, player, option, autoApply = False):
+    self.engine = engine
+    if player == 1:
+      self.config = self.engine.player1profile
+    elif player == 2:
+      self.config = self.engine.player2profile
+    instrument = self.config.get("instrument", "selected")
+    NavProfileChoice.__init__(self, engine, player, instrument, option, autoApply)
+
+  def getText(self, selected):
+    def keycode(k):
+      try:
+        return int(k)
+      except:
+        return getattr(pygame, k)
+    genericSection = self.section[:-1]
+    genericSection += "X"
+
+    o = self.config.prototype[genericSection][self.option]
+    v = self.config.get(self.section, self.option)
+    if v == "None":
+      v = self.config.get(genericSection, self.option)
+    return "%s: %s" % (o.text, pygame.key.name(keycode(v)).capitalize())
+
+  def change(self):
+    genericSection = self.section[:-1]
+    genericSection += "X"
+    o = self.config.prototype[genericSection][self.option]
+
+    if isinstance(o.options, dict):
+      for k, v in o.options.items():
+        if v == value:
+          value = k
+          break
+
+    key = Dialogs.getKey(self.engine, _("Press a key for '%s' or Escape to cancel.") % (o.text))
+
+    if key:
+      self.config.set(self.section, self.option, key)
+      self.engine.input.reloadControls()
+      
 class HopoConfigChoice(ConfigChoice):
   def __init__(self, config, section, option, autoApply = False):
     ConfigChoice.__init__(self, config, section, option, autoApply)
@@ -156,50 +208,39 @@ class SettingsMenu(Menu.Menu):
       else:
         menu.append(ConfigChoice(engine.config, "skins",  "skin_%s/" % (skindir) + m, autoApply = True))
     return menu
-        
+
+
+  
   def __init__(self, engine):
     applyItem = [(_("Apply New Settings"), self.applySettings)]
 
     skinSettings = self.getSkinSettingsMenu(engine) + applyItem
-    
+  
     gameSettings = [
       (_("Skin settings"), skinSettings),
       ConfigChoice(engine.config, "game",  "language"),
-      #ConfigChoice(engine.config, "game",  "leftymode", autoApply = True),
-      #ConfigChoice(engine.config, "game",  "tapping", autoApply = True),
       ConfigChoice(engine.config, "game",  "uploadscores", autoApply = True),
     ]
     gameSettingsMenu = Menu.Menu(engine, gameSettings + applyItem)
 
-    keySettings = [
-      (_("Test Keys"), lambda: Dialogs.testKeys(engine)),
-      KeyConfigChoice(engine, engine.config, "player0", "key_action1"),
-      KeyConfigChoice(engine, engine.config, "player0", "key_action2"),
-      KeyConfigChoice(engine, engine.config, "player0", "key_1"),
-      KeyConfigChoice(engine, engine.config, "player0", "key_2"),
-      KeyConfigChoice(engine, engine.config, "player0", "key_3"),
-      KeyConfigChoice(engine, engine.config, "player0", "key_4"),
-      KeyConfigChoice(engine, engine.config, "player0", "key_5"),
-      KeyConfigChoice(engine, engine.config, "player0", "key_left"),
-      KeyConfigChoice(engine, engine.config, "player0", "key_right"),
-      KeyConfigChoice(engine, engine.config, "player0", "key_up"),
-      KeyConfigChoice(engine, engine.config, "player0", "key_down"),
-      KeyConfigChoice(engine, engine.config, "player0", "key_cancel"),
-      KeyConfigChoice(engine, engine.config, "player1", "player_2_key_action1"),
-      KeyConfigChoice(engine, engine.config, "player1", "player_2_key_action2"),
-      KeyConfigChoice(engine, engine.config, "player1", "player_2_key_1"),
-      KeyConfigChoice(engine, engine.config, "player1", "player_2_key_2"),
-      KeyConfigChoice(engine, engine.config, "player1", "player_2_key_3"),
-      KeyConfigChoice(engine, engine.config, "player1", "player_2_key_4"),
-      KeyConfigChoice(engine, engine.config, "player1", "player_2_key_5"),
-      KeyConfigChoice(engine, engine.config, "player1", "player_2_key_left"),
-      KeyConfigChoice(engine, engine.config, "player1", "player_2_key_right"),
-      KeyConfigChoice(engine, engine.config, "player1", "player_2_key_up"),
-      KeyConfigChoice(engine, engine.config, "player1", "player_2_key_down"),
-      KeyConfigChoice(engine, engine.config, "player1", "player_2_key_cancel"),
+    player1NavSettings = [
+      NavProfileChoice(engine, 1, "general", "nav_left"),
+      NavProfileChoice(engine, 1, "general", "nav_right"),
+      NavProfileChoice(engine, 1, "general", "nav_up"),
+      NavProfileChoice(engine, 1, "general", "nav_down"),
+      NavProfileChoice(engine, 1, "general", "nav_cancel"),
     ]
-    keySettingsMenu = Menu.Menu(engine, keySettings)
-    
+    player1NavSettingsMenu = Menu.Menu(engine, player1NavSettings)
+
+    player2NavSettings = [
+      NavProfileChoice(engine, 2, "general", "nav_left"),
+      NavProfileChoice(engine, 2, "general", "nav_right"),
+      NavProfileChoice(engine, 2, "general", "nav_up"),
+      NavProfileChoice(engine, 2, "general", "nav_down"),
+      NavProfileChoice(engine, 2, "general", "nav_cancel"),
+    ]
+    player2NavSettingsMenu = Menu.Menu(engine, player2NavSettings)
+ 
     modes = engine.video.getVideoModes()
     modes.reverse()
     Config.define("video",  "resolution", str,   "640x480", text = _("Video Resolution"), options = ["%dx%d" % (m[0], m[1]) for m in modes])
@@ -231,16 +272,32 @@ class SettingsMenu(Menu.Menu):
       ConfigChoice(engine.config, "audio",  "buffersize"),
     ]
     audioSettingsMenu = Menu.Menu(engine, audioSettings + applyItem)
-
-    rfModPlayerSettings = [
-      ConfigChoice(engine.config, "game",  "players", autoApply = True),
-      ConfigChoice(engine.config, "player0",  "two_chord_max", autoApply = True),
-      ConfigChoice(engine.config, "player0",  "leftymode", autoApply = True),
-      ConfigChoice(engine.config, "player1",  "two_chord_max", autoApply = True),
-      ConfigChoice(engine.config, "player1",  "leftymode", autoApply = True),
+    
+    player1Settings = [
+      (_("Navigation Settings"), player1NavSettingsMenu),
+      (_("Key Settings >"), self.player1KeySettingsMenu),
+      InstrumentProfileChoice(engine, 1, "instrument",  "selected", autoApply = True),
+      ProfileChoice(engine, 1, "instrument",  "two_chord_max", autoApply = True),
+      ProfileChoice(engine, 1, "instrument",  "leftymode", autoApply = True),
     ]
-    rfModPlayerSettingsMenu = Menu.Menu(engine, rfModPlayerSettings)    
+    player1SettingsMenu = Menu.Menu(engine, player1Settings)    
 
+    player2Settings = [
+      (_("Navigation Settings"), player2NavSettingsMenu),
+      (_("Key Settings >"), self.player2KeySettingsMenu),
+      InstrumentProfileChoice(engine, 2, "instrument",  "selected", autoApply = True),
+      ProfileChoice(engine, 2, "instrument",  "two_chord_max", autoApply = True),
+      ProfileChoice(engine, 2, "instrument",  "leftymode", autoApply = True),
+    ]
+    player2SettingsMenu = Menu.Menu(engine, player2Settings)  
+
+    playerSettings = [
+      ConfigChoice(engine.config, "game",  "players", autoApply = True),
+      (_("Player 1"), player1SettingsMenu),
+      (_("Player 2"), player2SettingsMenu),      
+    ]
+    playerSettingsMenu = Menu.Menu(engine, playerSettings)
+    
     rfModHOPOSettings = [
       ConfigChoice(engine.config, "game",  "tapping", autoApply = True),
       HopoConfigChoice(engine.config, "game",  "hopo_mark", autoApply = True),
@@ -301,13 +358,13 @@ class SettingsMenu(Menu.Menu):
       (_("HO/PO settings"), rfModHOPOSettingsMenu),
       (_("Failing settings"), rfModFailSettingsMenu),
       (_("Performance settings"), rfModPerfSettingsMenu),
-      (_("Player settings"), rfModPlayerSettingsMenu),
+ #     (_("Player settings"), rfModPlayerSettingsMenu),
     ]
     rfModSettingsMenu = Menu.Menu(engine, rfModSettings)
 
     settings = [
       (_("Game Settings"),     gameSettingsMenu),
-      (_("Key Settings"),      keySettingsMenu),
+      (_("Player Settings"),   playerSettingsMenu),
       (_("Video Settings"),    videoSettingsMenu),
       (_("Audio Settings"),    audioSettingsMenu),
       (_("RF-mod Settings"),   rfModSettingsMenu),
@@ -328,13 +385,54 @@ class SettingsMenu(Menu.Menu):
         option.apply()
     self.engine.restart()
 
-  def baseLibrarySelect(self):
-    newPath = Dialogs.chooseFile(self.engine, masks = ["*/songs"], prompt = _("Choose a new songs directory."), dirSelect = True)
-    if newPath != None:
-      Config.set("game", "base_library", os.path.dirname(newPath))
-      Config.set("game", "selected_library", "songs")
-      Config.set("game", "selected_song", "")
+  def player1KeySettingsMenu(self):
+    keySettings = [
+      (_("Test Keys"), lambda: Dialogs.testKeys(self.engine)),
+      KeyProfileChoice(self.engine, 1, "key_action1"),
+      KeyProfileChoice(self.engine, 1, "key_action2"),
+      KeyProfileChoice(self.engine, 1, "key_1"),
+      KeyProfileChoice(self.engine, 1, "key_2"),
+      KeyProfileChoice(self.engine, 1, "key_3"),
+      KeyProfileChoice(self.engine, 1, "key_4"),
+      KeyProfileChoice(self.engine, 1, "key_5"),
+    ]
+    keySettingsMenu = Menu.Menu(self.engine, keySettings, onClose = lambda: self.engine.view.popLayer(self))
+    self.engine.view.pushLayer(keySettingsMenu)
+
+  def player2KeySettingsMenu(self):
+    keySettings = [
+      (_("Test Keys"), lambda: Dialogs.testKeys(self.engine)),
+      KeyProfileChoice(self.engine, 2, "key_action1"),
+      KeyProfileChoice(self.engine, 2, "key_action2"),
+      KeyProfileChoice(self.engine, 2, "key_1"),
+      KeyProfileChoice(self.engine, 2, "key_2"),
+      KeyProfileChoice(self.engine, 2, "key_3"),
+      KeyProfileChoice(self.engine, 2, "key_4"),
+      KeyProfileChoice(self.engine, 2, "key_5"),
+    ]
+    keySettingsMenu = Menu.Menu(self.engine, keySettings, onClose = lambda: self.engine.view.popLayer(self))
+    self.engine.view.pushLayer(keySettingsMenu)
     
+  def baseLibrarySelect(self):
+    newPath = Dialogs.chooseFile(self.engine, masks = ["*/songs"], prompt = _("Choose a new songs directory."), extraItem = "[Accept Directory]")
+    if newPath != None:
+      dirName = os.path.dirname(newPath)
+      baseName = os.path.basename(newPath)
+      dirName2 = os.path.dirname(dirName)
+      baseName2 = os.path.basename(dirName)
+      
+      if baseName2 == "songs":
+        Config.set("game", "base_library", dirName2)
+        Config.set("game", "selected_library", baseName2)
+        Config.set("game", "selected_song", "")
+      else:
+        if os.path.exists(os.path.join(dirName, "songs")):
+          Config.set("game", "base_library", dirName)
+          Config.set("game", "selected_library", "songs")
+          Config.set("game", "selected_song", "")
+        else:
+          Dialogs.showMessage(self.engine, _("No songs directory found."))
+
 class GameSettingsMenu(Menu.Menu):
   def __init__(self, engine):
     settings = [

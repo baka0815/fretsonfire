@@ -22,156 +22,162 @@
 
 import pygame
 import Config
+import Profile
 import Part
 import Difficulty
 
 from Language import _
 
-LEFT    = 0x1
-RIGHT   = 0x2
-UP      = 0x4
-DOWN    = 0x8
-ACTION1 = 0x10
-ACTION2 = 0x20
-KEY1    = 0x40
-KEY2    = 0x80
-KEY3    = 0x100
-KEY4    = 0x200
-KEY5    = 0x400
-CANCEL  = 0x800
+PLAYER_1_LEFT    = 0x000001
+PLAYER_1_RIGHT   = 0x000002
+PLAYER_1_UP      = 0x000004
+PLAYER_1_DOWN    = 0x000008
+PLAYER_1_CANCEL  = 0x000010
+PLAYER_1_ACTION1 = 0x000020
+PLAYER_1_ACTION2 = 0x000040
+PLAYER_1_KEY1    = 0x000090
+PLAYER_1_KEY2    = 0x000100
+PLAYER_1_KEY3    = 0x000200
+PLAYER_1_KEY4    = 0x000400
+PLAYER_1_KEY5    = 0x000800
 
-PLAYER_2_LEFT    = 0x1000
-PLAYER_2_RIGHT   = 0x2000
-PLAYER_2_UP      = 0x4000
-PLAYER_2_DOWN    = 0x8000
-PLAYER_2_ACTION1 = 0x10000
-PLAYER_2_ACTION2 = 0x20000
-PLAYER_2_KEY1    = 0x40000
-PLAYER_2_KEY2    = 0x80000
-PLAYER_2_KEY3    = 0x100000
-PLAYER_2_KEY4    = 0x200000
-PLAYER_2_KEY5    = 0x400000
-PLAYER_2_CANCEL  = 0x800000
+PLAYER_2_LEFT    = 0x001000
+PLAYER_2_RIGHT   = 0x002000
+PLAYER_2_UP      = 0x004000
+PLAYER_2_DOWN    = 0x008000
+PLAYER_2_CANCEL  = 0x010000
+PLAYER_2_ACTION1 = 0x020000
+PLAYER_2_ACTION2 = 0x040000
+PLAYER_2_KEY1    = 0x080000
+PLAYER_2_KEY2    = 0x100000
+PLAYER_2_KEY3    = 0x200000
+PLAYER_2_KEY4    = 0x400000
+PLAYER_2_KEY5    = 0x800000
 
-LEFTS  = [LEFT,PLAYER_2_LEFT]
-RIGHTS = [RIGHT,PLAYER_2_RIGHT]
-UPS    = [UP,PLAYER_2_UP]
-DOWNS  = [DOWN,PLAYER_2_DOWN]
-ACTION1S= [ACTION1,PLAYER_2_ACTION1]
-ACTION2S= [ACTION2,PLAYER_2_ACTION2]
-CANCELS= [CANCEL,PLAYER_2_CANCEL]
-KEY5S  = [KEY5,PLAYER_2_KEY5]
-KEY1S  = [KEY1,PLAYER_2_KEY1]
-KEY2S  = [KEY2,PLAYER_2_KEY2]
-KEY3S  = [KEY3,PLAYER_2_KEY3]
-KEY4S  = [KEY4,PLAYER_2_KEY4]
-KEY5S  = [KEY5,PLAYER_2_KEY5]
+
+LEFTS    = [PLAYER_1_LEFT,PLAYER_2_LEFT]
+RIGHTS   = [PLAYER_1_RIGHT,PLAYER_2_RIGHT]
+UPS      = [PLAYER_1_UP,PLAYER_2_UP]
+DOWNS    = [PLAYER_1_DOWN,PLAYER_2_DOWN]
+ACTION1S = [PLAYER_1_ACTION1,PLAYER_2_ACTION1]
+ACTION2S = [PLAYER_1_ACTION2,PLAYER_2_ACTION2]
+CANCELS  = [PLAYER_1_CANCEL,PLAYER_2_CANCEL]
+KEY5S    = [PLAYER_1_KEY5,PLAYER_2_KEY5]
+KEY1S    = [PLAYER_1_KEY1,PLAYER_2_KEY1]
+KEY2S    = [PLAYER_1_KEY2,PLAYER_2_KEY2]
+KEY3S    = [PLAYER_1_KEY3,PLAYER_2_KEY3]
+KEY4S    = [PLAYER_1_KEY4,PLAYER_2_KEY4]
+KEY5S    = [PLAYER_1_KEY5,PLAYER_2_KEY5]
+
+PLAYER_1_KEYS    = [PLAYER_1_KEY1, PLAYER_1_KEY2, PLAYER_1_KEY3, PLAYER_1_KEY4, PLAYER_1_KEY5]
+PLAYER_1_ACTIONS = [PLAYER_1_ACTION1, PLAYER_1_ACTION2]
+
+PLAYER_2_KEYS    = [PLAYER_2_KEY1, PLAYER_2_KEY2, PLAYER_2_KEY3, PLAYER_2_KEY4, PLAYER_2_KEY5]
+PLAYER_2_ACTIONS = [PLAYER_2_ACTION1, PLAYER_2_ACTION2]
 
 SCORE_MULTIPLIER = [0, 10, 20, 30]
 
-# define configuration keys
-Config.define("player0", "key_left",     str, "K_LEFT",   text = _("Move left"))
-Config.define("player0", "key_right",    str, "K_RIGHT",  text = _("Move right"))
-Config.define("player0", "key_up",       str, "K_UP",     text = _("Move up"))
-Config.define("player0", "key_down",     str, "K_DOWN",   text = _("Move down"))
-Config.define("player0", "key_action1",  str, "K_RETURN", text = _("Pick"))
-Config.define("player0", "key_action2",  str, "K_RSHIFT", text = _("Secondary Pick"))
-Config.define("player0", "key_1",        str, "K_F1",     text = _("Fret #1"))
-Config.define("player0", "key_2",        str, "K_F2",     text = _("Fret #2"))
-Config.define("player0", "key_3",        str, "K_F3",     text = _("Fret #3"))
-Config.define("player0", "key_4",        str, "K_F4",     text = _("Fret #4"))
-Config.define("player0", "key_5",        str, "K_F5",     text = _("Fret #5"))
-Config.define("player0", "key_cancel",   str, "K_ESCAPE", text = _("Cancel"))
-Config.define("player0", "akey_left",    str, "K_LEFT",   text = _("Alt Move left"))
-Config.define("player0", "akey_right",   str, "K_RIGHT",  text = _("Alt Move right"))
-Config.define("player0", "akey_up",      str, "K_UP",     text = _("Alt Move up"))
-Config.define("player0", "akey_down",    str, "K_DOWN",   text = _("Alt Move down"))
-Config.define("player0", "akey_action1", str, "K_RETURN", text = _("Alt Pick"))
-Config.define("player0", "akey_action2", str, "K_RSHIFT", text = _("Alt Secondary Pick"))
-Config.define("player0", "akey_1",       str, "K_F1",     text = _("Alt Fret #1"))
-Config.define("player0", "akey_2",       str, "K_F2",     text = _("Alt Fret #2"))
-Config.define("player0", "akey_3",       str, "K_F3",     text = _("Alt Fret #3"))
-Config.define("player0", "akey_4",       str, "K_F4",     text = _("Alt Fret #4"))
-Config.define("player0", "akey_5",       str, "K_F5",     text = _("Alt Fret #5"))
-Config.define("player0", "akey_cancel",  str, "K_ESCAPE", text = _("Alt Cancel"))
+# define profile keys
+Profile.define("general", "nav_left",     str, "K_LEFT",     text = _("Move left"))
+Profile.define("general", "nav_right",    str, "K_RIGHT",    text = _("Move right"))
+Profile.define("general", "nav_up",       str, "K_UP",       text = _("Move up"))
+Profile.define("general", "nav_down",     str, "K_DOWN",     text = _("Move down"))
+Profile.define("general", "nav_cancel",   str, "K_ESCAPE",   text = _("Cancel"))
 
-Config.define("player1", "player_2_key_left",     str, "K_LEFT",     text = _("Player 2 Move left"))
-Config.define("player1", "player_2_key_right",    str, "K_RIGHT",    text = _("Player 2 Move right"))
-Config.define("player1", "player_2_key_up",       str, "K_UP",       text = _("Player 2 Move up"))
-Config.define("player1", "player_2_key_down",     str, "K_DOWN",     text = _("Player 2 Move down"))
-Config.define("player1", "player_2_key_action1",  str, "K_PAGEDOWN", text = _("Player 2 Pick"))
-Config.define("player1", "player_2_key_action2",  str, "K_PAGEUP",   text = _("Player 2 Secondary Pick"))
-Config.define("player1", "player_2_key_1",        str, "K_F8",       text = _("Player 2 Fret #1"))
-Config.define("player1", "player_2_key_2",        str, "K_F9",       text = _("Player 2 Fret #2"))
-Config.define("player1", "player_2_key_3",        str, "K_F10",      text = _("Player 2 Fret #3"))
-Config.define("player1", "player_2_key_4",        str, "K_F11",      text = _("Player 2 Fret #4"))
-Config.define("player1", "player_2_key_5",        str, "K_F12",      text = _("Player 2 Fret #5"))
-Config.define("player1", "player_2_key_cancel",   str, "K_F7",       text = _("Player 2 Cancel"))
+Profile.define("guitarX", "key_action1",  str, "K_PAGEDOWN", text = _("Pick"))
+Profile.define("guitarX", "key_action2",  str, "K_PAGEUP",   text = _("Secondary Pick"))
+Profile.define("guitarX", "key_1",        str, "K_F8",       text = _("Fret #1"))
+Profile.define("guitarX", "key_2",        str, "K_F9",       text = _("Fret #2"))
+Profile.define("guitarX", "key_3",        str, "K_F10",      text = _("Fret #3"))
+Profile.define("guitarX", "key_4",        str, "K_F11",      text = _("Fret #4"))
+Profile.define("guitarX", "key_5",        str, "K_F12",      text = _("Fret #5"))
 
-Config.define("player1", "aplayer_2_key_left",     str, "K_LEFT",     text = _("Player 2 Move left"))
-Config.define("player1", "aplayer_2_key_right",    str, "K_RIGHT",    text = _("Player 2 Move right"))
-Config.define("player1", "aplayer_2_key_up",       str, "K_UP",       text = _("Player 2 Move up"))
-Config.define("player1", "aplayer_2_key_down",     str, "K_DOWN",     text = _("Player 2 Move down"))
-Config.define("player1", "aplayer_2_key_action1",  str, "K_PAGEDOWN", text = _("Player 2 Pick"))
-Config.define("player1", "aplayer_2_key_action2",  str, "K_PAGEUP",   text = _("Player 2 Secondary Pick"))
-Config.define("player1", "aplayer_2_key_1",        str, "K_F8",       text = _("Player 2 Fret #1"))
-Config.define("player1", "aplayer_2_key_2",        str, "K_F9",       text = _("Player 2 Fret #2"))
-Config.define("player1", "aplayer_2_key_3",        str, "K_F10",      text = _("Player 2 Fret #3"))
-Config.define("player1", "aplayer_2_key_4",        str, "K_F11",      text = _("Player 2 Fret #4"))
-Config.define("player1", "aplayer_2_key_5",        str, "K_F12",      text = _("Player 2 Fret #5"))
-Config.define("player1", "aplayer_2_key_cancel",   str, "K_F7",       text = _("Player 2 Cancel"))
+Profile.define("drumX", "key_action1",    str, "K_PAGEDOWN", text = _("Pedal"))
+Profile.define("drumX", "key_action2",    str, "K_PAGEUP",   text = _("Secondary Pedal"))
+Profile.define("drumX", "key_1",          str, "K_F8",       text = _("Head #1"))
+Profile.define("drumX", "key_2",          str, "K_F9",       text = _("Head #2"))
+Profile.define("drumX", "key_3",          str, "K_F10",      text = _("Head #3"))
+Profile.define("drumX", "key_4",          str, "K_F11",      text = _("Head #4"))
+Profile.define("drumX", "key_5",          str, "K_F12",      text = _("Head #5"))
 
-Config.define("player0", "name",         str, "")
-Config.define("player0", "difficulty",   int, Difficulty.EASY_DIFFICULTY)
-Config.define("player0", "part",         int, Part.GUITAR_PART)
+Profile.define("general", "name",         str, "",           text = _("Player Name")))
+Profile.define("instrument", "selected",  str, "guitar1",    text = _("Instrument"), options = {"guitar1": _("Guitar 1"), "guitar2": _("Guitar 2"), "guitar3": _("Guitar 3"), "drum1": _("Drum 1"), "drum2": _("Drum 2"), "drum3": _("Drum 3")})
 
-Config.define("player1", "name",         str, "")
-Config.define("player1", "difficulty",   int, Difficulty.EASY_DIFFICULTY)
-Config.define("player1", "part",         int, Part.GUITAR_PART)
+Profile.define("song", "difficulty",      int, Difficulty.EASY_DIFFICULTY)
+Profile.define("song", "part",            int, Part.GUITAR_PART)
 
 class Controls:
-  def __init__(self):
+  def __init__(self, engine):
+    self.engine = engine
+
+    def navcode(name, player):
+      playerstring = "player" + str(player)
+
+      if player == 0:
+        k = self.engine.player1profile.get("general", name)
+      elif player == 1:
+        k = self.engine.player2profile.get("general", name)
+      try:
+        return int(k)
+      except:
+        return getattr(pygame, k)
+      
     def keycode(name, player):
       playerstring = "player" + str(player)
-      k = Config.get(playerstring, name)
+      if player == 0:
+        instrument = self.engine.player1profile.get("instrument", "selected")
+        k = self.engine.player1profile.get(instrument, name)      
+        if k == "None":
+          genericSection = instrument[:-1]
+          genericSection += "X"
+          k = self.engine.player1profile.get(genericSection, name)
+
+      elif player == 1:
+        instrument = self.engine.player1profile.get("instrument", "selected")
+        k = self.engine.player2profile.get(instrument, name)
+        if k == "None":
+          genericSection = instrument[:-1]
+          genericSection += "X"
+          k = self.engine.player1profile.get(genericSection, name)
       try:
         return int(k)
       except:
         return getattr(pygame, k)
     
     self.flags = 0
-    prefix = ""
-    useAltKeySet = Config.get("game", "alt_keys")
-    if useAltKeySet == True:
-      prefix = "a"
-    self.controlMapping = {
-      keycode("%skey_left" % (prefix), 0):      LEFT,
-      keycode("%skey_right" % (prefix), 0):     RIGHT,
-      keycode("%skey_up" % (prefix), 0):        UP,
-      keycode("%skey_down" % (prefix), 0):      DOWN,
-      keycode("%skey_action1" % (prefix), 0):   ACTION1,
-      keycode("%skey_action2" % (prefix), 0):   ACTION2,
-      keycode("%skey_1" % (prefix), 0):         KEY1,
-      keycode("%skey_2" % (prefix), 0):         KEY2,
-      keycode("%skey_3" % (prefix), 0):         KEY3,
-      keycode("%skey_4" % (prefix), 0):         KEY4,
-      keycode("%skey_5" % (prefix), 0):         KEY5,
-      keycode("%skey_cancel" % (prefix), 0):    CANCEL,
-      
-      keycode("%splayer_2_key_action1" % (prefix), 1):   PLAYER_2_ACTION1,
-      keycode("%splayer_2_key_action2" % (prefix), 1):   PLAYER_2_ACTION2,
-      keycode("%splayer_2_key_1" % (prefix), 1):         PLAYER_2_KEY1,
-      keycode("%splayer_2_key_2" % (prefix), 1):         PLAYER_2_KEY2,
-      keycode("%splayer_2_key_3" % (prefix), 1):         PLAYER_2_KEY3,
-      keycode("%splayer_2_key_4" % (prefix), 1):         PLAYER_2_KEY4,
-      keycode("%splayer_2_key_5" % (prefix), 1):         PLAYER_2_KEY5,
-      keycode("%splayer_2_key_left" % (prefix), 1):      PLAYER_2_LEFT,
-      keycode("%splayer_2_key_right" % (prefix), 1):     PLAYER_2_RIGHT,
-      keycode("%splayer_2_key_up" % (prefix), 1):        PLAYER_2_UP,
-      keycode("%splayer_2_key_down" % (prefix), 1):      PLAYER_2_DOWN,
-      keycode("%splayer_2_key_cancel" % (prefix), 1):    PLAYER_2_CANCEL,
-    }
 
+    self.controlMapping = {
+      navcode("nav_left", 0):      PLAYER_1_LEFT,
+      navcode("nav_right", 0):     PLAYER_1_RIGHT,
+      navcode("nav_up", 0):        PLAYER_1_UP,
+      navcode("nav_down", 0):      PLAYER_1_DOWN,
+      navcode("nav_cancel", 0):    PLAYER_1_CANCEL,
+
+      keycode("key_action1", 0):   PLAYER_1_ACTION1,
+      keycode("key_action2", 0):   PLAYER_1_ACTION2,
+      keycode("key_1", 0):         PLAYER_1_KEY1,
+      keycode("key_2", 0):         PLAYER_1_KEY2,
+      keycode("key_3", 0):         PLAYER_1_KEY3,
+      keycode("key_4", 0):         PLAYER_1_KEY4,
+      keycode("key_5", 0):         PLAYER_1_KEY5,
+
+   
+      navcode("nav_left", 1):      PLAYER_2_LEFT,
+      navcode("nav_right", 1):     PLAYER_2_RIGHT,
+      navcode("nav_up", 1):        PLAYER_2_UP,
+      navcode("nav_down", 1):      PLAYER_2_DOWN,
+      navcode("nav_cancel", 1):    PLAYER_2_CANCEL,
+
+      keycode("key_action1", 1):   PLAYER_2_ACTION1,
+      keycode("key_action2", 1):   PLAYER_2_ACTION2,
+      keycode("key_1", 1):         PLAYER_2_KEY1,
+      keycode("key_2", 1):         PLAYER_2_KEY2,
+      keycode("key_3", 1):         PLAYER_2_KEY3,
+      keycode("key_4", 1):         PLAYER_2_KEY4,
+      keycode("key_5", 1):         PLAYER_2_KEY5,
+
+    }  
+    
     self.reverseControlMapping = dict((value, key) for key, value in self.controlMapping.iteritems() )
       
     # Multiple key support
@@ -218,11 +224,18 @@ class Controls:
     return self.flags & control
 
 class Player(object):
-  def __init__(self, owner, name, number):
+  def __init__(self, engine, owner, name, number):
+    self.engine   = engine
     self.owner    = owner
-    self.controls = Controls()
+    self.controls = Controls(self.engine)
     self.reset()
     self.playerstring = "player" + str(number)
+
+    if number == 0:    
+      self.profile = self.engine.player1profile
+    elif number == 1:
+      self.profile = self.engine.player2profile
+      
     
   def reset(self):
     self.score         = 0
@@ -234,10 +247,10 @@ class Player(object):
     self.lastExtraScore = 0
     
   def getName(self):
-    return Config.get(self.playerstring, "name")
+    return self.profile.get("general", "name")
     
   def setName(self, name):
-    Config.set(self.playerstring, "name", name)
+    self.profile.set("general", "name", name)
     
   name = property(getName, setName)
   
@@ -251,16 +264,16 @@ class Player(object):
   streak = property(getStreak, setStreak)
     
   def getDifficulty(self):
-    return Config.get(self.playerstring, "difficulty")
+    return self.profile.get("song", "difficulty")
     
   def setDifficulty(self, difficulty):
-    Config.set(self.playerstring, "difficulty", difficulty)
+    self.profile.set("song", "difficulty", difficulty)
 
   def getPart(self):
-    return Config.get(self.playerstring, "part")
+    return self.profile.get("song", "part")
     
   def setPart(self, part):
-    Config.set(self.playerstring, "part", part)    
+    self.profile.set("song", "part", part)    
     
   difficulty = property(getDifficulty, setDifficulty)
   part = property(getPart, setPart)

@@ -38,6 +38,8 @@ import Settings
 import datetime
 import sys
 import Theme
+import Resource
+import os
 
 class MainMenu(BackgroundLayer):
   def __init__(self, engine, songName = None):
@@ -73,12 +75,17 @@ class MainMenu(BackgroundLayer):
       (_("Import New Song"),               self.startImporter),
       (_("Import Guitar Hero(tm) Songs"),  self.startGHImporter),
     ])
+
+    playMenu = Menu(self.engine, [
+      (_("Play Solo Game"),            self.newSinglePlayerGame),
+      (_("Play Band Game"),            self.newMultiPlayerGame),
+      (_("Load Profile"),              self.loadProfile),
+    ])
     
     settingsMenu = Settings.SettingsMenu(self.engine)
     
     mainMenu = [
-      (_("Play Solo Game"),   self.newSinglePlayerGame),
-      (_("Play Band Game"),   self.newMultiPlayerGame),
+      (_("Play"),        playMenu),
       (_("Settings >"),  settingsMenu),
       (_("Tutorial"),    self.showTutorial),
       (_("Song Editor"), editorMenu),
@@ -201,6 +208,16 @@ class MainMenu(BackgroundLayer):
     self.launchLayer(lambda: Credits(self.engine))
   showCredits = catchErrors(showCredits)
 
+  def loadProfile(self):
+    resourcePath = Resource.getWritableResourcePath()
+    newProfile = Dialogs.chooseFile(self.engine, masks = ["*-profile.ini"], path = resourcePath, prompt = _("Select a Profile."), extraItem = "[Create New Profile]")
+    print newProfile
+    baseName = os.path.basename(newProfile)
+    if baseName == "ExtraMenuChoice":
+      print "woo"
+      profile = Dialogs.getText(self.engine, _("Enter new profile name"), "")
+      print profile
+    
   def run(self, ticks):
     self.time += ticks / 50.0
     if self.engine.cmdPlay != 0:
@@ -208,12 +225,11 @@ class MainMenu(BackgroundLayer):
         
   def render(self, visibility, topMost):
     self.visibility = visibility
-    v = 1.0 - ((1 - visibility) ** 2)
-
-      
+    v = 1.0 - ((1 - visibility) ** 2)  
     t = self.time / 100
     w, h, = self.engine.view.geometry[2:4]
     r = .5
+    
     self.background.transform.reset()
     
     if self.spinnyDisabled != True and Theme.spinnyMenuDisabled != True:
@@ -234,3 +250,10 @@ class MainMenu(BackgroundLayer):
     self.guy.transform.scale(-.9, .9)
     self.guy.transform.rotate(math.pi)
     self.guy.draw()
+
+
+    self.engine.view.setOrthogonalProjection(normalize = True)
+    font = self.engine.data.font
+    Theme.setBaseColor(1)
+    Dialogs.wrapText(font, (.65 + (1 - v),.65), self.engine.player1profile.get("general", "name"))
+    self.engine.view.resetProjection()    

@@ -144,7 +144,7 @@ class Resource(Task):
       songPath = [baseLibrary]
       
     if not args.get("writable", False):
-      for dataPath in self.dataPaths + songPath:
+      for dataPath in songPath + self.dataPaths:
         readOnlyPath = os.path.join(dataPath, *name)
         # If the requested file is in the read-write path and not in the
         # read-only path, use the existing read-write one.
@@ -157,7 +157,7 @@ class Resource(Task):
           return readWritePath
       return readOnlyPath
     else:
-      for dataPath in [self.dataPaths[-1]] + songPath:
+      for dataPath in songPath + [self.dataPaths[-1]]:
         readOnlyPath = os.path.join(dataPath, *name)
         if not (os.path.isfile(readOnlyPath) or os.path.isdir(readOnlyPath)):
           continue

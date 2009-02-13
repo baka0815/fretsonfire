@@ -100,7 +100,7 @@ Profile.define("drumX", "key_3",          str, "K_F10",      text = _("Head #3")
 Profile.define("drumX", "key_4",          str, "K_F11",      text = _("Head #4"))
 Profile.define("drumX", "key_5",          str, "K_F12",      text = _("Head #5"))
 
-Profile.define("general", "name",         str, "",           text = _("Player Name")))
+Profile.define("general", "name",         str, "",           text = _("Player Name"))
 Profile.define("instrument", "selected",  str, "guitar1",    text = _("Instrument"), options = {"guitar1": _("Guitar 1"), "guitar2": _("Guitar 2"), "guitar3": _("Guitar 3"), "drum1": _("Drum 1"), "drum2": _("Drum 2"), "drum3": _("Drum 3")})
 
 Profile.define("song", "difficulty",      int, Difficulty.EASY_DIFFICULTY)

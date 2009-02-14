@@ -242,7 +242,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       self.rhythmVolume     = self.song.rhythmVolume
     #RF-mod
     self.disableStats     = self.engine.config.get("video", "disable_stats")
-    self.hopoDisabled         = self.engine.config.get("game", "tapping")
+    self.hopoDisabled     = self.engine.config.get("game", "tapping")
     self.hopoMark         = self.engine.config.get("game", "hopo_mark")
     self.hopoStyle        = self.engine.config.get("game", "hopo_style")
     self.pov              = self.engine.config.get("game", "pov")
@@ -253,9 +253,8 @@ class GuitarSceneClient(GuitarScene, SceneClient):
       pass
       
     for i,guitar in enumerate(self.guitars):
-      guitar.leftyMode = self.engine.config.get("player%d" % (i), "leftymode")
-      guitar.twoChordMax  = self.engine.config.get("player%d" % (i), "two_chord_max")
-    #self.guitar.leftyMode = self.engine.config.get("game",  "leftymode")
+      guitar.leftyMode = self.playerList[i].profile.get("instrument", "leftymode")
+      guitar.twoChordMax  = self.playerList[i].profile.get("instrument", "two_chord_max")      
 
     if self.song:
       self.song.setBackgroundVolume(self.songVolume)
@@ -463,7 +462,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
           if guitar.boardSpeed == 2 or guitar.boardSpeed == 1:
             boardSpeed = 50
             difficulty = self.playerList[i].difficulty
-            difficulty = self.engine.config.get("player%d" %(i), "difficulty")
+            difficulty = self.playerList[i].profile.get("game", "difficulty")
             if difficulty == 0:
               boardSpeed = self.boardSpeedDiff0
             elif difficulty == 1:

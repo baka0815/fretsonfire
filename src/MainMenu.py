@@ -33,6 +33,7 @@ from Svg import SvgDrawing
 from Language import _
 import Dialogs
 import Config
+import Profile
 import Audio
 import Settings
 import datetime
@@ -76,16 +77,16 @@ class MainMenu(BackgroundLayer):
       (_("Import Guitar Hero(tm) Songs"),  self.startGHImporter),
     ])
 
-    playMenu = Menu(self.engine, [
-      (_("Play Solo Game"),            self.newSinglePlayerGame),
-      (_("Play Band Game"),            self.newMultiPlayerGame),
-      (_("Load Profile"),              self.loadProfile),
-    ])
-    
+##    playMenu = Menu(self.engine, [
+##      (_("Play Solo Game"),            self.newSinglePlayerGame),
+##      (_("Play Band Game"),            self.newMultiPlayerGame),
+##      (_("Load Profile"),              self.loadProfile),
+##    ])
+##    
     settingsMenu = Settings.SettingsMenu(self.engine)
     
     mainMenu = [
-      (_("Play"),        playMenu),
+      (_("Play"),        self.getPlayMenu),
       (_("Settings >"),  settingsMenu),
       (_("Tutorial"),    self.showTutorial),
       (_("Song Editor"), editorMenu),
@@ -94,6 +95,27 @@ class MainMenu(BackgroundLayer):
     ]
     self.menu = Menu(self.engine, mainMenu, onClose = lambda: self.engine.view.popLayer(self))
 
+  def getPlayMenu(self):
+    profile1 = self.engine.config.get("game", "player1profile")
+    profile2 = self.engine.config.get("game", "player2profile")
+
+    if profile2 == "None":
+      play = [
+        (_("Play Solo Game as %s" % profile1),            self.newSinglePlayerGame),
+        (_("Change Profile for Player 1"),              self.loadProfile1),
+        (_("Change Profile for Player 2"),              self.loadProfile2),
+      ]
+    else:
+      play = [
+        (_("Play Solo Game as %s" % profile1),            self.newSinglePlayerGame),
+        (_("Play Band Game with %s and %s" % (profile1, profile2)),            self.newMultiPlayerGame),
+        (_("Change Profile for Player 1"),              self.loadProfile1),
+        (_("Change Profile for Player 2"),              self.loadProfile2),
+      ]
+    #playMenu = Menu(self.engine, play, onClose = lambda: self.engine.view.popLayer(self))
+    playMenu = Menu(self.engine, play)
+    self.engine.view.pushLayer(playMenu)
+    
   def shown(self):
     self.engine.view.pushLayer(self.menu)
     self.engine.stopServer()
@@ -208,16 +230,39 @@ class MainMenu(BackgroundLayer):
     self.launchLayer(lambda: Credits(self.engine))
   showCredits = catchErrors(showCredits)
 
-  def loadProfile(self):
+  def loadProfile1(self):
     resourcePath = Resource.getWritableResourcePath()
     newProfile = Dialogs.chooseFile(self.engine, masks = ["*-profile.ini"], path = resourcePath, prompt = _("Select a Profile."), extraItem = "[Create New Profile]")
-    print newProfile
     baseName = os.path.basename(newProfile)
     if baseName == "ExtraMenuChoice":
-      print "woo"
       profile = Dialogs.getText(self.engine, _("Enter new profile name"), "")
-      print profile
-    
+      profileFile = "%s-profile.ini" % profile
+    else:
+      profile = baseName[:-12]
+      profileFile = baseName
+    self.engine.profileList[0] = Profile.load(profileFile)
+    self.engine.config.set("game", "player1profile", profile)
+    self.engine.profileList[0].set("general", "name", profile)
+
+##Do this to return to previous menu to refresh the dynamic menu that called us
+    self.engine.view.popLayer(self.engine.view.topLayer())
+
+  def loadProfile2(self):
+    resourcePath = Resource.getWritableResourcePath()
+    newProfile = Dialogs.chooseFile(self.engine, masks = ["*-profile.ini"], path = resourcePath, prompt = _("Select a Profile."), extraItem = "[Create New Profile]")
+    baseName = os.path.basename(newProfile)
+    if baseName == "ExtraMenuChoice":
+      profile = Dialogs.getText(self.engine, _("Enter new profile name"), "")
+      profileFile = "%s-profile.ini" % profile
+    else:
+      profile = baseName[:-12]
+      profileFile = baseName
+    self.engine.profileList[1] = Profile.load(profileFile)
+    self.engine.config.set("game", "player2profile", profile)
+    self.engine.profileList[1].set("general", "name", profile)
+
+##Do this to return to previous menu to refresh the dynamic menu that called us
+    self.engine.view.popLayer(self.engine.view.topLayer())      
   def run(self, ticks):
     self.time += ticks / 50.0
     if self.engine.cmdPlay != 0:
@@ -255,5 +300,5 @@ class MainMenu(BackgroundLayer):
     self.engine.view.setOrthogonalProjection(normalize = True)
     font = self.engine.data.font
     Theme.setBaseColor(1)
-    Dialogs.wrapText(font, (.65 + (1 - v),.65), self.engine.player1profile.get("general", "name"))
+    Dialogs.wrapText(font, (.65 + (1 - v),.65), self.engine.profileList[0].get("general", "name"))
     self.engine.view.resetProjection()    

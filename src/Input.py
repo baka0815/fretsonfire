@@ -76,7 +76,7 @@ class Input(Task):
     self.systemListeners      = []
     self.priorityKeyListeners = []
     self.engine               = engine
-    self.controls             = Controls(self.engine)
+    self.controls             = Controls(self.engine.profileList)
     self.disableKeyRepeat()
 
     # Initialize joysticks

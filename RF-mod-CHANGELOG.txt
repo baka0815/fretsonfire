@@ -1,3 +1,9 @@
+4.25
+   Redid profile handling in game engine
+   Fixed profile passing bug
+   More support for profiles
+   Integrated new waveform from 1.2.512 (disabled)
+
 4.24
    Some changes to FileChooser to allow for profile selection
    Fixed bug in library selection related to FileChooser

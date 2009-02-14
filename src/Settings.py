@@ -90,10 +90,10 @@ class VolumeConfigChoice(ConfigChoice):
 class ProfileChoice(ConfigChoice):
   def __init__(self, engine, player, section, option, autoApply = False):
     self.engine = engine
-    if player == 1:
-      self.config = self.engine.player1profile
-    elif player == 2:
-      self.config = self.engine.player2profile
+
+    playerNum = player - 1
+    self.config = self.engine.profileList[playerNum]
+
     ConfigChoice.__init__(self, self.config, section, option, autoApply)
 
 class InstrumentProfileChoice(ProfileChoice):
@@ -108,10 +108,9 @@ class NavProfileChoice(Menu.Choice):
     self.option  = option
     self.changed = False
     self.value   = None
-    if player == 1:
-      self.config = self.engine.player1profile
-    elif player == 2:
-      self.config = self.engine.player2profile
+
+    playerNum = player - 1
+    self.config = self.engine.profileList[playerNum]
   
     Menu.Choice.__init__(self, text = "", callback = self.change)
 
@@ -144,12 +143,10 @@ class NavProfileChoice(Menu.Choice):
     pass
 
 class KeyProfileChoice(NavProfileChoice):
-  def __init__(self, engine, player, option, autoApply = False):
-    self.engine = engine
-    if player == 1:
-      self.config = self.engine.player1profile
-    elif player == 2:
-      self.config = self.engine.player2profile
+  def __init__(self, profileList, player, option, autoApply = False):
+
+    playerNum = player - 1
+    self.config = self.profileList[playerNum]
     instrument = self.config.get("instrument", "selected")
     NavProfileChoice.__init__(self, engine, player, instrument, option, autoApply)
 
@@ -307,7 +304,6 @@ class SettingsMenu(Menu.Menu):
 
     rfModGameSettings = [
       (_("Select Song Library >"), self.baseLibrarySelect), 
-      ConfigChoice(engine.config, "game",  "alt_keys", autoApply = True),
       ConfigChoice(engine.config, "game",  "sort_order", autoApply = True),
       ConfigChoice(engine.config, "game",  "margin", autoApply = True),
       ConfigChoice(engine.config, "game",  "disable_vbpm", autoApply = True),

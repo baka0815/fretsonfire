@@ -27,6 +27,7 @@ import Theme
 
 from OpenGL.GL import *
 import math
+import numpy
 
 PLAYER1KEYS    = Player.PLAYER_1_KEYS
 PLAYER1ACTIONS = Player.PLAYER_1_ACTIONS
@@ -58,6 +59,9 @@ class Guitar:
     self.tempoBpm       = self.currentBpm
     self.lastBpmChange  = -1.0
     self.baseBeat       = 0.0
+
+    self.vertexCache    = numpy.empty((8 * 4096, 3), numpy.float32)
+    self.colorCache     = numpy.empty((8 * 4096, 4), numpy.float32)    
 
     self.twoChord       = 0
     self.hopoActive     = 0
@@ -595,46 +599,120 @@ class Guitar:
 
     if self.disableNoteSFX == True:
       return
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE)
-    for time, event in self.playedNotes:
-      step  = self.currentPeriod / 16
-      t     = time + event.length
-      x     = (self.strings / 2 - event.number) * w
-      x = ((self.strings - event.number) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
-      c     = self.fretColors[event.number]
-      s     = t
-      proj  = 1.0 / self.currentPeriod / beatsPerUnit
-      zStep = step * proj
 
-      def waveForm(t):
-        u = ((t - time) * -.1 + pos - time) / 64.0 + .0001
-        return (math.sin(event.number + self.time * -.01 + t * .03) + math.cos(event.number + self.time * .01 + t * .02)) * .1 + .1 + math.sin(u) / (5 * u)
+    def doWaveForm1(self):    
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+      for time, event in self.playedNotes:
+        step  = self.currentPeriod / 16
+        t     = time + event.length
+        x     = (self.strings / 2 - event.number) * w
+        x = ((self.strings - event.number) - (((self.strings % 2)) * 1) - (self.strings / 2) - ((not(self.strings % 2)) * 0.5)) * w    
+        c     = self.fretColors[event.number]
+        s     = t
+        proj  = 1.0 / self.currentPeriod / beatsPerUnit
+        zStep = step * proj
 
-      glBegin(GL_TRIANGLE_STRIP)
-      f1 = 0
-      while t > time:
-        z  = (t - pos) * proj
-        if z < 0:
-          break
-        f2 = min((s - t) / (6 * step), 1.0)
-        a1 = waveForm(t) * f1
-        a2 = waveForm(t - step) * f2
-        glColor4f(c[0], c[1], c[2], .5)
-        glVertex3f(x - a1, 0, z)
-        glVertex3f(x - a2, 0, z - zStep)
-        glColor4f(1, 1, 1, .75)
-        glVertex3f(x, 0, z)
-        glVertex3f(x, 0, z - zStep)
-        glColor4f(c[0], c[1], c[2], .5)
-        glVertex3f(x + a1, 0, z)
-        glVertex3f(x + a2, 0, z - zStep)
-        glVertex3f(x + a2, 0, z - zStep)
-        glVertex3f(x - a2, 0, z - zStep)
-        t -= step
-        f1 = f2
-      glEnd()
-      
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        def waveForm(t):
+          u = ((t - time) * -.1 + pos - time) / 64.0 + .0001
+          return (math.sin(event.number + self.time * -.01 + t * .03) + math.cos(event.number + self.time * .01 + t * .02)) * .1 + .1 + math.sin(u) / (5 * u)
+
+        glBegin(GL_TRIANGLE_STRIP)
+        f1 = 0
+        while t > time:
+          z  = (t - pos) * proj
+          if z < 0:
+            break
+          f2 = min((s - t) / (6 * step), 1.0)
+          a1 = waveForm(t) * f1
+          a2 = waveForm(t - step) * f2
+          glColor4f(c[0], c[1], c[2], .5)
+          glVertex3f(x - a1, 0, z)
+          glVertex3f(x - a2, 0, z - zStep)
+          glColor4f(1, 1, 1, .75)
+          glVertex3f(x, 0, z)
+          glVertex3f(x, 0, z - zStep)
+          glColor4f(c[0], c[1], c[2], .5)
+          glVertex3f(x + a1, 0, z)
+          glVertex3f(x + a2, 0, z - zStep)
+          glVertex3f(x + a2, 0, z - zStep)
+          glVertex3f(x - a2, 0, z - zStep)
+          t -= step
+          f1 = f2
+        glEnd()
+        
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    def doWaveForm2():
+      vertices = self.vertexCache
+      colors   = self.colorCache
+
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+      glEnableClientState(GL_VERTEX_ARRAY)
+      glEnableClientState(GL_COLOR_ARRAY)
+      glVertexPointer(3, GL_FLOAT, 0, vertices)
+      glColorPointer(4, GL_FLOAT, 0, colors)
+
+      for time, event in self.playedNotes:
+        t     = time + event.length
+        dt    = t - pos
+        proj  = 1.0 / self.currentPeriod / beatsPerUnit
+
+        # Increase these values to improve performance
+        step1 = dt * proj * 25
+        step2 = 10.0
+
+        if dt < 1e-3:
+          continue
+
+        dStep = (step2 - step1) / dt
+        x     = (self.strings / 2 - event.number) * w
+        c     = self.fretColors[event.number]
+        s     = t
+        step  = step1
+
+        vertexCount    = 0
+
+        def waveForm(t):
+          u = ((t - time) * -.1 + pos - time) / 64.0 + .0001
+          return (math.sin(event.number + self.time * -.01 + t * .03) + math.cos(event.number + self.time * .01 + t * .02)) * .1 + .1 + math.sin(u) / (5 * u)
+
+        i     = 0
+        a1    = 0.0
+        zStep = step * proj
+
+        while t > time and t - step > pos and i < len(vertices) / 8:
+          z  = (t - pos) * proj
+          a2 = waveForm(t - step)
+
+          colors[i    ]   = \
+          colors[i + 1]   = (c[0], c[1], c[2], .5)
+          colors[i + 2]   = \
+          colors[i + 3]   = (1, 1, 1, .75)
+          colors[i + 4]   = \
+          colors[i + 5]   = \
+          colors[i + 6]   = \
+          colors[i + 7]   = (c[0], c[1], c[2], .5)
+          vertices[i    ] = (x - a1, 0, z)
+          vertices[i + 1] = (x - a2, 0, z - zStep)
+          vertices[i + 2] = (x, 0, z)
+          vertices[i + 3] = (x, 0, z - zStep)
+          vertices[i + 4] = (x + a1, 0, z)
+          vertices[i + 5] = (x + a2, 0, z - zStep)
+          vertices[i + 6] = (x + a2, 0, z - zStep)
+          vertices[i + 7] = (x - a2, 0, z - zStep)
+
+          i    += 8
+          t    -= step
+          a1    = a2
+          step  = step1 + dStep * (s - t)
+          zStep = step * proj
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, i)
+      glDisableClientState(GL_VERTEX_ARRAY)
+      glDisableClientState(GL_COLOR_ARRAY)
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    doWaveForm2()      
 
   def renderNoteBody(self, time, pos, visibility, event):
     
@@ -752,7 +830,7 @@ class Guitar:
       self.renderNote2(visibility, f, length, sustain, color = color, colortail = color, tailOnly = tailOnly, isJPNote = doJPNote)
     glPopMatrix()
 
-  def renderNoteWave(self, time, pos, visibility, event):
+  def renderNoteWave1(self, time, pos, visibility, event):
     if event.length <= (1.4 * (60000.0 / event.noteBpm) / 4):
       return -1
 
@@ -792,6 +870,71 @@ class Guitar:
       t -= step
       f1 = f2
     glEnd()
+
+
+  def renderNoteWave2(self, time, pos, visibility, event):
+
+    beatsPerUnit = self.beatsPerBoard / self.boardLength
+    w = self.boardWidth / self.strings
+    vertices = self.vertexCache
+    colors   = self.colorCache
+    for time, event in self.playedNotes:
+      t     = time + event.length
+      dt    = t - pos
+      proj  = 1.0 / self.currentPeriod / beatsPerUnit
+
+      # Increase these values to improve performance
+      step1 = dt * proj * 25
+      step2 = 10.0
+
+      if dt < 1e-3:
+        continue
+
+      dStep = (step2 - step1) / dt
+      x     = (self.strings / 2 - event.number) * w
+      c     = self.fretColors[event.number]
+      s     = t
+      step  = step1
+
+      vertexCount    = 0
+
+      def waveForm(t):
+        u = ((t - time) * -.1 + pos - time) / 64.0 + .0001
+        return (math.sin(event.number + self.time * -.01 + t * .03) + math.cos(event.number + self.time * .01 + t * .02)) * .1 + .1 + math.sin(u) / (5 * u)
+
+      i     = 0
+      a1    = 0.0
+      zStep = step * proj
+
+      while t > time and t - step > pos and i < len(vertices) / 8:
+        z  = (t - pos) * proj
+        a2 = waveForm(t - step)
+
+        colors[i    ]   = \
+        colors[i + 1]   = (c[0], c[1], c[2], .5)
+        colors[i + 2]   = \
+        colors[i + 3]   = (1, 1, 1, .75)
+        colors[i + 4]   = \
+        colors[i + 5]   = \
+        colors[i + 6]   = \
+        colors[i + 7]   = (c[0], c[1], c[2], .5)
+        vertices[i    ] = (x - a1, 0, z)
+        vertices[i + 1] = (x - a2, 0, z - zStep)
+        vertices[i + 2] = (x, 0, z)
+        vertices[i + 3] = (x, 0, z - zStep)
+        vertices[i + 4] = (x + a1, 0, z)
+        vertices[i + 5] = (x + a2, 0, z - zStep)
+        vertices[i + 6] = (x + a2, 0, z - zStep)
+        vertices[i + 7] = (x - a2, 0, z - zStep)
+
+        i    += 8
+        t    -= step
+        a1    = a2
+        step  = step1 + dStep * (s - t)
+        zStep = step * proj
+
+      glDrawArrays(GL_TRIANGLE_STRIP, 0, i)
+
     
   def renderNotes2(self, visibility, song, pos):
     if not song:
@@ -861,10 +1004,25 @@ class Guitar:
       
     # Draw a waveform shape over the currently playing notes
     if self.disableNoteWavesSFX != True:
+
+      vertices = self.vertexCache
+      colors   = self.colorCache
+
+
+    
       glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+
+      glEnableClientState(GL_VERTEX_ARRAY)
+      glEnableClientState(GL_COLOR_ARRAY)
+      glVertexPointer(3, GL_FLOAT, 0, vertices)
+      glColorPointer(4, GL_FLOAT, 0, colors)
+      
       for time, event in self.playedNotes:
-        if (self.renderNoteWave(time, pos, visibility, event) == -1):
+        if (self.renderNoteWave1(time, pos, visibility, event) == -1):
           continue
+
+      glDisableClientState(GL_VERTEX_ARRAY)
+      glDisableClientState(GL_COLOR_ARRAY)      
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
   def renderFretKey(self, v, controls, string):

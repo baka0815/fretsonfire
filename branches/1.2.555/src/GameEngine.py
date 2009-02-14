@@ -73,7 +73,6 @@ Config.define("video",  "fontscale",  float,    1.0,  text = _("Text scale"),   
 
 #RF-mod items
 Config.define("engine", "game_priority",       int,   2,      text = _("Priority"), options = {0: _("0 Idle"), 1: _("1 Low"), 2: _("2 Normal"), 3:_("3 Above Normal"), 4:_("4 High"), 5:_("5 Realtime")})
-Config.define("game",   "alt_keys",            bool,  False,  text = _("Alternate Controller"), options = {False: _("No"), True: _("Yes")})
 Config.define("game",   "margin",              int,   0,      text = _("Hit Margin"), options = {0: _("FoF"), 1: _("Capo")})
 Config.define("game",   "hopo_mark",           int,   1,      text = _("HO/PO Note Marks"), options = {0: _("FoF"), 1: _("RFmod")})
 Config.define("game",   "hopo_style",          int,   2,      text = _("HO/PO Key Style"), options = {0: _("FoF"), 1: _("RFmod"), 2: _("RFmod2")})
@@ -180,21 +179,25 @@ class GameEngine(Engine):
       config = Config.load()
       
     self.config  = config
+    self.profileList = []
 
+    #player 1    
     profile = self.config.get("game", "player1profile")
     if profile == "None":
-      self.player1profile = Profile.load("player1-profile.ini")
+      self.profileList.append(Profile.load("player1-profile.ini"))
     else:
-      self.player1profile = Profile.load("%s-profile.ini" % profile)
-      
+      self.profileList.append(Profile.load("%s-profile.ini" % profile))
+
+    #player 2      
     profile = self.config.get("game", "player2profile")
     if profile == "None":
-      self.player2profile = Profile.load("player2-profile.ini")
+      self.profileList.append(Profile.load("player2-profile.ini"))
     else:
-      self.player2profile = Profile.load("%s-profile.ini" % profile)      
+      self.profileList.append(Profile.load("%s-profile.ini" % profile))
     
     fps          = self.config.get("video", "fps")
     tickrate     = self.config.get("engine", "tickrate")
+    
     Engine.__init__(self, fps = fps, tickrate = tickrate)
     
     #pygame.init()

@@ -107,38 +107,26 @@ Profile.define("song", "difficulty",      int, Difficulty.EASY_DIFFICULTY)
 Profile.define("song", "part",            int, Part.GUITAR_PART)
 
 class Controls:
-  def __init__(self, engine):
-    self.engine = engine
+  def __init__(self, profileList):
+    self.profileList = profileList
 
     def navcode(name, player):
-      playerstring = "player" + str(player)
-
-      if player == 0:
-        k = self.engine.player1profile.get("general", name)
-      elif player == 1:
-        k = self.engine.player2profile.get("general", name)
+      playerNum = player - 1
+      k = self.profileList[playerNum].get("general", name)
       try:
         return int(k)
       except:
         return getattr(pygame, k)
       
     def keycode(name, player):
-      playerstring = "player" + str(player)
-      if player == 0:
-        instrument = self.engine.player1profile.get("instrument", "selected")
-        k = self.engine.player1profile.get(instrument, name)      
-        if k == "None":
-          genericSection = instrument[:-1]
-          genericSection += "X"
-          k = self.engine.player1profile.get(genericSection, name)
+      playerNum = player - 1
+      instrument = self.profileList[playerNum].get("instrument", "selected")
+      k = self.profileList[playerNum].get(instrument, name)      
+      if k == "None":
+        genericSection = instrument[:-1]
+        genericSection += "X"
+        k = self.profileList[playerNum].get(genericSection, name)
 
-      elif player == 1:
-        instrument = self.engine.player1profile.get("instrument", "selected")
-        k = self.engine.player2profile.get(instrument, name)
-        if k == "None":
-          genericSection = instrument[:-1]
-          genericSection += "X"
-          k = self.engine.player1profile.get(genericSection, name)
       try:
         return int(k)
       except:
@@ -147,35 +135,34 @@ class Controls:
     self.flags = 0
 
     self.controlMapping = {
-      navcode("nav_left", 0):      PLAYER_1_LEFT,
-      navcode("nav_right", 0):     PLAYER_1_RIGHT,
-      navcode("nav_up", 0):        PLAYER_1_UP,
-      navcode("nav_down", 0):      PLAYER_1_DOWN,
-      navcode("nav_cancel", 0):    PLAYER_1_CANCEL,
+      navcode("nav_left", 1):      PLAYER_1_LEFT,
+      navcode("nav_right", 1):     PLAYER_1_RIGHT,
+      navcode("nav_up", 1):        PLAYER_1_UP,
+      navcode("nav_down", 1):      PLAYER_1_DOWN,
+      navcode("nav_cancel", 1):    PLAYER_1_CANCEL,
 
-      keycode("key_action1", 0):   PLAYER_1_ACTION1,
-      keycode("key_action2", 0):   PLAYER_1_ACTION2,
-      keycode("key_1", 0):         PLAYER_1_KEY1,
-      keycode("key_2", 0):         PLAYER_1_KEY2,
-      keycode("key_3", 0):         PLAYER_1_KEY3,
-      keycode("key_4", 0):         PLAYER_1_KEY4,
-      keycode("key_5", 0):         PLAYER_1_KEY5,
+      keycode("key_action1", 1):   PLAYER_1_ACTION1,
+      keycode("key_action2", 1):   PLAYER_1_ACTION2,
+      keycode("key_1", 1):         PLAYER_1_KEY1,
+      keycode("key_2", 1):         PLAYER_1_KEY2,
+      keycode("key_3", 1):         PLAYER_1_KEY3,
+      keycode("key_4", 1):         PLAYER_1_KEY4,
+      keycode("key_5", 1):         PLAYER_1_KEY5,
 
    
-      navcode("nav_left", 1):      PLAYER_2_LEFT,
-      navcode("nav_right", 1):     PLAYER_2_RIGHT,
-      navcode("nav_up", 1):        PLAYER_2_UP,
-      navcode("nav_down", 1):      PLAYER_2_DOWN,
-      navcode("nav_cancel", 1):    PLAYER_2_CANCEL,
+      navcode("nav_left", 2):      PLAYER_2_LEFT,
+      navcode("nav_right", 2):     PLAYER_2_RIGHT,
+      navcode("nav_up", 2):        PLAYER_2_UP,
+      navcode("nav_down", 2):      PLAYER_2_DOWN,
+      navcode("nav_cancel", 2):    PLAYER_2_CANCEL,
 
-      keycode("key_action1", 1):   PLAYER_2_ACTION1,
-      keycode("key_action2", 1):   PLAYER_2_ACTION2,
-      keycode("key_1", 1):         PLAYER_2_KEY1,
-      keycode("key_2", 1):         PLAYER_2_KEY2,
-      keycode("key_3", 1):         PLAYER_2_KEY3,
-      keycode("key_4", 1):         PLAYER_2_KEY4,
-      keycode("key_5", 1):         PLAYER_2_KEY5,
-
+      keycode("key_action1", 2):   PLAYER_2_ACTION1,
+      keycode("key_action2", 2):   PLAYER_2_ACTION2,
+      keycode("key_1", 2):         PLAYER_2_KEY1,
+      keycode("key_2", 2):         PLAYER_2_KEY2,
+      keycode("key_3", 2):         PLAYER_2_KEY3,
+      keycode("key_4", 2):         PLAYER_2_KEY4,
+      keycode("key_5", 2):         PLAYER_2_KEY5,
     }  
     
     self.reverseControlMapping = dict((value, key) for key, value in self.controlMapping.iteritems() )
@@ -224,18 +211,12 @@ class Controls:
     return self.flags & control
 
 class Player(object):
-  def __init__(self, engine, owner, name, number):
-    self.engine   = engine
+  def __init__(self, profileList, owner, name, number):
     self.owner    = owner
-    self.controls = Controls(self.engine)
+    self.controls = Controls(profileList)
     self.reset()
-    self.playerstring = "player" + str(number)
-
-    if number == 0:    
-      self.profile = self.engine.player1profile
-    elif number == 1:
-      self.profile = self.engine.player2profile
-      
+   
+    self.profile = profileList[number]
     
   def reset(self):
     self.score         = 0

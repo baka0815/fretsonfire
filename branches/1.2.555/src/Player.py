@@ -84,21 +84,21 @@ Profile.define("general", "nav_up",       str, "K_UP",       text = _("Move up")
 Profile.define("general", "nav_down",     str, "K_DOWN",     text = _("Move down"))
 Profile.define("general", "nav_cancel",   str, "K_ESCAPE",   text = _("Cancel"))
 
-Profile.define("guitarX", "key_action1",  str, "K_PAGEDOWN", text = _("Pick"))
-Profile.define("guitarX", "key_action2",  str, "K_PAGEUP",   text = _("Secondary Pick"))
-Profile.define("guitarX", "key_1",        str, "K_F8",       text = _("Fret #1"))
-Profile.define("guitarX", "key_2",        str, "K_F9",       text = _("Fret #2"))
-Profile.define("guitarX", "key_3",        str, "K_F10",      text = _("Fret #3"))
-Profile.define("guitarX", "key_4",        str, "K_F11",      text = _("Fret #4"))
-Profile.define("guitarX", "key_5",        str, "K_F12",      text = _("Fret #5"))
+Profile.define("guitarX", "key_action1",  str, "K_RETURN",   text = _("Pick"))
+Profile.define("guitarX", "key_action2",  str, "K_RSHIFT",   text = _("Secondary Pick"))
+Profile.define("guitarX", "key_1",        str, "K_F1",       text = _("Fret #1"))
+Profile.define("guitarX", "key_2",        str, "K_F2",       text = _("Fret #2"))
+Profile.define("guitarX", "key_3",        str, "K_F3",       text = _("Fret #3"))
+Profile.define("guitarX", "key_4",        str, "K_F4",       text = _("Fret #4"))
+Profile.define("guitarX", "key_5",        str, "K_F5",       text = _("Fret #5"))
 
-Profile.define("drumX", "key_action1",    str, "K_PAGEDOWN", text = _("Pedal"))
-Profile.define("drumX", "key_action2",    str, "K_PAGEUP",   text = _("Secondary Pedal"))
-Profile.define("drumX", "key_1",          str, "K_F8",       text = _("Head #1"))
-Profile.define("drumX", "key_2",          str, "K_F9",       text = _("Head #2"))
-Profile.define("drumX", "key_3",          str, "K_F10",      text = _("Head #3"))
-Profile.define("drumX", "key_4",          str, "K_F11",      text = _("Head #4"))
-Profile.define("drumX", "key_5",          str, "K_F12",      text = _("Head #5"))
+Profile.define("drumX", "key_action1",    str, "K_RETURN",   text = _("Pedal"))
+Profile.define("drumX", "key_action2",    str, "K_RSHIFT",   text = _("Secondary Pedal"))
+Profile.define("drumX", "key_1",          str, "K_F1",       text = _("Head #1"))
+Profile.define("drumX", "key_2",          str, "K_F2",       text = _("Head #2"))
+Profile.define("drumX", "key_3",          str, "K_F3",       text = _("Head #3"))
+Profile.define("drumX", "key_4",          str, "K_F4",       text = _("Head #4"))
+Profile.define("drumX", "key_5",          str, "K_F5",       text = _("Head #5"))
 
 Profile.define("general", "name",         str, "",           text = _("Player Name"))
 Profile.define("instrument", "selected",  str, "guitar1",    text = _("Instrument"), options = {"guitar1": _("Guitar 1"), "guitar2": _("Guitar 2"), "guitar3": _("Guitar 3"), "drum1": _("Drum 1"), "drum2": _("Drum 2"), "drum3": _("Drum 3")})
@@ -134,22 +134,7 @@ class Controls:
     
     self.flags = 0
 
-    self.controlMapping = {
-      navcode("nav_left", 1):      PLAYER_1_LEFT,
-      navcode("nav_right", 1):     PLAYER_1_RIGHT,
-      navcode("nav_up", 1):        PLAYER_1_UP,
-      navcode("nav_down", 1):      PLAYER_1_DOWN,
-      navcode("nav_cancel", 1):    PLAYER_1_CANCEL,
-
-      keycode("key_action1", 1):   PLAYER_1_ACTION1,
-      keycode("key_action2", 1):   PLAYER_1_ACTION2,
-      keycode("key_1", 1):         PLAYER_1_KEY1,
-      keycode("key_2", 1):         PLAYER_1_KEY2,
-      keycode("key_3", 1):         PLAYER_1_KEY3,
-      keycode("key_4", 1):         PLAYER_1_KEY4,
-      keycode("key_5", 1):         PLAYER_1_KEY5,
-
-   
+    self.controlMapping = { 
       navcode("nav_left", 2):      PLAYER_2_LEFT,
       navcode("nav_right", 2):     PLAYER_2_RIGHT,
       navcode("nav_up", 2):        PLAYER_2_UP,
@@ -163,6 +148,20 @@ class Controls:
       keycode("key_3", 2):         PLAYER_2_KEY3,
       keycode("key_4", 2):         PLAYER_2_KEY4,
       keycode("key_5", 2):         PLAYER_2_KEY5,
+
+      navcode("nav_left", 1):      PLAYER_1_LEFT,
+      navcode("nav_right", 1):     PLAYER_1_RIGHT,
+      navcode("nav_up", 1):        PLAYER_1_UP,
+      navcode("nav_down", 1):      PLAYER_1_DOWN,
+      navcode("nav_cancel", 1):    PLAYER_1_CANCEL,
+
+      keycode("key_action1", 1):   PLAYER_1_ACTION1,
+      keycode("key_action2", 1):   PLAYER_1_ACTION2,
+      keycode("key_1", 1):         PLAYER_1_KEY1,
+      keycode("key_2", 1):         PLAYER_1_KEY2,
+      keycode("key_3", 1):         PLAYER_1_KEY3,
+      keycode("key_4", 1):         PLAYER_1_KEY4,
+      keycode("key_5", 1):         PLAYER_1_KEY5,     
     }  
     
     self.reverseControlMapping = dict((value, key) for key, value in self.controlMapping.iteritems() )

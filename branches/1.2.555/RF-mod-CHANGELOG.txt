@@ -1,3 +1,8 @@
+4.26
+   Fixed some bugs in some of the game engine handling related to the keytester
+   Fixed the keytester preferences to prefer player1 if the keys are the same
+   Fixed empty skin dir problem
+
 4.25
    Redid profile handling in game engine
    Fixed profile passing bug

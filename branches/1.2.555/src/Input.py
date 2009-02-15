@@ -99,7 +99,7 @@ class Input(Task):
     pygame.key.name       = self.getKeyName
 
   def reloadControls(self):
-    self.controls = Controls(self.engine)
+    self.controls = Controls(self.engine.profileList)
 
   def disableKeyRepeat(self):
     pygame.key.set_repeat(0, 0)

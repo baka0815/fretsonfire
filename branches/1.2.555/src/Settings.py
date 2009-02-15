@@ -110,7 +110,7 @@ class NavProfileChoice(Menu.Choice):
     self.value   = None
 
     playerNum = player - 1
-    self.config = self.engine.profileList[playerNum]
+    self.profile = self.engine.profileList[playerNum]
   
     Menu.Choice.__init__(self, text = "", callback = self.change)
 
@@ -120,12 +120,12 @@ class NavProfileChoice(Menu.Choice):
         return int(k)
       except:
         return getattr(pygame, k)
-    o = self.config.prototype[self.section][self.option]
-    v = self.config.get(self.section, self.option)
+    o = self.profile.prototype[self.section][self.option]
+    v = self.profile.get(self.section, self.option)
     return "%s: %s" % (o.text, pygame.key.name(keycode(v)).capitalize())
     
   def change(self):
-    o = self.config.prototype[self.section][self.option]
+    o = self.profile.prototype[self.section][self.option]
 
     if isinstance(o.options, dict):
       for k, v in o.options.items():
@@ -136,18 +136,19 @@ class NavProfileChoice(Menu.Choice):
     key = Dialogs.getKey(self.engine, _("Press a key for '%s' or Escape to cancel.") % (o.text))
 
     if key:
-      self.config.set(self.section, self.option, key)
+      self.profile.set(self.section, self.option, key)
       self.engine.input.reloadControls()
 
   def apply(self):
     pass
 
 class KeyProfileChoice(NavProfileChoice):
-  def __init__(self, profileList, player, option, autoApply = False):
+  def __init__(self, engine, player, option, autoApply = False):
 
     playerNum = player - 1
-    self.config = self.profileList[playerNum]
-    instrument = self.config.get("instrument", "selected")
+    self.engine = engine
+    self.profile = self.engine.profileList[playerNum]
+    instrument = self.profile.get("instrument", "selected")
     NavProfileChoice.__init__(self, engine, player, instrument, option, autoApply)
 
   def getText(self, selected):
@@ -159,16 +160,16 @@ class KeyProfileChoice(NavProfileChoice):
     genericSection = self.section[:-1]
     genericSection += "X"
 
-    o = self.config.prototype[genericSection][self.option]
-    v = self.config.get(self.section, self.option)
+    o = self.profile.prototype[genericSection][self.option]
+    v = self.profile.get(self.section, self.option)
     if v == "None":
-      v = self.config.get(genericSection, self.option)
+      v = self.profile.get(genericSection, self.option)
     return "%s: %s" % (o.text, pygame.key.name(keycode(v)).capitalize())
 
   def change(self):
     genericSection = self.section[:-1]
     genericSection += "X"
-    o = self.config.prototype[genericSection][self.option]
+    o = self.profile.prototype[genericSection][self.option]
 
     if isinstance(o.options, dict):
       for k, v in o.options.items():
@@ -179,7 +180,7 @@ class KeyProfileChoice(NavProfileChoice):
     key = Dialogs.getKey(self.engine, _("Press a key for '%s' or Escape to cancel.") % (o.text))
 
     if key:
-      self.config.set(self.section, self.option, key)
+      self.profile.set(self.section, self.option, key)
       self.engine.input.reloadControls()
       
 class HopoConfigChoice(ConfigChoice):
@@ -199,6 +200,7 @@ class SettingsMenu(Menu.Menu):
     menu = []
     for w in Skin.getAvailableSkinDirs(engine, dir=skindir):
       menu.append((_("%s" % (w)), self.getSkinSettingsMenu(engine, skindir=w)))
+   
     for m in Skin.getAvailableSkins(engine, dir=skindir):
       if skindir == None:
         menu.append(ConfigChoice(engine.config, "skins",  "skin_" + m, autoApply = True))

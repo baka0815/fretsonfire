@@ -1278,9 +1278,9 @@ class KeyTester(Layer, KeyListener):
     self.engine         = engine
     self.accepted       = False
     self.time           = 0.0
-    self.controls       = Player.Controls(engine)
+    self.controls       = Player.Controls(engine.profileList)
     self.fretColors     = Theme.fretColors
-    
+   
   def shown(self):
     self.engine.input.addKeyListener(self, priority = True)
   

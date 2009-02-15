@@ -1967,9 +1967,12 @@ def getAvailableLibraries(engine, library = DEFAULT_LIBRARY):
         continue
       if os.path.isfile(os.path.join(libraryRoot, "notes.mid")):
         continue
+      if libraryRoot.startswith("."):
+        continue      
       libName = library + os.path.join(libraryRoot.replace(songRoot, ""))
       libraries.append(LibraryInfo(libName, os.path.join(libraryRoot, "library.ini")))
       continue
+      #does this matter?
       dirs = os.listdir(libraryRoot)
       for name in dirs:
         if os.path.isfile(os.path.join(libraryRoot, name, "song.ini")):
@@ -1982,7 +1985,7 @@ def getAvailableLibraries(engine, library = DEFAULT_LIBRARY):
   return libraries
 
 def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = False):
-  order = engine.config.get("game", "sort_order")
+  order = engine.config.get("game", "songlist_order")
   # Search for songs in both the read-write and read-only directories
   if library == None:
     return []
@@ -1992,6 +1995,8 @@ def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = Fals
     if (os.path.exists(songRoot) == False):
       return []
     for name in os.listdir(songRoot):
+      if name.startswith("."):
+        continue  
       if not os.path.isfile(os.path.join(songRoot, name, "notes.mid")):
         continue
       if not os.path.isfile(os.path.join(songRoot, name, "song.ini")) or name.startswith("."):

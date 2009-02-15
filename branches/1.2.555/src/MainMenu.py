@@ -77,16 +77,10 @@ class MainMenu(BackgroundLayer):
       (_("Import Guitar Hero(tm) Songs"),  self.startGHImporter),
     ])
 
-##    playMenu = Menu(self.engine, [
-##      (_("Play Solo Game"),            self.newSinglePlayerGame),
-##      (_("Play Band Game"),            self.newMultiPlayerGame),
-##      (_("Load Profile"),              self.loadProfile),
-##    ])
-##    
     settingsMenu = Settings.SettingsMenu(self.engine)
     
     mainMenu = [
-      (_("Play"),        self.getPlayMenu),
+      (_("Play >"),        self.getPlayMenu),
       (_("Settings >"),  settingsMenu),
       (_("Tutorial"),    self.showTutorial),
       (_("Song Editor"), editorMenu),

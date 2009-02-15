@@ -78,7 +78,7 @@ Config.define("game",   "hopo_mark",           int,   1,      text = _("HO/PO No
 Config.define("game",   "hopo_style",          int,   2,      text = _("HO/PO Key Style"), options = {0: _("FoF"), 1: _("RFmod"), 2: _("RFmod2")})
 Config.define("game",   "disable_vbpm",        bool,  False,  text = _("Disable Variable BPM"),  options = {False: _("No"), True: _("Yes")})
 Config.define("game",   "board_speed",         int,   0,      text = _("Board Speed"), options = {0: _("BPM based"), 1: _("Difficulty based")})
-Config.define("game",   "sort_order",          int,   0,      text = _("Sort Order"), options = {0: _("Title"), 1: _("Artist"), 2: _("Tag")})
+Config.define("game",   "songlist_order",      int,   0,      text = _("Songlist Order"), options = {0: _("Title"), 1: _("Artist"), 2: _("Tag")})
 Config.define("game",   "pov",                 int,   0,      text = _("Point Of View"), options = {0: _("FoF"), 1: _("Arcade"), 2: _("Custom")})
 Config.define("game",   "players",             int,   1,      text = _("Number of players"),  options = {1: _("1"), 2: _("2")})
 Config.define("game",   "party_time",          int,   30,     text = _("Party Mode Timer"), options = dict([(n, n) for n in range(1, 99)]))

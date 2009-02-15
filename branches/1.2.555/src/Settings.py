@@ -215,10 +215,43 @@ class SettingsMenu(Menu.Menu):
 
     skinSettings = self.getSkinSettingsMenu(engine) + applyItem
   
-    gameSettings = [
-      (_("Skin settings"), skinSettings),
+    hopoGameSettings = [
+      ConfigChoice(engine.config, "game",  "tapping", autoApply = True),
+      HopoConfigChoice(engine.config, "game",  "hopo_mark", autoApply = True),
+      HopoConfigChoice(engine.config, "game",  "hopo_style", autoApply = True),
+    ]
+    hopoGameSettingsMenu = Menu.Menu(engine, hopoGameSettings)    
+
+    failGameSettings = [ 
+      ConfigChoice(engine.config, "failing",  "failing", autoApply = True),
+      ConfigChoice(engine.config, "failing",  "difficulty", autoApply = True),
+      ConfigChoice(engine.config, "failing",  "jurgen", autoApply = True),
+      ConfigChoice(engine.config, "failing",  "jurgen_volume", autoApply = True),
+    ]
+    failGameSettingsMenu = Menu.Menu(engine, failGameSettings)
+
+    diffGameSettings = [
+      ConfigChoice(engine.config, "game",  "margin", autoApply = True),
+      ConfigChoice(engine.config, "game",  "disable_vbpm", autoApply = True),
+      ConfigChoice(engine.config, "game",  "board_speed", autoApply = True),
+    ]
+    diffGameSettingsMenu = Menu.Menu(engine, diffGameSettings)
+    
+    advGameSettings = [
+      (_("Select Song Library >"), self.baseLibrarySelect),
       ConfigChoice(engine.config, "game",  "language"),
       ConfigChoice(engine.config, "game",  "uploadscores", autoApply = True),
+      ConfigChoice(engine.config, "engine",  "game_priority", autoApply = True),
+    ]
+    advGameSettingsMenu = Menu.Menu(engine, advGameSettings)
+    
+    gameSettings = [
+      (_("HOPO Settings"), hopoGameSettingsMenu),
+      (_("Failing Settings"), failGameSettingsMenu),
+      (_("Difficulty Settings"), diffGameSettingsMenu),
+      (_("Advanced Settings"), advGameSettingsMenu),
+      
+
     ]
     gameSettingsMenu = Menu.Menu(engine, gameSettings + applyItem)
 
@@ -231,6 +264,15 @@ class SettingsMenu(Menu.Menu):
     ]
     player1NavSettingsMenu = Menu.Menu(engine, player1NavSettings)
 
+    player1Settings = [
+      (_("Navigation Settings"), player1NavSettingsMenu),
+      (_("Key Settings >"), self.player1KeySettingsMenu),
+      InstrumentProfileChoice(engine, 1, "instrument",  "selected", autoApply = True),
+      ProfileChoice(engine, 1, "instrument",  "two_chord_max", autoApply = True),
+      ProfileChoice(engine, 1, "instrument",  "leftymode", autoApply = True),
+    ]
+    player1SettingsMenu = Menu.Menu(engine, player1Settings) 
+
     player2NavSettings = [
       NavProfileChoice(engine, 2, "general", "nav_left"),
       NavProfileChoice(engine, 2, "general", "nav_right"),
@@ -239,47 +281,6 @@ class SettingsMenu(Menu.Menu):
       NavProfileChoice(engine, 2, "general", "nav_cancel"),
     ]
     player2NavSettingsMenu = Menu.Menu(engine, player2NavSettings)
- 
-    modes = engine.video.getVideoModes()
-    modes.reverse()
-    Config.define("video",  "resolution", str,   "640x480", text = _("Video Resolution"), options = ["%dx%d" % (m[0], m[1]) for m in modes])
-    videoSettings = [
-      ConfigChoice(engine.config, "video",  "resolution"),
-      ConfigChoice(engine.config, "video",  "fullscreen"),
-      ConfigChoice(engine.config, "video",  "fps"),
-      ConfigChoice(engine.config, "video",  "multisamples"),
-      #ConfigChoice(engine.config, "opengl", "svgshaders"),    # shaders broken at the moment
-      ConfigChoice(engine.config, "opengl", "svgquality"),
-      ConfigChoice(engine.config, "video", "fontscale"),
-    ]
-    videoSettingsMenu = Menu.Menu(engine, videoSettings + applyItem)
-
-    volumeSettings = [
-      VolumeConfigChoice(engine, engine.config, "audio",  "guitarvol"),
-      VolumeConfigChoice(engine, engine.config, "audio",  "songvol"),
-      VolumeConfigChoice(engine, engine.config, "audio",  "rhythmvol"),
-      VolumeConfigChoice(engine, engine.config, "audio",  "screwupvol"),
-      VolumeConfigChoice(engine, engine.config, "audio",  "gamevol"),
-    ]
-    volumeSettingsMenu = Menu.Menu(engine, volumeSettings + applyItem)
-
-    audioSettings = [
-      (_("Volume Settings"), volumeSettingsMenu),
-      ConfigChoice(engine.config, "audio",  "delay"),
-      ConfigChoice(engine.config, "audio",  "frequency"),
-      ConfigChoice(engine.config, "audio",  "bits"),
-      ConfigChoice(engine.config, "audio",  "buffersize"),
-    ]
-    audioSettingsMenu = Menu.Menu(engine, audioSettings + applyItem)
-    
-    player1Settings = [
-      (_("Navigation Settings"), player1NavSettingsMenu),
-      (_("Key Settings >"), self.player1KeySettingsMenu),
-      InstrumentProfileChoice(engine, 1, "instrument",  "selected", autoApply = True),
-      ProfileChoice(engine, 1, "instrument",  "two_chord_max", autoApply = True),
-      ProfileChoice(engine, 1, "instrument",  "leftymode", autoApply = True),
-    ]
-    player1SettingsMenu = Menu.Menu(engine, player1Settings)    
 
     player2Settings = [
       (_("Navigation Settings"), player2NavSettingsMenu),
@@ -292,88 +293,113 @@ class SettingsMenu(Menu.Menu):
 
     playerSettings = [
       ConfigChoice(engine.config, "game",  "players", autoApply = True),
+      ConfigChoice(engine.config, "game", "party_time", autoApply = True),
       (_("Player 1"), player1SettingsMenu),
       (_("Player 2"), player2SettingsMenu),      
     ]
     playerSettingsMenu = Menu.Menu(engine, playerSettings)
     
-    rfModHOPOSettings = [
-      ConfigChoice(engine.config, "game",  "tapping", autoApply = True),
-      HopoConfigChoice(engine.config, "game",  "hopo_mark", autoApply = True),
-      HopoConfigChoice(engine.config, "game",  "hopo_style", autoApply = True),
+    advVideoSettings = [
+      ConfigChoice(engine.config, "video",  "fps"),
+      ConfigChoice(engine.config, "video",  "multisamples"),
+      #ConfigChoice(engine.config, "opengl", "svgshaders"),    # shaders broken at the moment
+      ConfigChoice(engine.config, "opengl", "svgquality"),
+      ConfigChoice(engine.config, "video", "fontscale"),
     ]
-    rfModHOPOSettingsMenu = Menu.Menu(engine, rfModHOPOSettings)    
+    advVideoSettingsMenu = Menu.Menu(engine, advVideoSettings + applyItem)
+ 
+    modes = engine.video.getVideoModes()
+    modes.reverse()
+    Config.define("video",  "resolution", str,   "640x480", text = _("Video Resolution"), options = ["%dx%d" % (m[0], m[1]) for m in modes])
+    videoSettings = [
+      ConfigChoice(engine.config, "video",  "resolution"),
+      ConfigChoice(engine.config, "video",  "fullscreen"),
+      (_("Advanced Video"),   advVideoSettingsMenu),
+    ]
+    videoSettingsMenu = Menu.Menu(engine, videoSettings + applyItem)
 
-    rfModGameSettings = [
-      (_("Select Song Library >"), self.baseLibrarySelect), 
-      ConfigChoice(engine.config, "game",  "sort_order", autoApply = True),
-      ConfigChoice(engine.config, "game",  "margin", autoApply = True),
-      ConfigChoice(engine.config, "game",  "disable_vbpm", autoApply = True),
-      ConfigChoice(engine.config, "game",  "board_speed", autoApply = True),
+    gameAudioSettings = [
+      VolumeConfigChoice(engine, engine.config, "audio",  "guitarvol"),
+      VolumeConfigChoice(engine, engine.config, "audio",  "songvol"),
+      VolumeConfigChoice(engine, engine.config, "audio",  "rhythmvol"),
+      ConfigChoice(engine.config, "audio", "miss_volume", autoApply = True),      
+      VolumeConfigChoice(engine, engine.config, "audio",  "screwupvol"),
+    ]
+    gameAudioSettingsMenu = Menu.Menu(engine, gameAudioSettings + applyItem)
+
+    menuAudioSettings = [
+      VolumeConfigChoice(engine, engine.config, "audio",  "gamevol"),
+      ConfigChoice(engine.config, "audio", "disable_preview", autoApply = True),
+    ]
+    menuAudioSettingsMenu = Menu.Menu(engine, menuAudioSettings + applyItem)
+    
+    advAudioSettings = [
+      ConfigChoice(engine.config, "audio",  "frequency"),
+      ConfigChoice(engine.config, "audio",  "bits"),
+      ConfigChoice(engine.config, "audio",  "buffersize"),      
+    ]
+    advAudioSettingsMenu = Menu.Menu(engine, advAudioSettings + applyItem)
+    
+    audioSettings = [
+      ConfigChoice(engine.config, "audio",  "delay"),
+      (_("Game Audio"), gameAudioSettingsMenu),
+      (_("Menu Audio"), menuAudioSettingsMenu),
+      (_("Advanced Audio"), advAudioSettingsMenu),
+    ]
+    audioSettingsMenu = Menu.Menu(engine, audioSettings + applyItem) 
+
+    gameUISettings = [
+      ConfigChoice(engine.config, "video", "disable_stats", autoApply = True),   
       ConfigChoice(engine.config, "game", "pov", autoApply = True),
       ConfigChoice(engine.config, "game", "tracks_type", autoApply = True),
-      ConfigChoice(engine.config, "game", "party_time", autoApply = True),
-      ConfigChoice(engine.config, "audio", "miss_volume", autoApply = True),
     ]
-    rfModGameSettingsMenu = Menu.Menu(engine, rfModGameSettings)
-
-    rfModFailSettings = [ 
-      ConfigChoice(engine.config, "failing",  "failing", autoApply = True),
-      ConfigChoice(engine.config, "failing",  "difficulty", autoApply = True),
-      ConfigChoice(engine.config, "failing",  "jurgen", autoApply = True),
-      ConfigChoice(engine.config, "failing",  "jurgen_volume", autoApply = True),
-    ]
-    rfModFailSettingsMenu = Menu.Menu(engine, rfModFailSettings)
-
-    rfModPerfGameSettings = [
-      ConfigChoice(engine.config, "video", "disable_stats", autoApply = True),
+    gameUISettingsMenu = Menu.Menu(engine, gameUISettings)
+    
+    noteUISettings = [     
       ConfigChoice(engine.config, "video", "disable_notesfx", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_notewavessfx", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_fretsfx", autoApply = True),
       ConfigChoice(engine.config, "video", "disable_flamesfx", autoApply = True),
     ]
-    rfModPerfGameSettingsMenu = Menu.Menu(engine, rfModPerfGameSettings)
+    noteUISettingsMenu = Menu.Menu(engine, noteUISettings)
     
-    rfModPerfMenuSettings = [
-      ConfigChoice(engine.config, "game", "songlist_render", autoApply = True),
-      ConfigChoice(engine.config, "game", "songlist_items", autoApply = True),
-      ConfigChoice(engine.config, "audio", "disable_preview", autoApply = True),
+    menuUISettings = [
       ConfigChoice(engine.config, "game", "disable_spinny", autoApply = True),
       ConfigChoice(engine.config, "game", "disable_libcount", autoApply = True),
       ConfigChoice(engine.config, "game", "disable_librotation", autoApply = True),
     ]
-    rfModPerfMenuSettingsMenu = Menu.Menu(engine, rfModPerfMenuSettings)
+    menuUISettingsMenu = Menu.Menu(engine, menuUISettings)
 
-    rfModPerfSettings = [
-      ConfigChoice(engine.config, "engine",  "game_priority", autoApply = True),
-      (_("Game Performance"), rfModPerfGameSettingsMenu),
-      (_("Menu Performance"), rfModPerfMenuSettingsMenu),      
+    songlistUISettings = [
+      ConfigChoice(engine.config, "game", "songlist_render", autoApply = True),
+      ConfigChoice(engine.config, "game", "songlist_items", autoApply = True),
+      ConfigChoice(engine.config, "game", "songlist_order", autoApply = True),     
     ]
-    rfModPerfSettingsMenu = Menu.Menu(engine, rfModPerfSettings)
+    songlistUISettingsMenu = Menu.Menu(engine, songlistUISettings)
     
-    rfModSettings = [
-      (_("Game settings"), rfModGameSettingsMenu),
-      (_("HO/PO settings"), rfModHOPOSettingsMenu),
-      (_("Failing settings"), rfModFailSettingsMenu),
-      (_("Performance settings"), rfModPerfSettingsMenu),
- #     (_("Player settings"), rfModPlayerSettingsMenu),
+    uiSettings = [
+      (_("Skins"), skinSettings),
+      (_("Game UI"), gameUISettingsMenu),
+      (_("Note UI"), noteUISettingsMenu),
+      (_("Menu UI"), menuUISettingsMenu),
+      (_("Songlist UI"), songlistUISettingsMenu),
     ]
-    rfModSettingsMenu = Menu.Menu(engine, rfModSettings)
+    uiSettingsMenu = Menu.Menu(engine, uiSettings)
 
     settings = [
       (_("Game Settings"),     gameSettingsMenu),
       (_("Player Settings"),   playerSettingsMenu),
       (_("Video Settings"),    videoSettingsMenu),
       (_("Audio Settings"),    audioSettingsMenu),
-      (_("RF-mod Settings"),   rfModSettingsMenu),
+      (_("UI Settings"),       uiSettingsMenu),
     ]
 
     self.settingsToApply = settings + \
-                           videoSettings + \
+                           uiSettings + \
                            audioSettings + \
-                           volumeSettings + \
-                           gameSettings + \
-                           skinSettings
+                           videoSettings + \
+                           playerSettings + \
+                           gameSettings
 
     Menu.Menu.__init__(self, engine, settings)
     

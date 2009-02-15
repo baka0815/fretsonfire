@@ -397,7 +397,7 @@ class SongChooser(Layer, KeyListener):
 
     #RF-mod
     self.previewDisabled  = self.engine.config.get("audio", "disable_preview")
-    self.sortOrder        = self.engine.config.get("game", "sort_order")
+    self.songlistOrder    = self.engine.config.get("game", "songlist_order")
     self.rotationDisabled = self.engine.config.get("game", "disable_librotation")
     self.spinnyDisabled   = self.engine.config.get("game", "disable_spinny")
     self.displayedPart    = 0
@@ -610,7 +610,7 @@ class SongChooser(Layer, KeyListener):
           if songNum == "False":
             #If no set number, make it nothing so it doesn't false positive
             songNum = ""
-        if self.sortOrder == 1:
+        if self.songlistOrder == 1:
           if not self.items[i].artist:
             continue
           if self.items[i].artist[0] == k1 or self.items[i].artist[0] == k2 or (songNum != "" and (songNum[0] == k1 or songNum[0] == k2)):

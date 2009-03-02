@@ -1,8 +1,9 @@
 #####################################################################
 # -*- coding: iso-8859-1 -*-                                        #
-#                                                                   #
 # Frets on Fire                                                     #
-# Copyright (C) 2006 Sami Kyöstilä                                  #
+# Copyright (C) 2006-2009                                           #
+#               Sami Kyöstilä                                       #
+#               Alex Samonte                                        #
 #                                                                   #
 # This program is free software; you can redistribute it and/or     #
 # modify it under the terms of the GNU General Public License       #
@@ -24,7 +25,7 @@ import re
 import os
 from xml import sax
 from OpenGL.GL import *
-from Numeric import reshape, matrixmultiply, transpose, identity, zeros, Float
+import numpy
 from math import sin, cos
 
 import Log
@@ -64,7 +65,7 @@ class SvgGradient:
     self.transform = transform
 
   def applyTransform(self, transform):
-    m = matrixmultiply(transform.matrix, self.transform.matrix)
+    m = numpy.dot(transform.matrix, self.transform.matrix)
     self.gradientDesc.SetMatrix(transform.getGMatrix(m))
 
 class SvgContext:
@@ -255,36 +256,36 @@ class SvgTransform:
       if m:
         e = [float(c) for c in m.groups()]
         e = [e[0], e[2], e[4], e[1], e[3], e[5], 0, 0, 1]
-        m = reshape(e, (3, 3))
-        self.matrix = matrixmultiply(self.matrix, m)
+        m = numpy.reshape(e, (3, 3))
+        self.matrix = numpy.dot(self.matrix, m)
 
   def transform(self, transform):
-    self.matrix = matrixmultiply(self.matrix, transform.matrix)
+    self.matrix = numpy.dot(self.matrix, transform.matrix)
 
   def reset(self):
-    self.matrix = identity(3, typecode = Float)
+    self.matrix = numpy.identity(3)
 
   def translate(self, dx, dy):
-    m = zeros((3, 3))
+    m = numpy.zeros((3, 3))
     m[0, 2] = dx
     m[1, 2] = dy
     self.matrix += m
 
   def rotate(self, angle):
-    m = identity(3, typecode = Float)
+    m = numpy.identity(3)
     s = sin(angle)
     c = cos(angle)
     m[0, 0] =  c
     m[0, 1] = -s
     m[1, 0] =  s
     m[1, 1] =  c
-    self.matrix = matrixmultiply(self.matrix, m)
+    self.matrix = numpy.dot(self.matrix, m)
 
   def scale(self, sx, sy):
-    m = identity(3, typecode = Float)
+    m = numpy.identity(3)
     m[0, 0] = sx
     m[1, 1] = sy
-    self.matrix = matrixmultiply(self.matrix, m)
+    self.matrix = numpy.dot(self.matrix, m)
 
   def applyGL(self):
     # Interpret the 2D matrix as 3D

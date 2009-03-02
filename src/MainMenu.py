@@ -1,8 +1,9 @@
-####################################################################
+#####################################################################
 # -*- coding: iso-8859-1 -*-                                        #
-#                                                                   #
 # Frets on Fire                                                     #
-# Copyright (C) 2006 Sami Kyöstilä                                  #
+# Copyright (C) 2006-2009                                           #
+#               Sami Kyöstilä                                       #
+#               Alex Samonte                                        #
 #                                                                   #
 # This program is free software; you can redistribute it and/or     #
 # modify it under the terms of the GNU General Public License       #
@@ -56,7 +57,7 @@ class MainMenu(BackgroundLayer):
     self.engine.loadSvgDrawing(self, "guy",        "pose.svg")
     self.engine.loadSvgDrawing(self, "logo",       "logo.svg")
     self.song = Audio.Sound(self.engine.resource.fileName("menu.ogg"))
-    self.song.setVolume(self.engine.config.get("audio", "songvol"))
+    self.song.setVolume(self.engine.config.get("audio", "gamevol"))
     self.song.play(-1)
 
     #expire = datetime.date(2007, 8, 15) 

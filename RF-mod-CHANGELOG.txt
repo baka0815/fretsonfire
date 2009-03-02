@@ -1,3 +1,15 @@
+4.28
+   Remove Numeric usage and changed to numpy
+   Updated sources to work with python 2.5 (both linux and windows
+   Rebuilt all windows depedency libraries with python 2.5
+   Updated source coding and copyright to work with python 2.5
+   Added volume variable to all audio
+   Added test audio instead of using screwup sounds
+   Fixed screwup sounds
+   Change sort_order to songlist_order
+   Using new optimized font routines
+   Fixed main menu song volume
+   
 4.27
    Reorganized menu structure
    Fixed reading of song/library dirs that start with .

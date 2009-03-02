@@ -1,8 +1,9 @@
 #####################################################################
 # -*- coding: iso-8859-1 -*-                                        #
-#                                                                   #
 # Frets on Fire                                                     #
-# Copyright (C) 2006 Sami Kyöstilä                                  #
+# Copyright (C) 2006-2009                                           #
+#               Sami Kyöstilä                                       #
+#               Alex Samonte                                        #
 #                                                                   #
 # This program is free software; you can redistribute it and/or     #
 # modify it under the terms of the GNU General Public License       #
@@ -404,10 +405,6 @@ class DisplayEffect(Effect):
     else:
       curPlayer = self.player
       t = self.trigger(player = curPlayer)    
-
-    #if self.layer.num == 52:
-    #  print self.player, curPlayer, t
-    #  print t1, t2
     
     if self.mod != 0:
       if self.modCap == -1 or t < self.modCap:

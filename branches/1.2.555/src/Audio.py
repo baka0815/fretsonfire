@@ -1,8 +1,9 @@
 #####################################################################
 # -*- coding: iso-8859-1 -*-                                        #
-#                                                                   #
 # Frets on Fire                                                     #
-# Copyright (C) 2006 Sami Kyöstilä                                  #
+# Copyright (C) 2006-2009                                           #
+#               Sami Kyöstilä                                       #
+#               Alex Samonte                                        #
 #                                                                   #
 # This program is free software; you can redistribute it and/or     #
 # modify it under the terms of the GNU General Public License       #
@@ -19,6 +20,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,        #
 # MA  02110-1301, USA.                                              #
 #####################################################################
+
 
 import pygame
 import Log
@@ -70,6 +72,7 @@ class Audio:
 class Music(object):
   def __init__(self, fileName):
     pygame.mixer.music.load(fileName)
+    self.volume = 0.0
 
   @staticmethod
   def setEndEvent(event):
@@ -91,8 +94,8 @@ class Music(object):
     pygame.mixer.music.unpause()
 
   def setVolume(self, volume):
-    #print "audiomusic", volume
     pygame.mixer.music.set_volume(volume)
+    self.volume = volume
 
   def fadeout(self, time):
     pygame.mixer.music.fadeout(time)
@@ -106,6 +109,7 @@ class Music(object):
 class Channel(object):
   def __init__(self, id):
     self.channel = pygame.mixer.Channel(id)
+    self.volume = 0.0
 
   def play(self, sound):
     self.channel.play(sound.sound)
@@ -114,8 +118,8 @@ class Channel(object):
     self.channel.stop()
 
   def setVolume(self, volume):
-    #print "audiochannel", volume
     self.channel.set_volume(volume)
+    self.volume = volume
 
   def fadeout(self, time):
     self.channel.fadeout(time)
@@ -126,6 +130,7 @@ class Channel(object):
 class Sound(object):
   def __init__(self, fileName):
     self.sound   = pygame.mixer.Sound(fileName)
+    self.volume = 0.0
 
   def play(self, loops = 0):
     self.sound.play(loops)
@@ -134,16 +139,15 @@ class Sound(object):
     self.sound.stop()
 
   def setVolume(self, volume):
-    print "audiosound", volume
     self.sound.set_volume(volume)
+    self.volume = 0.0
 
   def fadeout(self, time):
     self.sound.fadeout(time)
 
 if ogg:
   import struct
-  # Must use Numeric instead of numpy, since PyGame 1.7.1 is not compatible with the former
-  import Numeric
+  import numpy
 
   class OggStream(object):
     def __init__(self, inputFileName):
@@ -163,13 +167,13 @@ if ogg:
       self.bufferSize   = 1024 * 64
       self.bufferCount  = 8
       self.volume       = 0.0
-      self.buffer       = Numeric.zeros((2 * self.bufferSize, 2), typecode = "s")
+      self.buffer       = numpy.zeros((2 * self.bufferSize, 2), numpy.short)
       self.decodingRate = 4
       self._reset()
 
     def _reset(self):
       self.stream        = OggStream(self.fileName)
-      self.buffersIn     = [pygame.sndarray.make_sound(Numeric.zeros((self.bufferSize, 2), typecode = "s")) for i in range(self.bufferCount + 1)]
+      self.buffersIn     = [pygame.sndarray.make_sound(numpy.zeros((self.bufferSize, 2), numpy.short)) for i in range(self.bufferCount + 1)]
       self.buffersOut    = []
       self.buffersBusy   = []
       self.bufferPos     = 0
@@ -201,7 +205,6 @@ if ogg:
       self._reset()
 
     def setVolume(self, volume):
-      #print "streamingogg", volume
       self.volume = volume
 
     def fadeout(self, time):
@@ -254,7 +257,6 @@ if ogg:
       if not self.playing:
         return
 
-      #print "audiorun", self.volume
       self.channel.set_volume(self.volume)
 
       if len(self.buffersOut) < self.bufferCount:
@@ -277,6 +279,7 @@ class StreamingSound(Sound, Task):
     Task.__init__(self)
     Sound.__init__(self, fileName)
     self.channel = channel
+    self.volume = 0.0
 
   def __new__(cls, engine, channel, fileName):
     frequency, format, stereo = pygame.mixer.get_init()
@@ -295,9 +298,9 @@ class StreamingSound(Sound, Task):
     self.channel.stop()
 
   def setVolume(self, volume):
-    print "Streamingsound", volume
     Sound.setVolume(self, volume)
     self.channel.setVolume(volume)
+    self.volume = 0.0
 
   def fadeout(self, time):
     Sound.fadeout(self, time)

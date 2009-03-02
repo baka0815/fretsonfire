@@ -1,8 +1,9 @@
 #####################################################################
 # -*- coding: iso-8859-1 -*-                                        #
-#                                                                   #
 # Frets on Fire                                                     #
-# Copyright (C) 2008 Alex Samonte                                   #
+# Copyright (C) 2006-2009                                           #
+#               Sami Kyöstilä                                       #
+#               Alex Samonte                                        #
 #                                                                   #
 # This program is free software; you can redistribute it and/or     #
 # modify it under the terms of the GNU General Public License       #

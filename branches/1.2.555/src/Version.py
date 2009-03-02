@@ -1,8 +1,9 @@
 #####################################################################
 # -*- coding: iso-8859-1 -*-                                        #
-#                                                                   #
 # Frets on Fire                                                     #
-# Copyright (C) 2006 Sami Kyöstilä                                  #
+# Copyright (C) 2006-2009                                           #
+#               Sami Kyöstilä                                       #
+#               Alex Samonte                                        #
 #                                                                   #
 # This program is free software; you can redistribute it and/or     #
 # modify it under the terms of the GNU General Public License       #
@@ -34,7 +35,7 @@ def branch():
   return "RF-mod"
 
 def branchrevision():
-  return 4.22
+  return 4.28
 
 def branchVersion():
   return "-%s-%.2f" % (branch(), branchrevision())

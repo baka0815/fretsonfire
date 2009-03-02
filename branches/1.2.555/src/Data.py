@@ -1,8 +1,9 @@
 #####################################################################
 # -*- coding: iso-8859-1 -*-                                        #
-#                                                                   #
 # Frets on Fire                                                     #
-# Copyright (C) 2006 Sami Kyöstilä                                  #
+# Copyright (C) 2006-2009                                           #
+#               Sami Kyöstilä                                       #
+#               Alex Samonte                                        #
 #                                                                   #
 # This program is free software; you can redistribute it and/or     #
 # modify it under the terms of the GNU General Public License       #
@@ -72,29 +73,32 @@ class Data(object):
     self.loadFont(self, "font", font, fontSize[0], scale, reversed, not asciiOnly)
     self.loadFont(self, "bigFont", bigFont, fontSize[1], scale, reversed, not asciiOnly)
 
-    # load sounds
-    volume   = Config.get("audio", "screwupvol")
     #self.loadSyncSounds(self, "syncSounds")
+
     self.loadSoundEffect(self, "acceptSound",  "in.ogg")
     self.loadSoundEffect(self, "cancelSound",  "out.ogg")
     self.loadSoundEffect(self, "selectSound1", "crunch1.ogg")
     self.loadSoundEffect(self, "selectSound2", "crunch2.ogg")
     self.loadSoundEffect(self, "selectSound3", "crunch3.ogg")
     self.loadSoundEffect(self, "startSound",   "start.ogg")
+    self.loadSoundEffect(self, "testSound",    "in.ogg")
 
+  def volGameSounds(self):
+    volume   = Config.get("audio", "gamevol")
+    self.acceptSound.setVolume(volume)
+    self.cancelSound.setVolume(volume)
+    self.selectSound1.setVolume(volume)
+    self.selectSound2.setVolume(volume)
+    self.selectSound3.setVolume(volume)
+    self.startSound.setVolume(volume)
+    
   def loadSoundEffect(self, target, name, fileName):
     volume   = Config.get("audio", "gamevol")
     fileName = self.resource.fileName(fileName)
     self.resource.load(target, name, lambda: Sound(fileName), onLoad = lambda s: s.setVolume(volume))
-
-  def loadScrewUpSounds(self):
-    return [Sound(self.resource.fileName("fiba%d.ogg" % i)) for i in range(1, 7)]
-
-  def loadScrewUpSoundsBass(self):
-    return [Sound(self.resource.fileName("bfiba%d.ogg" % i)) for i in range(1, 7)]
   
   def loadSyncSounds(self, target, name):
-    volume = Config.get("audio", "screwupvol")
+    volume = Config.get("audio", "gamevol")
     fileNames = [Sound(self.resource.fileName("sync%d.ogg" % i)) for i in range(1, 2)]
     self.resource.load(target, name, lambda: Sound(fileNames), onLoad = lambda s: s.setVolume(volume))
     
@@ -130,7 +134,6 @@ class Data(object):
     font1     = lambda: Font(fileName, size, scale = scale, reversed = reversed, systemFont = systemFont)
     font2     = self.resource.load(target, name, font1, onLoad = self.customizeFont)
     font     = self.resource.load(target, name, lambda: Font(fileName, size, scale = scale, reversed = reversed, systemFont = systemFont), onLoad = self.customizeFont, synch = True)
-    print font, font2
     return font
       
   def customizeFont(self, font):
@@ -147,17 +150,6 @@ class Data(object):
     return random.choice([self.selectSound1, self.selectSound2, self.selectSound3])
 
   selectSound = property(getSelectSound)
-
-  def getScrewUpSound(self):
-    """@return: A randomly chosen screw-up sound."""
-    return random.choice(self.screwUpSounds)
-
-  def getScrewUpSoundBass(self):
-    """@return: A randomly chosen screw-up sound."""
-    return random.choice(self.screwUpSoundsBass)
-
-  screwUpSound = property(getScrewUpSound)
-  screwUpSoundBass = property(getScrewUpSoundBass)
   
   def essentialResourcesLoaded(self):
     """return: True if essential resources such as the font have been loaded."""

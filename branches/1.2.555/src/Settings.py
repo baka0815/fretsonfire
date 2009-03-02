@@ -1,8 +1,9 @@
 #####################################################################
 # -*- coding: iso-8859-1 -*-                                        #
-#                                                                   #
 # Frets on Fire                                                     #
-# Copyright (C) 2006 Sami Kyöstilä                                  #
+# Copyright (C) 2006-2009                                           #
+#               Sami Kyöstilä                                       #
+#               Alex Samonte                                        #
 #                                                                   #
 # This program is free software; you can redistribute it and/or     #
 # modify it under the terms of the GNU General Public License       #
@@ -83,10 +84,17 @@ class VolumeConfigChoice(ConfigChoice):
 
   def change(self, value):
     ConfigChoice.change(self, value)
-    sound = self.engine.data.screwUpSound
+    sound = self.engine.data.testSound
+    volume = sound.volume
     sound.setVolume(self.value)
     sound.play()
 
+class GameVolumeConfigChoice(VolumeConfigChoice):
+
+  def change(self, value):
+    VolumeConfigChoice.change(self, value)
+    self.engine.data.volGameSounds()
+    
 class ProfileChoice(ConfigChoice):
   def __init__(self, engine, player, section, option, autoApply = False):
     self.engine = engine
@@ -226,7 +234,7 @@ class SettingsMenu(Menu.Menu):
       ConfigChoice(engine.config, "failing",  "failing", autoApply = True),
       ConfigChoice(engine.config, "failing",  "difficulty", autoApply = True),
       ConfigChoice(engine.config, "failing",  "jurgen", autoApply = True),
-      ConfigChoice(engine.config, "failing",  "jurgen_volume", autoApply = True),
+      VolumeConfigChoice(engine, engine.config, "failing",  "jurgen_volume", autoApply = True),
     ]
     failGameSettingsMenu = Menu.Menu(engine, failGameSettings)
 
@@ -319,16 +327,16 @@ class SettingsMenu(Menu.Menu):
     videoSettingsMenu = Menu.Menu(engine, videoSettings + applyItem)
 
     gameAudioSettings = [
-      VolumeConfigChoice(engine, engine.config, "audio",  "guitarvol"),
-      VolumeConfigChoice(engine, engine.config, "audio",  "songvol"),
-      VolumeConfigChoice(engine, engine.config, "audio",  "rhythmvol"),
-      ConfigChoice(engine.config, "audio", "miss_volume", autoApply = True),      
-      VolumeConfigChoice(engine, engine.config, "audio",  "screwupvol"),
+      VolumeConfigChoice(engine, engine.config, "audio",  "guitarvol", autoApply = True),
+      VolumeConfigChoice(engine, engine.config, "audio",  "songvol", autoApply = True),
+      VolumeConfigChoice(engine, engine.config, "audio",  "rhythmvol", autoApply = True),
+      VolumeConfigChoice(engine, engine.config, "audio",  "miss_volume", autoApply = True),      
+      VolumeConfigChoice(engine, engine.config, "audio",  "screwupvol", autoApply = True),
     ]
     gameAudioSettingsMenu = Menu.Menu(engine, gameAudioSettings + applyItem)
 
     menuAudioSettings = [
-      VolumeConfigChoice(engine, engine.config, "audio",  "gamevol"),
+      GameVolumeConfigChoice(engine, engine.config, "audio",  "gamevol", autoApply = True),
       ConfigChoice(engine.config, "audio", "disable_preview", autoApply = True),
     ]
     menuAudioSettingsMenu = Menu.Menu(engine, menuAudioSettings + applyItem)

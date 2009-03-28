@@ -201,6 +201,7 @@ class Texture:
 
     if name:
       self.loadFile(name)
+    print "Texture", self.name
 
   def loadFile(self, name):
     """Load the texture from disk, using PIL to open the file"""
@@ -351,13 +352,24 @@ class TextureAtlasFullException(Exception):
   pass
 
 class TextureAtlas(object):
-  def __init__(self, size = TEXTURE_ATLAS_SIZE):
+  def __init__(self, w = TEXTURE_ATLAS_SIZE, h = TEXTURE_ATLAS_SIZE):
     self.texture      = Texture()
     self.cursor       = (0, 0)
     self.rowHeight    = 0
     self.surfaceCount = 0
-    self.texture.loadEmpty((size, size), GL_RGBA)
+    self.width        = self.nextPowerOfTwo(w)
+    self.height       = self.nextPowerOfTwo(h)
+    print w, h, self.width, self.height
+    self.texture.loadEmpty((self.width, self.height), GL_RGBA)
 
+  def nextPowerOfTwo(self, n):
+    m = 1
+    while m < n:
+      m <<= 1
+    if m < 32:
+      return 32
+    return m
+  
   def add(self, surface, margin = 0):
     w, h = surface.get_size()
     x, y = self.cursor
@@ -365,9 +377,14 @@ class TextureAtlas(object):
     w += margin
     h += margin
 
+    print "texture", w, h
     if w > self.texture.pixelSize[0] or h > self.texture.pixelSize[1]:
-      raise ValueError("Surface is too big to fit into atlas.")
-
+      #print self.texture.name
+      #raise ValueError("Surface (%d x %d) is too big to fit into atlas (%d x %d)." % (w, h, self.texture.pixelSize[0], self.texture.pixelSize[1]))
+      Log.debug("Surface (%d x %d) is too big to fit into atlas (%d x %d)." % (w, h, self.texture.pixelSize[0], self.texture.pixelSize[1]))
+      raise TextureAtlasFullException()
+      #Maybe reallocate new texture atlas the correct size?
+    
     if x + w >= self.texture.pixelSize[0]:
       x = 0
       y += self.rowHeight

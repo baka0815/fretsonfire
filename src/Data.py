@@ -131,8 +131,8 @@ class Data(object):
     @return:            L{SvgDrawing} instance
     """
     fileName = self.resource.fileName(fileName)
-    font1     = lambda: Font(fileName, size, scale = scale, reversed = reversed, systemFont = systemFont)
-    font2     = self.resource.load(target, name, font1, onLoad = self.customizeFont)
+    #font1     = lambda: Font(fileName, size, scale = scale, reversed = reversed, systemFont = systemFont)
+    #font2     = self.resource.load(target, name, font1, onLoad = self.customizeFont)
     font     = self.resource.load(target, name, lambda: Font(fileName, size, scale = scale, reversed = reversed, systemFont = systemFont), onLoad = self.customizeFont, synch = True)
     return font
       

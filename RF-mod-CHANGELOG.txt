@@ -1,3 +1,10 @@
+4.29
+   A lot of font clean up for memory release when objects are deleted
+   A lot of texture memory allocation reduction
+   Allow use of system fonts in themes for memory savings
+   SVG memory release when objects are deleted
+   Theme changes to remove some double theme layers
+
 4.28
    Remove Numeric usage and changed to numpy
    Updated sources to work with python 2.5 (both linux and windows

@@ -550,6 +550,13 @@ class SvgDrawing:
         Log.debug("Loading SVG file '%s'." % (svgData))
         self.svgData = open(svgData).read()
 
+  def __delitem__(self, something):
+    self.svgData = None
+    self.texture = None
+    self.context = None
+    self.cache = None
+    self.transform = None
+    
   def _cacheDrawing(self, drawBoard):
     self.cache.beginCaching()
     parser = sax.make_parser()

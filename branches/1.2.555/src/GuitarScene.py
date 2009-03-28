@@ -233,6 +233,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
     #self.fx3x = None
     #self.fx4x = None
     self.menu = None
+    self.stage.freeResources()
     
   def loadSettings(self):
     #self.delay            = self.engine.config.get("audio", "delay")
@@ -275,7 +276,7 @@ class GuitarSceneClient(GuitarScene, SceneClient):
 
   def endSong(self):
     self.engine.view.popLayer(self.menu)
-    #self.freeResources()
+    self.freeResources()
     self.goToResults()
 
   def quit(self):

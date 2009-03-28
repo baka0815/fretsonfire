@@ -55,6 +55,25 @@ class Font:
     self.font.set_italic(italic)
     self.font.set_underline(underline)
 
+  def __delitem__(self, something):
+    #pygame.font.quit()
+    print "free glyphcache", self.glyphCache
+    del self.glyphCache
+    self.glyphCache = {}
+    print "free glyphsizecache", self.glyphSizeCache
+    del self.glyphSizeCache
+    self.glyphSizeCache = {}
+    print "free glyphtextures", self.glyphTextures
+    del self.glyphTextures
+    self.glyphTextures = []
+    print "free stringcache", self.stringCache
+    del self.stringCache
+    self.stringCache = {}
+    print "free font", self.font
+    del self.font
+    self.font = None
+    print "Woo", something
+    
   def getStringSize(self, s, scale = 0.002):
     """
     Get the dimensions of a string when rendered with this font.
@@ -186,10 +205,12 @@ class Font:
     glDisableClientState(GL_TEXTURE_COORD_ARRAY)
     glDisable(GL_TEXTURE_2D)
 
-  def _allocateGlyphTexture(self):
-    t = TextureAtlas(size = glGetInteger(GL_MAX_TEXTURE_SIZE))
+  def _allocateGlyphTexture(self, w = glGetInteger(GL_MAX_TEXTURE_SIZE), h = glGetInteger(GL_MAX_TEXTURE_SIZE)):
+    #t = TextureAtlas(size = glGetInteger(GL_MAX_TEXTURE_SIZE))
+    t = TextureAtlas(w = w, h = h)
     t.texture.setFilter(GL_LINEAR, GL_LINEAR)
     t.texture.setRepeat(GL_CLAMP, GL_CLAMP)
+    print "allocating glyph", glGetInteger(GL_MAX_TEXTURE_SIZE), t
     self.glyphTextures.append(t)
     return t
 
@@ -225,7 +246,9 @@ class Font:
       """
 
       if not self.glyphTextures:
-        texture = self._allocateGlyphTexture()
+        w, h = s.get_size()
+        print "New tex", w, h
+        texture = self._allocateGlyphTexture(w = w, h = h)
       else:
         texture = self.glyphTextures[-1]
 
@@ -234,7 +257,9 @@ class Font:
         coordinates = texture.add(s)
       except TextureAtlasFullException:
         # Try again with a fresh atlas
-        texture = self._allocateGlyphTexture()
+        w, h = s.get_size()
+        print "Realloc tex", w, h
+        texture = self._allocateGlyphTexture(w = w, h = h)
         return self.getGlyph(ch)
 
       self.glyphCache[ch] = (texture, coordinates)

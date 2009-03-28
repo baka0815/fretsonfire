@@ -29,8 +29,13 @@ import Theme
 import Part
 from Audio import Sound
 import random
+from Font import Font
 
 MAXLAYERS = 96
+
+DRAWING_LAYER = 1
+FONT_LAYER = 2
+SOUND_LAYER = 3
 class Layer(object):
   """
   A graphical stage layer that can have a number of animation effects associated with it.
@@ -46,6 +51,7 @@ class Layer(object):
     self.num         = 0
     self.stage       = stage
     self.drawing     = drawing
+    self.resourceName = None
     self.position    = (0.0, 0.0)
     self.angle       = 0.0
     self.scale       = (1.0, 1.0)
@@ -57,11 +63,11 @@ class Layer(object):
     self.effects     = []
 
   def render(self, visibility):
-    if self.type == 1:
+    if self.type == DRAWING_LAYER:
       self.renderDrawing(visibility)
-    elif self.type == 2:
+    elif self.type == FONT_LAYER:
       self.renderFont(visibility)
-    elif self.type == 3:
+    elif self.type == SOUND_LAYER:
       self.renderSound(visibility)
       
   def renderDrawing(self, visibility):
@@ -94,6 +100,8 @@ class Layer(object):
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
   def renderFont(self, visibility):
+    if self.drawing.font == None:
+      return
     """
     Render the layer.
 
@@ -121,7 +129,6 @@ class Layer(object):
     if self.display == 1:
       if self.text != "":
         self.drawing.render(self.text, fontPosition, scale = self.scale[0] * 0.002)
-      #self.stage.engine.data.font.render(self.text, self.position, scale = self.scale[0] * 0.002)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)   
 
   def renderSound(self, visibility):
@@ -643,7 +650,7 @@ class TextPulseEffect(Effect):
   def __init__(self, layer, options):
     Effect.__init__(self, layer, options)
     self.length     = float(options.get("length", 1.0))
-    if self.layer.type != 2:
+    if self.layer.type != FONT_LAYER:
       raise "Not Font Layer"
     self.lastTrigger = 0
     self.lastTriggerPos = 0
@@ -692,7 +699,7 @@ class TextFadeEffect(Effect):
   def __init__(self, layer, options):
     Effect.__init__(self, layer, options)
     self.length     = float(options.get("length", 1.0))
-    if self.layer.type != 2:
+    if self.layer.type != FONT_LAYER:
       raise "Not Font Layer"
     self.lastTrigger = 0
     self.lastTriggerPos = 0
@@ -741,7 +748,7 @@ class TextFadeEffect(Effect):
 class PlayEffect(Effect):
   def __init__(self, layer, options):
     Effect.__init__(self, layer, options)
-    if self.layer.type != 3:
+    if self.layer.type != SOUND_LAYER:
       raise "Not Sound Layer"
     self.soundFile     = options.get("soundfile")
     self.lastSound  = [0.0, 0.0]
@@ -784,7 +791,7 @@ class PlayEffect(Effect):
 class PlayRandomEffect(Effect):
   def __init__(self, layer, options):
     Effect.__init__(self, layer, options)
-    if self.layer.type != 3:
+    if self.layer.type != SOUND_LAYER:
       raise "Not Sound Layer"
     if self.stop - self.start < 1:
       raise "random sounds need more than 1 sound"
@@ -885,14 +892,26 @@ class Stage(object):
           try:
             drawing = self.textures[texture]
           except KeyError:
-            drawing = self.engine.loadSvgDrawing(self, None, texture, textureSize = (xres, yres))
-            self.textures[texture] = drawing
+            #drawing = self.engine.loadSvgDrawing(self, None, texture, textureSize = (xres, yres))
+            #self.textures[texture] = drawing
+            print "loading texture", texture
+            resourceName = texture
         elif font != None:
           try:
             drawing = self.fonts[font]
           except KeyError:
-            drawing = self.engine.loadFont(self, None, font, fontSize, fontScale, fontRev, not fontAscii)
+            #drawing = self.engine.loadFont(self, None, font, fontSize, fontScale, fontRev, not fontAscii)
+            if font == "fof":
+              drawing = self.engine.data.font
+            elif font == "fofbig":
+              drawing = self.engine.data.bigFont
+            else:
+              drawing = Font(self.engine.resource.fileName(font), fontSize, scale = fontScale, reversed = fontRev)
+              #drawing = self.engine.loadFont(self, None, font, fontSize, fontScale, fontRev, not fontAscii)
+              pass
             self.fonts[font] = drawing
+            print "loading font", font
+            resourceName = font
 
         elif sound != None:
           drawing = 1
@@ -903,12 +922,12 @@ class Stage(object):
         layer = Layer(self, drawing)
 
         if texture != None:
-          layer.type = 1
+          layer.type = DRAWING_LAYER
         elif font != None:
-          layer.type = 2
+          layer.type = FONT_LAYER
           layer.fontJustify = fontJustify
         elif sound != None:
-          layer.type = 3
+          layer.type = SOUND_LAYER
           
         layer.relative    = get("relative", int)
         layer.num         = i
@@ -926,11 +945,12 @@ class Stage(object):
         layer.srcBlending = globals()["GL_%s" % get("src_blending", str, "src_alpha").upper()]
         layer.dstBlending = globals()["GL_%s" % get("dst_blending", str, "one_minus_src_alpha").upper()]
         layer.color       = (get("color_r", float, 1.0), get("color_g", float, 1.0), get("color_b", float, 1.0), get("color_a", float, 1.0))
-        if layer.type == 2:
+        if layer.type == FONT_LAYER:
           if layer.color == (1.0, 1.0, 1.0, 1.0):
             layer.color = Theme.getSelectedColor()
         layer.display     = get("display", int, 1)
         layer.text        = get("text", str, "")
+        layer.resourceName = resourceName
 
         # Load any effects
         fxClasses = {
@@ -970,7 +990,7 @@ class Stage(object):
           foregroundLayers.append(layer)
         else:
           backgroundLayers.append(layer)
-
+    
   def reset(self):
     self.lastBeatPos        = None
     self.lastQuarterBeatPos = None
@@ -1060,3 +1080,34 @@ class Stage(object):
     self.scene.renderGuitar()
     for i in range(3):
       self._renderLayers(self.foregroundLayers[i], visibility)
+
+  def freeLayers(self, layers):
+    for layer in layers:
+      print layer, layer.resourceName
+      if layer.type == DRAWING_LAYER:
+        print "Deleting texture", layer.resourceName
+        del self.textures[layer.resourceName][:]
+      elif layer.type == FONT_LAYER:
+        print "Deleting font", layer.resourceName
+        if layer.resourceName != "fof" and layer.resourceName != "fofbig":
+          del self.fonts[layer.resourceName][:]
+      elif layer.type == SOUND_LAYER:
+        print "Deleting sound", self.effectSound
+        del self.effectSound
+      print "effect", layer.effects
+      print "drawing", layer.drawing
+      del layer.drawing
+      del layer
+        
+  def freeResources(self):
+    print self.fonts
+    print self.textures
+    #self.textures = ()
+    print "Background"
+    for i in range(3):
+      self.freeLayers(self.backgroundLayers[i])
+      self.backgroundLayers[i] = []
+    print "Foreground"
+    for i in range(3):
+      self.freeLayers(self.foregroundLayers[i])
+      self.foregroundLayers[i] = []

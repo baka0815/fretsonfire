@@ -1,0 +1,21 @@
+diff -ur Tahchee-1.0.0/Sources/tahchee/main.py Tahchee-1.0.0.new/Sources/tahchee/main.py
+--- Tahchee-1.0.0/Sources/tahchee/main.py	2010-04-27 14:14:43.000000000 +0100
++++ Tahchee-1.0.0.new/Sources/tahchee/main.py	2012-01-31 22:16:42.733201987 +0000
+@@ -418,7 +418,7 @@
+ 		"""Returns this site signature as a string. The signature uniquely
+ 		identifies this site. Each instance has a different signature."""
+ 		sig =  self.pages() + self.output() + self.templatesDir
+-		return hashfunc.new(sig).hexdigest()
++		return hashfunc(sig).hexdigest()
+ 
+ 	def absolutePath( self, path="" ):
+ 		"""Returns the absolute normalized path for the given path, which must
+@@ -520,7 +520,7 @@
+ 					template_has_changed = True
+ 		# There is a SHA1 mode for real checksum change detection
+ 		if self.site.changeDetectionMethod() == CHANGE_CHECKSUM:
+-			chksum = hashfunc.new(data or load_data(path)).hexdigest()
++			chksum = hashfunc(data or load_data(path)).hexdigest()
+ 		# Default is modification time (faster)
+ 		else:
+ 			if os.path.exists(path):

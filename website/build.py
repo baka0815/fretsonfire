@@ -15,6 +15,7 @@ MAIN      = "index.html"
 SHOW_MAIN = True
 INDEXES   = ["index.*"]
 IGNORES   = ["*.sw?", "*.bak", "*.pyc", ".cvs", ".CVS", ".svn", ".svn/*", ".DS_Store", "*.*~"]
+USE_TIDY  = "no"
 TIDYFLAGS = "-i"
 ACCEPTS   = []
 # =============================================================================

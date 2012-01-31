@@ -1,7 +1,7 @@
 # Tahchee makefile template version 0.9.8
-PYTHON  = /usr/bin/env python
-LOCAL   = Site/Local
-REMOTE  = Site/Remote
+PYTHON = ./local_python.sh
+LOCAL  = Site/Local
+REMOTE = Site/Remote
 
 local:
 	$(PYTHON) build.py local

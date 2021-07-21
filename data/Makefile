@@ -77,6 +77,6 @@ killscores:
 	@pushd $(TOP)/data/songs ; ./killscores.sh ; popd
 
 %.png: %.svg
-	$(INKSCAPE) -e "$@" -D -f "$<" -b black -y 0.0
+	$(INKSCAPE) --export-filename="$@" -D "$<" -b black -y 0.0
 
 .PHONY: graphics translations killscores

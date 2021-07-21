@@ -4,6 +4,7 @@
 TOP=.
 PYTHON=python
 PLATFORM=$(shell uname)
+SHELL := /bin/bash
 
 include data/Makefile
 

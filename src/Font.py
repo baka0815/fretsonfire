@@ -174,7 +174,7 @@ class Font:
       text = "".join(reversed(text))
 
     if self.outline:
-      glPushAttrib(GL_CURRENT_BIT)
+      glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT)
       glColor4f(0, 0, 0, glGetFloatv(GL_CURRENT_COLOR)[3])
       self._renderString(text, (pos[0] + 0.003, pos[1] + 0.003), direction, scale)
       glPopAttrib()

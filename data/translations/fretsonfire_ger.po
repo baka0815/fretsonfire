@@ -361,8 +361,8 @@ msgid "Make sure you have at least 500 megabytes of free disk space before using
 msgstr "Du benötigst mindestens 500 mb Speicher um den Importer benutzen zu können."
 
 #: Editor.py:756
-msgid "Enter the path to the mounted Guitar Hero (tm) DVD"
-msgstr "Pfad zur Guitar Hero (tm) DVD"
+msgid "Enter the path to the mounted Guitar Hero (tm) I/II/Encore DVD"
+msgstr "Pfad zur Guitar Hero (tm) I/II/Encore DVD eingeben"
 
 #: Editor.py:765
 msgid "That's not it. Try again."
@@ -725,3 +725,6 @@ msgstr "Total Krank"
 msgid "Choose a difficulty:"
 msgstr "Schwierigkeitsgrad auswählen:"
 
+#: Settings.py:218
+msgid "Settings saved. Please restart the game to activate the new settings."
+msgstr "Einstellungen gespeichert. Bitte das Spiel neu starten."

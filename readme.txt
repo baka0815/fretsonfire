@@ -5,23 +5,24 @@
                      (_)/\/   /_  / /_) /_
                              /   / / \ /_
 
-             >>------------------------------------>>
-              |   http://www.unrealvoodoo.org      |
-             >>------------------------------------>>
-              |                                    |
-              | 1. Introduction                    |
-              |                                    |
-              | 2. Requirements                    |
-              |                                    |
-              | 3. Playing the game                |
-              |                                    |
-              | 4. Editing and Importing songs     |
-              |                                    |
-              | 5. Importing Guitar Hero(tm) songs |
-              |                                    |
-              | 6. Troubleshooting                 |
-              |                                    |
-             >>------------------------------------>>
+             >>------------------------------------->>
+              | http://fretsonfire.sourceforge.net/ |
+              |    https://www.fretsonfire.org/     |
+             >>------------------------------------->>
+              |                                     |
+              | 1. Introduction                     |
+              |                                     |
+              | 2. Requirements                     |
+              |                                     |
+              | 3. Playing the game                 |
+              |                                     |
+              | 4. Editing and Importing songs      |
+              |                                     |
+              | 5. Importing Guitar Hero(tm) songs  |
+              |                                     |
+              | 6. Troubleshooting                  |
+              |                                     |
+             >>------------------------------------->>
 
  >>-------------------------------------------------------------------->>
   |  1. Introduction                                                   |

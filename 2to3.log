@@ -1,0 +1,1536 @@
+--- ./src/Audio.py	(original)
++++ ./src/Audio.py	(refactored)
+@@ -379,7 +379,7 @@
+       # Decode enough that we have at least one full sound buffer
+       # ready in the queue if possible
+       while not self.done:
+-        for i in xrange(self.decodingRate):
++        for i in range(self.decodingRate):
+           soundBuffer = self._decodeStream()
+           if soundBuffer:
+             self.buffersOut.insert(0, soundBuffer)
+--- ./src/Cerealizer.py	(original)
++++ ./src/Cerealizer.py	(refactored)
+@@ -128,11 +128,11 @@
+ logger = logging.getLogger("cerealizer")
+ #logging.basicConfig(level=logging.INFO)
+ 
+-from cStringIO import StringIO
++from io import StringIO
+ from new       import instance
+ 
+-class NotCerealizerFileError(StandardError): pass
+-class NonCerealizableObjectError(StandardError): pass
++class NotCerealizerFileError(Exception): pass
++class NonCerealizableObjectError(Exception): pass
+ 
+ def _priority_sorter(a, b): return cmp(a[0], b[0])
+ 
+@@ -200,7 +200,7 @@
+     elif c == "r": return self.id2obj[int(s.readline())]
+     elif c == "n": return None
+     elif c == "b": return bool(int(s.read(1)))
+-    elif c == "l": return long(s.readline())
++    elif c == "l": return int(s.readline())
+     elif c == "c": return complex(s.readline())
+     raise ValueError("Unknown ref code '%s'!" % c)
+     
+@@ -351,13 +351,13 @@
+   classname = "dict\n"
+   def collect(self, obj, dumper):
+     if Handler.collect(self, obj, dumper):
+-      for i in obj.iterkeys  (): dumper.collect(i) # Collect is not ordered
+-      for i in obj.itervalues(): dumper.collect(i)
++      for i in obj.keys  (): dumper.collect(i) # Collect is not ordered
++      for i in obj.values(): dumper.collect(i)
+       return 1
+     
+   def dump_data(self, obj, dumper, s):
+     s.write("%s\n" % len(obj))
+-    for k, v in obj.iteritems():
++    for k, v in obj.items():
+       _HANDLERS_[v.__class__].dump_ref(v, dumper, s) # Value is saved fist
+       _HANDLERS_[k.__class__].dump_ref(k, dumper, s)
+       
+@@ -503,16 +503,16 @@
+ 
+ CLASSNAME is the classname used in Cerealizer files. It defaults to the full classname (module.class)
+ but you may choose something shorter -- as long as there is no risk of name clash."""
+-  if not _configurable: raise StandardError("Cannot register new classes after freeze_configuration has been called!")
++  if not _configurable: raise Exception("Cannot register new classes after freeze_configuration has been called!")
+   if "\n" in classname: raise ValueError("CLASSNAME cannot have \\n (Cerealizer automatically add a trailing \\n for performance reason)!")
+   if not handler:
+     if   hasattr(Class, "__getnewargs__" ): handler = NewArgsObjHandler (Class, classname)
+     elif hasattr(Class, "__getinitargs__"): handler = InitArgsObjHandler(Class, classname)
+     elif hasattr(Class, "__slots__"      ): handler = SlotedObjHandler  (Class, classname)
+     else:                                   handler = ObjHandler        (Class, classname)
+-  if _HANDLERS_.has_key(Class): raise ValueError("Class %s has already been registred!" % Class)
++  if Class in _HANDLERS_: raise ValueError("Class %s has already been registred!" % Class)
+   if not isinstance(handler, RefHandler):
+-    if _HANDLERS .has_key(handler.classname): raise ValueError("A class has already been registred under the name %s!" % handler.classname[:-1])
++    if handler.classname in _HANDLERS: raise ValueError("A class has already been registred under the name %s!" % handler.classname[:-1])
+     _HANDLERS [handler.classname] = handler
+     if handler.__class__ is ObjHandler:
+       logger.info("Registring class %s as '%s'" % (Class, handler.classname[:-1]))
+@@ -538,7 +538,7 @@
+   handler = _HANDLERS_.get(Class)
+   if not handler:
+     raise ValueError("Cannot register alias '%s' to Class %s: the class is not yet registred!" % (alias, Class))
+-  if _HANDLERS.has_key(alias):
++  if alias in _HANDLERS:
+     raise ValueError("Cannot register alias '%s' to Class %s: another class is already registred under the alias name!" % (alias, Class))
+   logger.info("Registring alias '%s' for %s" % (alias, Class))
+   _HANDLERS[alias + "\n"] = handler
+@@ -557,10 +557,10 @@
+   
+ register(type(None), NoneHandler     ())
+ register(str       , StrHandler      ())
+-register(unicode   , UnicodeHandler  ())
++register(str   , UnicodeHandler  ())
+ register(bool      , BoolHandler     ())
+ register(int       , IntHandler      ())
+-register(long      , LongHandler     ())
++register(int      , LongHandler     ())
+ register(float     , FloatHandler    ())
+ register(complex   , ComplexHandler  ())
+ register(dict      , DictHandler     ())
+@@ -605,8 +605,8 @@
+ Utility function; for each classes found in the given module, print the needed call to register."""
+   class D: pass
+   class O(object): pass
+-  s = set([c for module in modules for c in module.__dict__.values() if isinstance(c, type(D)) or  isinstance(c, type(O))])
++  s = set([c for module in modules for c in list(module.__dict__.values()) if isinstance(c, type(D)) or  isinstance(c, type(O))])
+   l = ['cerealizer.register(%s.%s)' % (c.__module__, c.__name__) for c in s]
+   l.sort()
+-  for i in l: print i
+-  
++  for i in l: print(i)
++  
+--- ./src/Collada.py	(original)
++++ ./src/Collada.py	(refactored)
+@@ -62,7 +62,7 @@
+ 	try:
+ 		return [ float( split[ 0 ] ), float( split[ 1 ] )]
+ 	except IndexError:
+-		print 'Error: ' + errorText
++		print('Error: ' + errorText)
+ 		raise
+ 
+ def ToList(var):
+@@ -305,7 +305,7 @@
+ 		attrs = ''
+ 		attributes = xmlNode.attributes
+ 		if attributes != None:
+-			for attr in attributes.keys():
++			for attr in list(attributes.keys()):
+ 				val = attributes[attr].nodeValue
+ 				attrs += ' %s="%s"'%(attr,val)
+ 		result = '%s<%s%s>'%(totalIndent,xmlNode.localName,attrs)
+--- ./src/Config.py	(original)
++++ ./src/Config.py	(refactored)
+@@ -20,7 +20,7 @@
+ # MA  02110-1301, USA.                                              #
+ #####################################################################
+ 
+-from ConfigParser import ConfigParser
++from configparser import ConfigParser
+ import Log
+ import Resource
+ import os
+@@ -32,7 +32,7 @@
+ class Option:
+   """A prototype configuration key."""
+   def __init__(self, **args):
+-    for key, value in args.items():
++    for key, value in list(args.items()):
+       setattr(self, key, value)
+       
+ def define(section, option, type, default = None, text = None, options = None, prototype = prototype):
+@@ -85,10 +85,10 @@
+     self.fileName  = fileName
+   
+     # fix the defaults and non-existing keys
+-    for section, options in prototype.items():
++    for section, options in list(prototype.items()):
+       if not self.config.has_section(section):
+         self.config.add_section(section)
+-      for option in options.keys():
++      for option in list(options.keys()):
+         type    = options[option].type
+         default = options[option].default
+         if not self.config.has_option(section, option):
+@@ -138,7 +138,7 @@
+     if not self.config.has_section(section):
+       self.config.add_section(section)
+ 
+-    if type(value) == unicode:
++    if type(value) == str:
+       value = value.encode(encoding)
+     else:
+       value = str(value)
+--- ./src/Credits.py	(original)
++++ ./src/Credits.py	(refactored)
+@@ -206,7 +206,7 @@
+   def quit(self):
+     self.engine.view.popLayer(self)
+ 
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     if self.engine.input.controls.getMapping(key) in [Player.CANCEL, Player.KEY1, Player.KEY2] or key == pygame.K_RETURN:
+       self.songLoader.cancel()
+       self.quit()
+--- ./src/Data.py	(original)
++++ ./src/Data.py	(refactored)
+@@ -31,12 +31,12 @@
+ import Config
+ 
+ # these constants define a few customized letters in the default font
+-STAR1 = unicode('\x10')
+-STAR2 = unicode('\x11')
+-LEFT  = unicode('\x12')
+-RIGHT = unicode('\x13')
+-BALL1 = unicode('\x14')
+-BALL2 = unicode('\x15')
++STAR1 = str('\x10')
++STAR2 = str('\x11')
++LEFT  = str('\x12')
++RIGHT = str('\x13')
++BALL1 = str('\x14')
++BALL2 = str('\x15')
+ 
+ class Data(object):
+   """A collection of globally used data resources such as fonts and sound effects."""
+@@ -136,4 +136,4 @@
+ 
+   def resourcesLoaded(self):
+     """return: True if all the resources have been loaded."""
+-    return not None in self.__dict__.values()
++    return not None in list(self.__dict__.values())
+--- ./src/Debug.py	(original)
++++ ./src/Debug.py	(refactored)
+@@ -54,7 +54,7 @@
+         
+       x, y = (.5, .05)
+       font.render("Layers:", (x, y), scale = scale)
+-      for layer in self.engine.view.layers + self.engine.view.incoming + self.engine.view.outgoing + self.engine.view.visibility.keys():
++      for layer in self.engine.view.layers + self.engine.view.incoming + self.engine.view.outgoing + list(self.engine.view.visibility.keys()):
+         font.render(self.className(layer), (x + .1, y), scale = scale)
+         y += h
+         
+@@ -107,7 +107,7 @@
+     gc.collect()
+     for obj in gc.garbage:
+       try:
+-        print >>f, obj
++        print(obj, file=f)
+         n += 1
+       except:
+         pass
+--- ./src/Dialogs.py	(original)
++++ ./src/Dialogs.py	(refactored)
+@@ -116,7 +116,7 @@
+     self.engine.input.removeKeyListener(self)
+     self.engine.input.disableKeyRepeat()
+     
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     self.time = 0
+     c = self.engine.input.controls.getMapping(key)
+     if (c in [Player.KEY1] or key == pygame.K_RETURN) and not self.accepted:
+@@ -128,8 +128,8 @@
+       self.accepted = True
+     elif key == pygame.K_BACKSPACE and not self.accepted:
+       self.text = self.text[:-1]
+-    elif unicode and ord(unicode) > 31 and not self.accepted:
+-      self.text += str(unicode)
++    elif str and ord(str) > 31 and not self.accepted:
++      self.text += str(str)
+     return True
+     
+   def run(self, ticks):
+@@ -176,7 +176,7 @@
+   def hidden(self):
+     self.engine.input.removeKeyListener(self)
+     
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     c = self.engine.input.controls.getMapping(key)
+     if c in [Player.CANCEL, Player.KEY2] and not self.accepted:
+       self.key = None
+@@ -225,7 +225,7 @@
+   def shown(self):
+     self.engine.input.addKeyListener(self, priority = True)
+ 
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     c = self.engine.input.controls.getMapping(key)
+     if self.allowCancel and c == Player.CANCEL:
+       self.engine.view.popLayer(self)
+@@ -284,7 +284,7 @@
+   def shown(self):
+     self.engine.input.addKeyListener(self, priority = True)
+ 
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     c = self.engine.input.controls.getMapping(key)
+     if c in [Player.KEY1, Player.KEY2, Player.CANCEL] or key == pygame.K_RETURN:
+       self.engine.view.popLayer(self)
+@@ -430,7 +430,7 @@
+     self.songCountdown = 1024
+     self.loadItemLabel(self.selectedIndex)
+     
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     if not self.items or self.accepted:
+       return
+ 
+@@ -510,8 +510,8 @@
+         self.items.sort(key=lambda l: (l.name.lower()))
+     elif key == pygame.K_TAB:
+       self.cassetteShow = not self.cassetteShow
+-    elif unicode and ord(unicode) > 31 and not self.accepted:
+-      self.searchText += str(unicode)
++    elif str and ord(str) > 31 and not self.accepted:
++      self.searchText += str(str)
+       self.doSearch()
+     return True
+ 
+@@ -858,10 +858,10 @@
+             else:
+               score, stars, name = "---", 0, "---"
+             Theme.setBaseColor(1 - v)
+-            font.render(unicode(d),     (x, y),           scale = scale)
+-            font.render(unicode(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x, y + h), scale = scale * .9)
++            font.render(str(d),     (x, y),           scale = scale)
++            font.render(str(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x, y + h), scale = scale * .9)
+             Theme.setSelectedColor(1 - v)
+-            font.render(unicode(score), (x + .15, y),     scale = scale)
++            font.render(str(score), (x + .15, y),     scale = scale)
+             font.render(name,       (x + .15, y + h),     scale = scale)
+             y += 2 * h + f / 4.0
+         elif isinstance(item, Song.LibraryInfo):
+@@ -1061,7 +1061,7 @@
+     self.engine.input.removeKeyListener(self)
+     self.song.fadeout(1000)
+     
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     if self.accepted:
+       return True
+       
+@@ -1122,7 +1122,7 @@
+   def hidden(self):
+     self.engine.input.removeKeyListener(self)
+     
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     if self.accepted:
+       return True
+ 
+--- ./src/Editor.py	(original)
++++ ./src/Editor.py	(refactored)
+@@ -111,7 +111,7 @@
+       self.modified = True
+ 
+   def setAVDelay(self):
+-    delay = Dialogs.getText(self.engine, _("Enter A/V delay in milliseconds"), unicode(self.song.info.delay))
++    delay = Dialogs.getText(self.engine, _("Enter A/V delay in milliseconds"), str(self.song.info.delay))
+     if delay:
+       try:
+         self.song.info.delay = int(delay)
+@@ -120,7 +120,7 @@
+         Dialogs.showMessage(self.engine, _("That isn't a number."))
+ 
+   def setBpm(self):
+-    bpm = Dialogs.getText(self.engine, _("Enter Beats per Minute Value"), unicode(self.song.bpm))
++    bpm = Dialogs.getText(self.engine, _("Enter Beats per Minute Value"), str(self.song.bpm))
+     if bpm:
+       try:
+         self.song.setBpm(float(bpm))
+@@ -211,17 +211,17 @@
+     self.engine.view.popLayer(self)
+     self.engine.view.popLayer(self.menu)
+ 
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     c = self.engine.input.controls.getMapping(key)
+     if c == Player.CANCEL:
+       self.engine.view.pushLayer(self.menu)
+     elif key == pygame.K_PAGEDOWN and self.song:
+       d = self.song.difficulty
+-      v = difficulties.values()
++      v = list(difficulties.values())
+       self.song.difficulty = v[(v.index(d) + 1) % len(v)]
+     elif key == pygame.K_PAGEUP and self.song:
+       d = self.song.difficulty
+-      v = difficulties.values()
++      v = list(difficulties.values())
+       self.song.difficulty = v[(v.index(d) - 1) % len(v)]
+     elif key == pygame.K_DELETE and self.song:
+       # gather up all events that intersect the cursor and delete the ones on the selected string
+@@ -338,7 +338,7 @@
+       t = "%d.%02d'%03d" % (self.pos / 60000, (self.pos % 60000) / 1000, self.pos % 1000)
+       font.render(t, (.05, .05 - h / 2))
+       font.render(status, (.05, .05 + h / 2))
+-      font.render(unicode(self.song.difficulty), (.05, .05 + 3 * h / 2))
++      font.render(str(self.song.difficulty), (.05, .05 + 3 * h / 2))
+ 
+       Theme.setBaseColor()
+       text = self.song.info.name + (self.modified and "*" or "")
+@@ -688,7 +688,7 @@
+       vgsMap  = {}
+       library = DEFAULT_LIBRARY
+       for line in open(self.engine.resource.fileName("ghmidimap.txt")):
+-        fields = map(lambda s: s.strip(), line.strip().split(";"))
++        fields = [s.strip() for s in line.strip().split(";")]
+         if fields[0] == "$library":
+           library = os.path.join(DEFAULT_LIBRARY, fields[1])
+         else:
+@@ -700,7 +700,7 @@
+       songs    = []
+ 
+       # Filter out the songs that aren't in this archive
+-      for songName, data in songMap.items():
++      for songName, data in list(songMap.items()):
+         library, fullName, artist = data
+         songPath = self.engine.resource.fileName(library, songName, writable = True)
+ 
+@@ -717,10 +717,10 @@
+           del songMap[songName]
+           continue
+ 
+-      for songName, data in songMap.items():
++      for songName, data in list(songMap.items()):
+         library, fullName, artist = data
+         songPath = self.engine.resource.fileName(library, songName, writable = True)
+-        print songPath
++        print(songPath)
+ 
+         Log.notice("Extracting song '%s'" % songName)
+         self.statusText = _("Extracting %s by %s. %d of %d songs imported. Yeah, this is going to take forever.") % (fullName, artist, len(songs), len(songMap))
+--- ./src/Font.py	(original)
++++ ./src/Font.py	(refactored)
+@@ -141,7 +141,7 @@
+       if len(text) > 5:
+         # Limit the cache size
+         if len(self.stringCache) > self.stringCacheLimit:
+-          del self.stringCache[self.stringCache.keys()[0]]
++          del self.stringCache[list(self.stringCache.keys())[0]]
+         self.stringCache[(text, scale)] = cacheEntry
+     else:
+       cacheEntry = self.stringCache[(text, scale)]
+--- ./src/FretsOnFire.py	(original)
++++ ./src/FretsOnFire.py	(refactored)
+@@ -59,7 +59,7 @@
+   try:
+     opts, args = getopt.getopt(sys.argv[1:], "vp:", ["verbose", "play="])
+   except getopt.GetoptError:
+-    print usage
++    print(usage)
+     sys.exit(1)
+ 
+   songName = None
+--- ./src/GameEngine.py	(original)
++++ ./src/GameEngine.py	(refactored)
+@@ -80,7 +80,7 @@
+     self.engine = engine
+     self.altStatus = False
+   
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     if key == pygame.K_LALT:
+       self.altStatus = True
+     elif key == pygame.K_RETURN and self.altStatus:
+@@ -362,7 +362,7 @@
+       sys.exit(0)
+     except SystemExit:
+       sys.exit(0)
+-    except Exception, e:
++    except Exception as e:
+       def clearMatrixStack(stack):
+         try:
+           glMatrixMode(stack)
+@@ -383,6 +383,6 @@
+       clearMatrixStack(GL_PROJECTION)
+       clearMatrixStack(GL_MODELVIEW)
+       
+-      Dialogs.showMessage(self, unicode(e))
++      Dialogs.showMessage(self, str(e))
+       self.handlingException = False
+       return True
+--- ./src/GameResultsScene.py	(original)
++++ ./src/GameResultsScene.py	(refactored)
+@@ -65,8 +65,8 @@
+     self.engine.loadSvgDrawing(self, "background", "keyboard.svg")
+     Dialogs.showLoadingScreen(self.engine, lambda: self.song, text = _("Chilling..."))
+     
+-  def keyPressed(self, key, unicode):
+-    ret = SceneClient.keyPressed(self, key, unicode)
++  def keyPressed(self, key, str):
++    ret = SceneClient.keyPressed(self, key, str)
+ 
+     c = self.controls.keyPressed(key)
+     if self.song and (c in [Player.KEY1, Player.KEY2, Player.CANCEL, Player.ACTION1, Player.ACTION2] or key == pygame.K_RETURN):
+@@ -188,8 +188,8 @@
+           else:
+             Theme.setBaseColor(1 - v)
+           font.render("%d." % (i + 1), (x, y),    scale = scale)
+-          font.render(unicode(score), (x + .05, y),   scale = scale)
+-          font.render(unicode(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x + .25, y), scale = scale * .9)
++          font.render(str(score), (x + .05, y),   scale = scale)
++          font.render(str(Data.STAR2 * stars + Data.STAR1 * (5 - stars)), (x + .25, y), scale = scale * .9)
+           font.render(name, (x + .5, y), scale = scale)
+           y += h
+           
+--- ./src/Guitar.py	(original)
++++ ./src/Guitar.py	(refactored)
+@@ -538,7 +538,7 @@
+         chords[time] = []
+       chords[time].append((time, note))
+ 
+-    for notes in chords.values():
++    for notes in list(chords.values()):
+       # matching keys?
+       requiredKeys = [note.number for time, note in notes]
+ 
+--- ./src/GuitarScene.py	(original)
++++ ./src/GuitarScene.py	(refactored)
+@@ -285,7 +285,7 @@
+       self.session.world.deleteScene(self)
+       self.session.world.createScene("GameResultsScene", libraryName = self.libraryName, songName = self.songName)
+ 
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     control = self.controls.keyPressed(key)
+ 
+     if control in (Player.ACTION1, Player.ACTION2):
+--- ./src/Input.py	(original)
++++ ./src/Input.py	(refactored)
+@@ -28,7 +28,7 @@
+ from Player import Controls
+ 
+ class KeyListener:
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     pass
+     
+   def keyReleased(self, key):
+@@ -186,8 +186,8 @@
+     pygame.event.pump()
+     for event in pygame.event.get():
+       if event.type == pygame.KEYDOWN:
+-        if not self.broadcastEvent(self.priorityKeyListeners, "keyPressed", event.key, event.unicode):
+-          self.broadcastEvent(self.keyListeners, "keyPressed", event.key, event.unicode)
++        if not self.broadcastEvent(self.priorityKeyListeners, "keyPressed", event.key, event.str):
++          self.broadcastEvent(self.keyListeners, "keyPressed", event.key, event.str)
+       elif event.type == pygame.KEYUP:
+         if not self.broadcastEvent(self.priorityKeyListeners, "keyReleased", event.key):
+           self.broadcastEvent(self.keyListeners, "keyReleased", event.key)
+@@ -205,8 +205,8 @@
+         self.broadcastEvent(self.systemListeners, "musicFinished")
+       elif event.type == pygame.JOYBUTTONDOWN: # joystick buttons masquerade as keyboard events
+         id = self.encodeJoystickButton(event.joy, event.button)
+-        if not self.broadcastEvent(self.priorityKeyListeners, "keyPressed", id, u'\x00'):
+-          self.broadcastEvent(self.keyListeners, "keyPressed", id, u'\x00')
++        if not self.broadcastEvent(self.priorityKeyListeners, "keyPressed", id, '\x00'):
++          self.broadcastEvent(self.keyListeners, "keyPressed", id, '\x00')
+       elif event.type == pygame.JOYBUTTONUP:
+         id = self.encodeJoystickButton(event.joy, event.button)
+         if not self.broadcastEvent(self.priorityKeyListeners, "keyReleased", id):
+@@ -220,11 +220,11 @@
+           if event.value > threshold and state != 1:
+             self.joystickAxes[event.joy][event.axis] = 1
+             keyEvent = "keyPressed"
+-            args     = (self.encodeJoystickAxis(event.joy, event.axis, 1), u'\x00')
++            args     = (self.encodeJoystickAxis(event.joy, event.axis, 1), '\x00')
+             state    = 1
+           elif event.value < -threshold and state != -1:
+             keyEvent = "keyPressed"
+-            args     = (self.encodeJoystickAxis(event.joy, event.axis, 0), u'\x00')
++            args     = (self.encodeJoystickAxis(event.joy, event.axis, 0), '\x00')
+             state    = -1
+           elif state != 0:
+             keyEvent = "keyReleased"
+@@ -245,7 +245,7 @@
+           if event.value != (0, 0) and state == (0, 0):
+             self.joystickHats[event.joy][event.hat] = event.value
+             keyEvent = "keyPressed"
+-            args     = (self.encodeJoystickHat(event.joy, event.hat, event.value), u'\x00')
++            args     = (self.encodeJoystickHat(event.joy, event.hat, event.value), '\x00')
+             state    = event.value
+           else:
+             keyEvent = "keyReleased"
+--- ./src/Language.py	(original)
++++ ./src/Language.py	(refactored)
+@@ -45,7 +45,7 @@
+     def translate(m):
+       return catalog.gettext(m).decode("utf-8")
+     _ = translate
+-  except Exception, x:
++  except Exception as x:
+     Log.warn("Unable to select language '%s': %s" % (language, x))
+     language = None
+ 
+--- ./src/Lobby.py	(original)
++++ ./src/Lobby.py	(refactored)
+@@ -74,7 +74,7 @@
+     self.engine.addTask(GameTask(self.engine, self.session))
+     self.engine.view.popLayer(self)
+ 
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     c = self.engine.input.controls.getMapping(key)
+     if c in [Player.CANCEL, Player.KEY2]:
+       self.engine.view.popLayer(self)
+--- ./src/Log.py	(original)
++++ ./src/Log.py	(refactored)
+@@ -47,10 +47,10 @@
+   }
+ 
+ def log(cls, msg):
+-  msg = unicode(msg).encode(encoding, "ignore")
++  msg = str(msg).encode(encoding, "ignore")
+   if not quiet:
+-    print labels[cls] + " " + msg
+-  print >>logFile, labels[cls] + " " + msg
++    print(labels[cls] + " " + msg)
++  print(labels[cls] + " " + msg, file=logFile)
+ 
+ warn   = lambda msg: log("warn", msg)
+ debug  = lambda msg: log("debug", msg)
+--- ./src/MainMenu.py	(original)
++++ ./src/MainMenu.py	(refactored)
+@@ -105,13 +105,13 @@
+           import traceback
+           traceback.print_exc()
+           raise
+-      except socket.error, e:
+-        Dialogs.showMessage(self.engine, unicode(e[1]))
++      except socket.error as e:
++        Dialogs.showMessage(self.engine, str(e[1]))
+       except KeyboardInterrupt:
+         pass
+-      except Exception, e:
++      except Exception as e:
+         if e:
+-          Dialogs.showMessage(self.engine, unicode(e))
++          Dialogs.showMessage(self.engine, str(e))
+     return harness
+ 
+   def launchLayer(self, layerFunc):
+--- ./src/Menu.py	(original)
++++ ./src/Menu.py	(refactored)
+@@ -33,7 +33,7 @@
+ 
+ class Choice:
+   def __init__(self, text, callback, values = None, valueIndex = 0):
+-    self.text       = unicode(text)
++    self.text       = str(text)
+     self.callback   = callback
+     self.values     = values
+     self.valueIndex = valueIndex
+@@ -119,7 +119,7 @@
+     if self.currentIndex < self.viewOffset:
+       self.viewOffset = self.currentIndex
+     
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     self.time = 0
+     choice = self.choices[self.currentIndex]
+     c = self.engine.input.controls.getMapping(key)
+--- ./src/Mod.py	(original)
++++ ./src/Mod.py	(refactored)
+@@ -40,7 +40,7 @@
+   modPath = _getModPath(engine)
+   try:
+     dirList = os.listdir(modPath)
+-  except OSError, e:
++  except OSError as e:
+     import Log
+     Log.warn("Could not find mods directory")
+     return []
+--- ./src/Network.py	(original)
++++ ./src/Network.py	(refactored)
+@@ -24,7 +24,7 @@
+ import socket
+ import struct
+ import time
+-import StringIO
++import io
+ 
+ import Log
+ 
+@@ -70,7 +70,7 @@
+     self._buffer = []
+     self._sentSizeField = False
+     self._receivedSizeField = 0
+-    self._packet = StringIO.StringIO()
++    self._packet = io.StringIO()
+ 
+     if not sock:
+       self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+@@ -128,7 +128,7 @@
+             self.handlePacket(self._packet.getvalue())
+           self._packet.truncate()
+           self._packet.seek(0)
+-    except socket.error, e:
++    except socket.error as e:
+       Log.error("Socket error while receiving: %s" % str(e))
+ 
+   def writable(self):
+@@ -168,7 +168,7 @@
+       else:
+         self._buffer = self._buffer[1:]
+         self._sentSizeField = False
+-    except socket.error, e:
++    except socket.error as e:
+       Log.error("Socket error while sending: %s" % str(e))
+ 
+ class Server(asyncore.dispatcher):
+@@ -201,7 +201,7 @@
+     self.handle_close()
+ 
+   def handleClose(self):
+-    for c in self.clients.values():
++    for c in list(self.clients.values()):
+       c.close()
+ 
+   def handle_close(self):
+@@ -212,11 +212,11 @@
+       del self.clients[connection.id]
+ 
+   def broadcastPacket(self, packet, ignore = [], meToo = True):
+-    for c in self.clients.values():
++    for c in list(self.clients.values()):
+       if not c.id in ignore:
+         c.sendPacket(packet)
+     if meToo:
+-      self.clients.values()[0].handlePacket(packet)
++      list(self.clients.values())[0].handlePacket(packet)
+ 
+   def sendPacket(self, receiverId, packet):
+     self.clients[receiverId].sendPacket(packet)
+--- ./src/NetworkTest.py	(original)
++++ ./src/NetworkTest.py	(refactored)
+@@ -41,7 +41,7 @@
+     c.sendPacket("moikka")
+ 
+     Network.communicate(100)
+-    client = s.clients.values()[0]
++    client = list(s.clients.values())[0]
+     assert client.packet == "moikka"
+     assert client.id == 1
+ 
+--- ./src/Object.py	(original)
++++ ./src/Object.py	(refactored)
+@@ -21,7 +21,7 @@
+ #####################################################################
+ 
+ import pickle
+-from StringIO import StringIO
++from io import StringIO
+ 
+ class Serializer(pickle.Pickler):
+   def persistent_id(self, obj):
+@@ -87,8 +87,8 @@
+   def getChanges(self, everything = False):
+     data = []
+     if everything:
+-      data += [(self.MSG_CREATE, [(id, data) for id, data in self.__creationData.items()])]
+-      data += [(self.MSG_CHANGE, [(o.id, o.getChanges(everything = True)) for o in self.objects.values()])]
++      data += [(self.MSG_CREATE, [(id, data) for id, data in list(self.__creationData.items())])]
++      data += [(self.MSG_CHANGE, [(o.id, o.getChanges(everything = True)) for o in list(self.objects.values())])]
+     else:
+       if self.__created: data += [(self.MSG_CREATE, [(o.id, self.__creationData[o.id]) for o in self.__created])]
+       if self.__changed: data += [(self.MSG_CHANGE, [(o.id, o.getChanges()) for o in self.__changed])]
+@@ -117,8 +117,8 @@
+           id = data
+           del self.__creationData[id]
+           del self.objects[id]
+-      except Exception, e:
+-        print "Exception %s while processing incoming changes from manager %s." % (str(e), managerId)
++      except Exception as e:
++        print("Exception %s while processing incoming changes from manager %s." % (str(e), managerId))
+         raise
+ 
+ def enableGlobalManager():
+--- ./src/Resource.py	(original)
++++ ./src/Resource.py	(refactored)
+@@ -21,7 +21,7 @@
+ #####################################################################
+ 
+ import os
+-from Queue import Queue, Empty
++from queue import Queue, Empty
+ from threading import Thread, BoundedSemaphore
+ import time
+ import shutil
+@@ -78,7 +78,7 @@
+     Log.notice("Loaded %s.%s in %.3f seconds" % (self.target.__class__.__name__, self.name, self.time))
+     
+     if self.exception:
+-      raise self.exception[0], self.exception[1], self.exception[2]
++      raise self.exception[0](self.exception[1]).with_traceback(self.exception[2])
+     if self.target and self.name:
+       setattr(self.target, self.name, self.result)
+     if self.onLoad:
+--- ./src/Scene.py	(original)
++++ ./src/Scene.py	(refactored)
+@@ -107,7 +107,7 @@
+   def hidden(self):
+     self.engine.input.removeKeyListener(self)
+ 
+-  def keyPressed(self, key, unicode):
++  def keyPressed(self, key, str):
+     c = self.controls.keyPressed(key)
+     if c:
+       self.session.sendMessage(ControlEvent(flags = self.controls.flags))
+@@ -200,7 +200,7 @@
+       id = self.objects.id(actor)
+       self.server.broadcastMessage(ActorData(id = id, data = actor.getState()), meToo = False)
+ 
+-    for sender, flags in self.changedControlData.items():
++    for sender, flags in list(self.changedControlData.items()):
+       self.server.broadcastMessage(ControlData(owner = sender, flags = flags))
+     self.changedControlData = {}
+ 
+--- ./src/Server.py	(original)
++++ ./src/Server.py	(refactored)
+@@ -23,7 +23,7 @@
+ import Network
+ import Engine
+ import Log
+-import cPickle as pickle
++import pickle as pickle
+ 
+ from Session import ServerSession, MessageBroker
+ from World import WorldServer
+@@ -54,7 +54,7 @@
+       pass
+ 
+   def broadcastMessage(self, message, meToo = True, ignore = []):
+-    for id, session in self.sessions.items():
++    for id, session in list(self.sessions.items()):
+       if id in ignore: continue
+       session.sendMessage(message)
+     if meToo:
+--- ./src/Session.py	(original)
++++ ./src/Session.py	(refactored)
+@@ -21,7 +21,7 @@
+ #####################################################################
+ 
+ import pickle
+-from StringIO import StringIO
++from io import StringIO
+ 
+ import Network
+ import Engine
+@@ -39,11 +39,11 @@
+ 
+ class Message:
+   def __init__(self, **args):
+-    for key, value in args.items():
++    for key, value in list(args.items()):
+       setattr(self, key, value)
+ 
+   def __repr__(self):
+-    return "<Message %s %s>" % (str(self.__class__), " ".join(["%s='%s'" % (k, v) for k, v in self.__dict__.items()]))
++    return "<Message %s %s>" % (str(self.__class__), " ".join(["%s='%s'" % (k, v) for k, v in list(self.__dict__.items())]))
+   
+ class MessageBroker:
+   def __init__(self):
+@@ -64,7 +64,7 @@
+     for handler in reversed(self.messageHandlers):
+       try:
+         handler.handleMessage(sender, message)
+-      except Exception, e:
++      except Exception as e:
+         import traceback
+         traceback.print_exc()
+ 
+@@ -116,7 +116,7 @@
+     elif id in self.receivedClasses:
+       message = self.receivedClasses[id][0]()
+       if len(data) > 1:
+-        message.__dict__.update(dict(zip(self.receivedClasses[id][1], data[1:])))
++        message.__dict__.update(dict(list(zip(self.receivedClasses[id][1], data[1:]))))
+       return message
+     else:
+       Log.warn("Message with unknown class received: %d" % id)
+@@ -126,7 +126,7 @@
+     
+     if not message.__class__ in self.sentClasses:
+       id = len(self.sentClasses) + 1
+-      definition = [message.__class__, message.__dict__.keys()]
++      definition = [message.__class__, list(message.__dict__.keys())]
+       self.sentClasses[message.__class__] = [id] + definition
+       packets.append(self.serialize([-id] + definition))
+       Log.debug("%d phrases taught." % len(self.sentClasses))
+--- ./src/Settings.py	(original)
++++ ./src/Settings.py	(refactored)
+@@ -40,7 +40,7 @@
+     o = config.prototype[section][option]
+     v = config.get(section, option)
+     if isinstance(o.options, dict):
+-      values     = o.options.values()
++      values     = list(o.options.values())
+       values.sort()
+       try:
+         valueIndex = values.index(o.options[v])
+@@ -60,7 +60,7 @@
+     o = self.config.prototype[self.section][self.option]
+     
+     if isinstance(o.options, dict):
+-      for k, v in o.options.items():
++      for k, v in list(o.options.items()):
+         if v == value:
+           value = k
+           break
+@@ -110,7 +110,7 @@
+     o = self.config.prototype[self.section][self.option]
+ 
+     if isinstance(o.options, dict):
+-      for k, v in o.options.items():
++      for k, v in list(o.options.items()):
+         if v == value:
+           value = k
+           break
+--- ./src/Song.py	(original)
++++ ./src/Song.py	(refactored)
+@@ -23,7 +23,7 @@
+ import midi
+ import Log
+ import Audio
+-from ConfigParser import ConfigParser
++from configparser import ConfigParser
+ import os
+ import re
+ import shutil
+@@ -31,10 +31,11 @@
+ import sha
+ import binascii
+ import Cerealizer
+-import urllib
++import urllib.request, urllib.parse, urllib.error
+ import Version
+ import Theme
+ from Language import _
++from functools import reduce
+ 
+ DEFAULT_LIBRARY         = "songs"
+ 
+@@ -80,7 +81,7 @@
+     scores = self._get("scores", str, "")
+     if scores:
+       scores = Cerealizer.loads(binascii.unhexlify(scores))
+-      for difficulty in scores.keys():
++      for difficulty in list(scores.keys()):
+         try:
+           difficulty = difficulties[difficulty]
+         except KeyError:
+@@ -94,7 +95,7 @@
+   def _set(self, attr, value):
+     if not self.info.has_section("song"):
+       self.info.add_section("song")
+-    if type(value) == unicode:
++    if type(value) == str:
+       value = value.encode(Config.encoding)
+     else:
+       value = str(value)
+@@ -102,7 +103,7 @@
+     
+   def getObfuscatedScores(self):
+     s = {}
+-    for difficulty in self.highScores.keys():
++    for difficulty in list(self.highScores.keys()):
+       s[difficulty.id] = [(score, stars, name, self.getScoreHash(difficulty, score, stars, name)) for score, stars, name in self.highScores[difficulty]]
+     return binascii.hexlify(Cerealizer.dumps(s))
+ 
+@@ -142,7 +143,7 @@
+       info.difficulties.sort(lambda a, b: cmp(b.id, a.id))
+       self._difficulties = info.difficulties
+     except:
+-      self._difficulties = difficulties.values()
++      self._difficulties = list(difficulties.values())
+     return self._difficulties
+ 
+   def getName(self):
+@@ -188,14 +189,14 @@
+         "scores":   self.getObfuscatedScores(),
+         "version":  Version.version()
+       }
+-      data = urllib.urlopen(url + "?" + urllib.urlencode(d)).read()
++      data = urllib.request.urlopen(url + "?" + urllib.parse.urlencode(d)).read()
+       Log.debug("Score upload result: %s" % data)
+       if ";" in data:
+         fields = data.split(";")
+       else:
+         fields = [data, "0"]
+       return (fields[0] == "True", int(fields[1]))
+-    except Exception, e:
++    except Exception as e:
+       Log.error(e)
+       return (False, 0)
+   
+@@ -248,7 +249,7 @@
+   def _set(self, attr, value):
+     if not self.info.has_section("library"):
+       self.info.add_section("library")
+-    if type(value) == unicode:
++    if type(value) == str:
+       value = value.encode(Config.encoding)
+     else:
+       value = str(value)
+@@ -458,13 +459,13 @@
+     try:
+       if guitarTrackName:
+         self.guitarTrack = Audio.StreamingSound(self.engine, self.engine.audio.getChannel(1), guitarTrackName)
+-    except Exception, e:
++    except Exception as e:
+       Log.warn("Unable to load guitar track: %s" % e)
+ 
+     try:
+       if rhythmTrackName:
+         self.rhythmTrack = Audio.StreamingSound(self.engine, self.engine.audio.getChannel(2), rhythmTrackName)
+-    except Exception, e:
++    except Exception as e:
+       Log.warn("Unable to load rhythm track: %s" % e)
+ 	
+     # load the notes
+@@ -608,7 +609,7 @@
+   0x40: (SUPAEASY_DIFFICULTY, 4),
+ }
+ 
+-reverseNoteMap = dict([(v, k) for k, v in noteMap.items()])
++reverseNoteMap = dict([(v, k) for k, v in list(noteMap.items())])
+ 
+ class MidiWriter:
+   def __init__(self, song, out):
+@@ -629,7 +630,7 @@
+       self.out.tempo(int(60.0 * 10.0**6 / 122.0))
+ 
+     # Collect all events
+-    events = [zip([difficulty] * len(track.getAllEvents()), track.getAllEvents()) for difficulty, track in enumerate(self.song.tracks)]
++    events = [list(zip([difficulty] * len(track.getAllEvents()), track.getAllEvents())) for difficulty, track in enumerate(self.song.tracks)]
+     events = reduce(lambda a, b: a + b, events)
+     events.sort(lambda a, b: {True: 1, False: -1}[a[1][0] > b[1][0]])
+     heldNotes = []
+@@ -668,7 +669,7 @@
+     self.file = scriptFile
+ 
+   def read(self):
+-    for line in self.file.xreadlines():
++    for line in self.file:
+       if line.startswith("#"): continue
+       time, length, type, data = re.split("[\t ]+", line.strip(), 3)
+       time   = float(time)
+--- ./src/SongTest.py	(original)
++++ ./src/SongTest.py	(refactored)
+@@ -69,7 +69,7 @@
+         t2, n2 = event[1]
+         
+         if "-v" in sys.argv:
+-          print "%8d. %.3f + %.3f\t%2d\t     %.3f + %.3f\t%2d" % (i, t1, n1.length, n1.number, t2, n2.length, n2.number)
++          print("%8d. %.3f + %.3f\t%2d\t     %.3f + %.3f\t%2d" % (i, t1, n1.length, n1.number, t2, n2.length, n2.number))
+         
+         # Allow 2ms of rounding error
+         assert abs(t1 - t2) < 2
+--- ./src/Stage.py	(original)
++++ ./src/Stage.py	(refactored)
+@@ -20,7 +20,7 @@
+ # MA  02110-1301, USA.                                              #
+ #####################################################################
+ 
+-from ConfigParser import ConfigParser
++from configparser import ConfigParser
+ from OpenGL.GL import *
+ import math
+ import Log
+--- ./src/Svg.py	(original)
++++ ./src/Svg.py	(refactored)
+@@ -170,14 +170,14 @@
+ 
+   def __cmp__(self, s):
+     if s:
+-      for k, v in self.__dict__.items():
++      for k, v in list(self.__dict__.items()):
+         if v != getattr(s, k):
+           return 1
+       return 0
+     return 1
+ 
+   def __repr__(self):
+-    return "<SvgRenderStyle " + " ".join(["%s:%s" % (k, v) for k, v in self.__dict__.items()]) + ">"
++    return "<SvgRenderStyle " + " ".join(["%s:%s" % (k, v) for k, v in list(self.__dict__.items())]) + ">"
+ 
+   def applyAttributes(self, attrs, defs):
+     style = attrs.get("style")
+--- ./src/Texture.py	(original)
++++ ./src/Texture.py	(refactored)
+@@ -20,17 +20,17 @@
+ # MA  02110-1301, USA.                                              #
+ #####################################################################
+ 
+-from __future__ import division
++
+ 
+ import Log
+ import Config
+ from PIL import Image
+ import pygame
+-import StringIO
++import io
+ from PIL import PngImagePlugin
+ from OpenGL.GL import *
+ from OpenGL.GLU import *
+-from Queue import Queue, Empty
++from queue import Queue, Empty
+ 
+ Config.define("opengl", "supportfbo", bool, False)
+ 
+--- ./src/Video.py	(original)
++++ ./src/Video.py	(refactored)
+@@ -59,7 +59,7 @@
+ 
+     try:
+       self.screen = pygame.display.set_mode(resolution, flags)
+-    except Exception, e:
++    except Exception as e:
+       Log.error(str(e))
+       if multisamples:
+         Log.warn("Video setup failed. Trying without antialiasing.")
+--- ./src/View.py	(original)
++++ ./src/View.py	(refactored)
+@@ -20,7 +20,7 @@
+ # MA  02110-1301, USA.                                              #
+ #####################################################################
+ 
+-from __future__ import division
++
+ from OpenGL.GL import *
+ from OpenGL.GLU import *
+ 
+--- ./src/rgb2py.py	(original)
++++ ./src/rgb2py.py	(refactored)
+@@ -2,12 +2,12 @@
+ 
+ f = open("/etc/X11/rgb.txt")
+ 
+-print "colors = {"
++print("colors = {")
+ for l in f.readlines():
+   if l.startswith("!"): continue
+   c = re.split("[ \t]+", l.strip())
+-  rgb, names = map(int, c[:3]), c[3:]
++  rgb, names = list(map(int, c[:3])), c[3:]
+   rgb = [float(c) / 255.0 for c in rgb]
+   for n in names:
+-    print '  %-24s: (%.2f, %.2f, %.2f),' % ('"%s"' % n.lower(), rgb[0], rgb[1], rgb[2])
+-print "}"
++    print('  %-24s: (%.2f, %.2f, %.2f),' % ('"%s"' % n.lower(), rgb[0], rgb[1], rgb[2]))
++print("}")
+--- ./src/svg2png.py	(original)
++++ ./src/svg2png.py	(refactored)
+@@ -5,4 +5,4 @@
+ for root, dirs, files in os.walk("."):
+   for svg in fnmatch.filter(files, "*.svg"):
+     svg = os.path.join(root, svg)
+-    print svg, os.system("inkscape --export-filename='%s' -D '%s' -b black -y 0.0" % (svg.replace(".svg", ".png"), svg))
++    print(svg, os.system("inkscape --export-filename='%s' -D '%s' -b black -y 0.0" % (svg.replace(".svg", ".png"), svg)))
+--- ./src/midi/DataTypeConverters.py	(original)
++++ ./src/midi/DataTypeConverters.py	(refactored)
+@@ -163,11 +163,11 @@
+ #
+ #    print 'varLen', varLen(1)
+ #
+--- ./src/midi/EventDispatcher.py	(original)
++++ ./src/midi/EventDispatcher.py	(refactored)
+@@ -4,11 +4,11 @@
+ from struct import unpack
+ 
+ # custom
+-from DataTypeConverters import readBew, readVar, varLen, toBytes
++from .DataTypeConverters import readBew, readVar, varLen, toBytes
+ 
+ # uhh I don't really like this, but there are so many constants to 
+ # import otherwise
+-from constants import *
++from .constants import *
+ 
+ 
+ class EventDispatcher:
+@@ -132,7 +132,7 @@
+ 
+         else:
+ 
+-            raise ValueError, 'Illegal channel message!'
++            raise ValueError('Illegal channel message!')
+ 
+ 
+ 
+@@ -261,7 +261,7 @@
+             try:
+                 nn, dd, cc, bb = toBytes(data)
+                 stream.time_signature(nn, dd, cc, bb)
+-            except ValueError, e:
++            except ValueError as e:
+                 pass
+         
+         # KEY_SIGNATURE = 0x59 (59 02 sf mi)
+@@ -286,7 +286,7 @@
+ if __name__ == '__main__':
+ 
+ 
+-    from MidiToText import MidiToText
++    from .MidiToText import MidiToText
+     
+     outstream = MidiToText()
+     dispatcher = EventDispatcher(outstream)
+--- ./src/midi/MidiFileParser.py	(original)
++++ ./src/midi/MidiFileParser.py	(refactored)
+@@ -5,9 +5,9 @@
+ 
+ # uhh I don't really like this, but there are so many constants to 
+ # import otherwise
+-from constants import *
++from .constants import *
+ 
+-from EventDispatcher import EventDispatcher
++from .EventDispatcher import EventDispatcher
+ 
+ class MidiFileParser:
+ 
+@@ -45,7 +45,7 @@
+ 
+         # check if it is a proper midi file
+         if header_chunk_type != 'MThd':
+-            raise TypeError, "It is not a valid midi file!"
++            raise TypeError("It is not a valid midi file!")
+ 
+         # Header values are at fixed locations, so no reason to be clever
+         self.format = raw_in.readBew(2)
+@@ -190,8 +190,8 @@
+ #    
+ #    
+ #    # do parsing
+-    from MidiToText import MidiToText
+-    from RawInstreamFile import RawInstreamFile
++    from .MidiToText import MidiToText
++    from .RawInstreamFile import RawInstreamFile
+ 
+     midi_in = MidiFileParser(RawInstreamFile(test_file), MidiToText())
+     midi_in.parseMThdChunk()
+--- ./src/midi/MidiInFile.py	(original)
++++ ./src/midi/MidiInFile.py	(refactored)
+@@ -1,7 +1,7 @@
+ # -*- coding: ISO-8859-1 -*-
+ 
+-from RawInstreamFile import RawInstreamFile
+-from MidiFileParser import MidiFileParser
++from .RawInstreamFile import RawInstreamFile
++from .MidiFileParser import MidiFileParser
+ 
+ 
+ class MidiInFile:
+--- ./src/midi/MidiInStream.py	(original)
++++ ./src/midi/MidiInStream.py	(refactored)
+@@ -1,6 +1,6 @@
+ # -*- coding: ISO-8859-1 -*-
+ 
+-from MidiOutStream import MidiOutStream
++from .MidiOutStream import MidiOutStream
+ 
+ class MidiInStream:
+ 
+--- ./src/midi/MidiOutFile.py	(original)
++++ ./src/midi/MidiOutFile.py	(refactored)
+@@ -1,10 +1,10 @@
+ # -*- coding: ISO-8859-1 -*-
+ 
+-from MidiOutStream import MidiOutStream
+-from RawOutstreamFile import RawOutstreamFile
+-
+-from constants import *
+-from DataTypeConverters import fromBytes, writeVar
++from .MidiOutStream import MidiOutStream
++from .RawOutstreamFile import RawOutstreamFile
++
++from .constants import *
++from .DataTypeConverters import fromBytes, writeVar
+ 
+ class MidiOutFile(MidiOutStream):
+ 
+--- ./src/midi/MidiToText.py	(original)
++++ ./src/midi/MidiToText.py	(refactored)
+@@ -1,6 +1,6 @@
+ # -*- coding: ISO-8859-1 -*-
+ 
+-from MidiOutStream import MidiOutStream
++from .MidiOutStream import MidiOutStream
+ class MidiToText(MidiOutStream):
+ 
+ 
+@@ -14,33 +14,33 @@
+     
+     def channel_message(self, message_type, channel, data):
+         """The default event handler for channel messages"""
+-        print 'message_type:%X, channel:%X, data size:%X' % (message_type, channel, len(data))
++        print('message_type:%X, channel:%X, data size:%X' % (message_type, channel, len(data)))
+ 
+ 
+     def note_on(self, channel=0, note=0x40, velocity=0x40):
+-        print 'note_on  - ch:%02X,  note:%02X,  vel:%02X time:%s' % (channel, note, velocity, self.rel_time())
++        print('note_on  - ch:%02X,  note:%02X,  vel:%02X time:%s' % (channel, note, velocity, self.rel_time()))
+ 
+     def note_off(self, channel=0, note=0x40, velocity=0x40):
+-        print 'note_off - ch:%02X,  note:%02X,  vel:%02X time:%s' % (channel, note, velocity, self.rel_time())
++        print('note_off - ch:%02X,  note:%02X,  vel:%02X time:%s' % (channel, note, velocity, self.rel_time()))
+ 
+     def aftertouch(self, channel=0, note=0x40, velocity=0x40):
+-        print 'aftertouch', channel, note, velocity
++        print('aftertouch', channel, note, velocity)
+ 
+ 
+     def continuous_controller(self, channel, controller, value):
+-        print 'controller - ch: %02X, cont: #%02X, value: %02X' % (channel, controller, value)
++        print('controller - ch: %02X, cont: #%02X, value: %02X' % (channel, controller, value))
+ 
+ 
+     def patch_change(self, channel, patch):
+-        print 'patch_change - ch:%02X, patch:%02X' % (channel, patch)
++        print('patch_change - ch:%02X, patch:%02X' % (channel, patch))
+ 
+ 
+     def channel_pressure(self, channel, pressure):
+-        print 'channel_pressure', channel, pressure
++        print('channel_pressure', channel, pressure)
+ 
+ 
+     def pitch_bend(self, channel, value):
+-        print 'pitch_bend ch:%s, value:%s' % (channel, value)
++        print('pitch_bend ch:%s, value:%s' % (channel, value))
+ 
+ 
+ 
+@@ -49,23 +49,23 @@
+ 
+ 
+     def system_exclusive(self, data):
+-        print 'system_exclusive - data size: %s' % len(date)
++        print('system_exclusive - data size: %s' % len(date))
+ 
+ 
+     def song_position_pointer(self, value):
+-        print 'song_position_pointer: %s' % value
++        print('song_position_pointer: %s' % value)
+ 
+ 
+     def song_select(self, songNumber):
+-        print 'song_select: %s' % songNumber
++        print('song_select: %s' % songNumber)
+ 
+ 
+     def tuning_request(self):
+-        print 'tuning_request'
++        print('tuning_request')
+ 
+ 
+     def midi_time_code(self, msg_type, values):
+-        print 'midi_time_code - msg_type: %s, values: %s' % (msg_type, values)
++        print('midi_time_code - msg_type: %s, values: %s' % (msg_type, values))
+ 
+ 
+ 
+@@ -73,21 +73,21 @@
+     # header does not really belong here. But anyhoo!!!
+ 
+     def header(self, format=0, nTracks=1, division=96):
+-        print 'format: %s, nTracks: %s, division: %s' % (format, nTracks, division)
+-        print '----------------------------------'
+-        print ''
++        print('format: %s, nTracks: %s, division: %s' % (format, nTracks, division))
++        print('----------------------------------')
++        print('')
+ 
+     def eof(self):
+-        print 'End of file'
++        print('End of file')
+ 
+ 
+     def start_of_track(self, n_track=0):
+-        print 'Start - track #%s' % n_track
++        print('Start - track #%s' % n_track)
+ 
+ 
+     def end_of_track(self):
+-        print 'End of track'
+-        print ''
++        print('End of track')
++        print('')
+ 
+ 
+ 
+@@ -95,74 +95,74 @@
+     # sysex event
+ 
+     def sysex_event(self, data):
+-        print 'sysex_event - datasize: %X' % len(data)
++        print('sysex_event - datasize: %X' % len(data))
+ 
+ 
+     #####################
+     ## meta events
+ 
+     def meta_event(self, meta_type, data):
+-        print 'undefined_meta_event:', meta_type, len(data)
++        print('undefined_meta_event:', meta_type, len(data))
+ 
+ 
+     def sequence_number(self, value):
+-        print 'sequence_number', value
++        print('sequence_number', value)
+ 
+ 
+     def text(self, text):
+-        print 'text', text
++        print('text', text)
+ 
+ 
+     def copyright(self, text):
+-        print 'copyright', text
++        print('copyright', text)
+ 
+ 
+     def sequence_name(self, text):
+-        print 'sequence_name:', text
++        print('sequence_name:', text)
+ 
+ 
+     def instrument_name(self, text):
+-        print 'instrument_name:', text
++        print('instrument_name:', text)
+ 
+ 
+     def lyric(self, text):
+-        print 'lyric', text
++        print('lyric', text)
+ 
+ 
+     def marker(self, text):
+-        print 'marker', text
++        print('marker', text)
+ 
+ 
+     def cuepoint(self, text):
+-        print 'cuepoint', text
++        print('cuepoint', text)
+ 
+ 
+     def midi_ch_prefix(self, channel):
+-        print 'midi_ch_prefix', channel
++        print('midi_ch_prefix', channel)
+ 
+ 
+     def midi_port(self, value):
+-        print 'midi_port:', value
++        print('midi_port:', value)
+ 
+ 
+     def tempo(self, value):
+-        print 'tempo:', value
++        print('tempo:', value)
+ 
+ 
+     def smtp_offset(self, hour, minute, second, frame, framePart):
+-        print 'smtp_offset', hour, minute, second, frame, framePart
++        print('smtp_offset', hour, minute, second, frame, framePart)
+ 
+ 
+     def time_signature(self, nn, dd, cc, bb):
+-        print 'time_signature:', self.abs_time(), nn, dd, cc, bb
++        print('time_signature:', self.abs_time(), nn, dd, cc, bb)
+ 
+ 
+     def key_signature(self, sf, mi):
+-        print 'key_signature', sf, mi
++        print('key_signature', sf, mi)
+ 
+ 
+     def sequencer_specific(self, data):
+-        print 'sequencer_specific', len(data)
++        print('sequencer_specific', len(data))
+ 
+ 
+ 
+@@ -174,7 +174,7 @@
+     f = open(test_file, 'rb')
+     
+     # do parsing
+-    from MidiInFile import MidiInFile
++    from .MidiInFile import MidiInFile
+     midiIn = MidiInFile(MidiToText(), f)
+     midiIn.read()
+     f.close()
+--- ./src/midi/RawInstreamFile.py	(original)
++++ ./src/midi/RawInstreamFile.py	(refactored)
+@@ -5,7 +5,7 @@
+ from struct import unpack
+ 
+ # custom import
+-from DataTypeConverters import readBew, readVar, varLen
++from .DataTypeConverters import readBew, readVar, varLen
+ 
+ 
+ class RawInstreamFile:
+@@ -28,7 +28,7 @@
+         copy them into memory.
+         """
+         if infile:
+-            if type(infile) in [str, unicode]:
++            if type(infile) in [str, str]:
+                 infile = open(infile, 'rb')
+                 self.data = infile.read()
+                 infile.close()
+@@ -99,10 +99,10 @@
+ 
+     test_file = 'test/midifiles/minimal.mid'
+     fis = RawInstreamFile(test_file)
+-    print fis.nextSlice(len(fis.data))
++    print(fis.nextSlice(len(fis.data)))
+ 
+     test_file = 'test/midifiles/cubase-minimal.mid'
+     cubase_minimal = open(test_file, 'rb')
+     fis2 = RawInstreamFile(cubase_minimal)
+-    print fis2.nextSlice(len(fis2.data))
++    print(fis2.nextSlice(len(fis2.data)))
+     cubase_minimal.close()
+--- ./src/midi/RawOutstreamFile.py	(original)
++++ ./src/midi/RawOutstreamFile.py	(refactored)
+@@ -4,10 +4,10 @@
+ import sys
+ from types import StringType
+ from struct import unpack
+-from cStringIO import StringIO
++from io import StringIO
+ 
+ # custom import
+-from DataTypeConverters import writeBew, writeVar, fromBytes
++from .DataTypeConverters import writeBew, writeVar, fromBytes
+ 
+ class RawOutstreamFile:
+     
+--- ./src/midi/__init__.py	(original)
++++ ./src/midi/__init__.py	(refactored)
+@@ -1,7 +1,7 @@
+ # -*- coding: ISO-8859-1 -*-
+ 
+-from MidiOutStream import MidiOutStream
+-from MidiOutFile import MidiOutFile
+-from MidiInStream import MidiInStream
+-from MidiInFile import MidiInFile
+-from MidiToText import MidiToText
++from .MidiOutStream import MidiOutStream
++from .MidiOutFile import MidiOutFile
++from .MidiInStream import MidiInStream
++from .MidiInFile import MidiInFile
++from .MidiToText import MidiToText

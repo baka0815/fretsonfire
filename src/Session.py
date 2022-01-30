@@ -21,7 +21,7 @@
 #####################################################################
 
 import pickle
-from StringIO import StringIO
+from io import StringIO
 
 import Network
 import Engine
@@ -39,11 +39,11 @@ except:
 
 class Message:
   def __init__(self, **args):
-    for key, value in args.items():
+    for key, value in list(args.items()):
       setattr(self, key, value)
 
   def __repr__(self):
-    return "<Message %s %s>" % (str(self.__class__), " ".join(["%s='%s'" % (k, v) for k, v in self.__dict__.items()]))
+    return "<Message %s %s>" % (str(self.__class__), " ".join(["%s='%s'" % (k, v) for k, v in list(self.__dict__.items())]))
   
 class MessageBroker:
   def __init__(self):
@@ -64,7 +64,7 @@ class MessageBroker:
     for handler in reversed(self.messageHandlers):
       try:
         handler.handleMessage(sender, message)
-      except Exception, e:
+      except Exception as e:
         import traceback
         traceback.print_exc()
 
@@ -116,7 +116,7 @@ class Phrasebook:
     elif id in self.receivedClasses:
       message = self.receivedClasses[id][0]()
       if len(data) > 1:
-        message.__dict__.update(dict(zip(self.receivedClasses[id][1], data[1:])))
+        message.__dict__.update(dict(list(zip(self.receivedClasses[id][1], data[1:]))))
       return message
     else:
       Log.warn("Message with unknown class received: %d" % id)
@@ -126,7 +126,7 @@ class Phrasebook:
     
     if not message.__class__ in self.sentClasses:
       id = len(self.sentClasses) + 1
-      definition = [message.__class__, message.__dict__.keys()]
+      definition = [message.__class__, list(message.__dict__.keys())]
       self.sentClasses[message.__class__] = [id] + definition
       packets.append(self.serialize([-id] + definition))
       Log.debug("%d phrases taught." % len(self.sentClasses))

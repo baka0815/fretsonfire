@@ -28,7 +28,7 @@ import os
 import re
 import shutil
 import Config
-import sha
+import hashlib
 import binascii
 import Cerealizer
 import urllib.request, urllib.parse, urllib.error
@@ -140,7 +140,7 @@ class SongInfo(object):
         midiIn.read()
       except MidiInfoReader.Done:
         pass
-      info.difficulties.sort(lambda a, b: cmp(b.id, a.id))
+      info.difficulties.sort(lambda a, b: (a.id > b.id) - (a.id < b.id))
       self._difficulties = info.difficulties
     except:
       self._difficulties = list(difficulties.values())
@@ -165,9 +165,13 @@ class SongInfo(object):
   
   def setArtist(self, value):
     self._set("artist", value)
-    
+
+  
   def getScoreHash(self, difficulty, score, stars, name):
-    return sha.sha("%d%d%d%s" % (difficulty.id, score, stars, name)).hexdigest()
+    """
+    Returns the SHA-1 hash of the score.
+    """
+    return hashlib.sha1("%d%d%d%s" % (difficulty.id, score, stars, name)).hexdigest()
     
   def getDelay(self):
     return self._get("delay", int, 0)
@@ -483,7 +487,7 @@ class Song(object):
       track.update()
 
   def getHash(self):
-    h = sha.new()
+    h = hashlib.sha1()
     f = open(self.noteFileName, "rb")
     bs = 1024
     while True:
@@ -770,7 +774,8 @@ class MidiInfoReader(midi.MidiOutStream):
       if not diff in self.difficulties:
         self.difficulties.append(diff)
         if len(self.difficulties) == len(difficulties):
-          raise Done
+          ## TODO : was just "raise Done"
+          raise MidiInfoReader.Done
     except KeyError:
       pass
 
@@ -871,7 +876,7 @@ def getAvailableLibraries(engine, library = DEFAULT_LIBRARY):
             libraries.append(LibraryInfo(libName, os.path.join(libraryRoot, "library.ini")))
             libraryRoots.append(libraryRoot)
             break
-  libraries.sort(lambda a, b: cmp(a.name, b.name))
+  libraries.sort(lambda a, b: (a.name > b.name) - (a.name < b.name))
   return libraries
 
 def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = False):
@@ -888,5 +893,5 @@ def getAvailableSongs(engine, library = DEFAULT_LIBRARY, includeTutorials = Fals
   songs = [SongInfo(engine.resource.fileName(library, name, "song.ini", writable = True)) for name in names]
   if not includeTutorials:
     songs = [song for song in songs if not song.tutorial]
-  songs.sort(lambda a, b: cmp(a.name, b.name))
+  songs.sort(lambda a, b: (a.name > b.name) - (a.name < b.name))
   return songs

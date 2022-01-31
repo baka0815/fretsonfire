@@ -1,8 +1,6 @@
 # -*- coding: ISO-8859-1 -*-
 
 # standard library imports
-from types import StringType
-from struct import unpack
 
 # custom import
 from .DataTypeConverters import readBew, readVar, varLen
